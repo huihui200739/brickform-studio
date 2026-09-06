@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
   Maximize,
   Minus,
@@ -26,9 +27,12 @@ export default function ModelViewer({
   const control = useRef<{
     zoom: (f: number) => void;
     reset: () => void;
+    update: (layer: number, exploded: boolean) => void;
   } | null>(null);
-  const [error, setError] = useState('');
-  const [ready, setReady] = useState(false);
+  const viewState = useRef({ layer, exploded });
+  viewState.current = { layer, exploded };
+  const [error, setError] = useState(''),
+    [ready, setReady] = useState(false);
   useEffect(() => {
     if (!mount.current) return;
     const el = mount.current;
@@ -36,48 +40,57 @@ export default function ModelViewer({
     setReady(false);
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     } catch {
-      setError('当前设备无法启动 3D。你仍可查看下方分层图纸和零件清单。');
+      setError('此设备无法启动 3D，请使用下方的分步图纸。');
       return;
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.setClearColor('#edf1eb');
+    renderer.setClearColor('#f1f3f5');
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.3;
     el.appendChild(renderer.domElement);
     renderer.domElement.setAttribute(
       'aria-label',
-      '积木模型 3D 预览。拖动旋转，滚轮缩放。',
+      '积木模型：拖动旋转、滚轮缩放，使用工具栏复位。',
     );
     renderer.domElement.setAttribute('role', 'img');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 1000);
-    const size = Math.max(model.width, model.height * 1.2, model.depth);
-    const target = new THREE.Vector3(0, model.height * 0.56, 0);
-    camera.position.set(size * 0.92, size * 0.95, size * 1.42);
+    const scene = new THREE.Scene(),
+      camera = new THREE.PerspectiveCamera(32, 1, 0.1, 2000);
+    const size = Math.max(model.width, model.height * 0.4, model.depth),
+      target = new THREE.Vector3(0, model.height * 0.2, 0);
     const orbit = new OrbitControls(camera, renderer.domElement);
     orbit.target.copy(target);
     orbit.enableDamping = true;
-    orbit.minDistance = size * 0.65;
-    orbit.maxDistance = size * 4.5;
+    orbit.minDistance = size * 0.7;
+    orbit.maxDistance = size * 7;
     orbit.maxPolarAngle = Math.PI * 0.49;
     orbit.enablePan = false;
-    orbit.update();
-    orbit.saveState();
-    control.current = {
-      zoom: (f) => {
-        camera.position.sub(orbit.target).multiplyScalar(f).add(orbit.target);
-        orbit.update();
-      },
-      reset: () => orbit.reset(),
+    const fit = () => {
+      const verticalFov = THREE.MathUtils.degToRad(camera.fov),
+        fov = Math.min(
+          verticalFov,
+          2 * Math.atan(Math.tan(verticalFov / 2) * camera.aspect),
+        );
+      const tall = model.height * 0.4 * (viewState.current.exploded ? 1.55 : 1);
+      const radius = Math.hypot(model.width, tall, model.depth) / 2;
+      orbit.target.set(0, tall / 2, 0);
+      camera.position.copy(
+        new THREE.Vector3(0.92, 0.62, 1.5)
+          .normalize()
+          .multiplyScalar((radius / Math.sin(fov / 2)) * 1.12)
+          .add(orbit.target),
+      );
+      orbit.update();
     };
-    scene.add(new THREE.HemisphereLight('#ffffff', '#788b71', 2.7));
-    const light = new THREE.DirectionalLight('#fff9e9', 3.5);
-    light.position.set(-size, size * 2, size);
-    light.castShadow = true;
-    light.shadow.mapSize.set(2048, 2048);
-    Object.assign(light.shadow.camera, {
+    scene.add(new THREE.HemisphereLight('#ffffff', '#758399', 2.5));
+    const keyLight = new THREE.DirectionalLight('#ffffff', 3.6);
+    keyLight.position.set(-size, size * 1.8, size * 1.4);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(2048, 2048);
+    Object.assign(keyLight.shadow.camera, {
       left: -size,
       right: size,
       top: size,
@@ -85,85 +98,131 @@ export default function ModelViewer({
       near: 0.1,
       far: size * 6,
     });
-    light.shadow.normalBias = 0.08;
-    light.shadow.bias = -0.0002;
-    scene.add(light);
-    const fill = new THREE.DirectionalLight('#edf5ff', 1.4);
-    fill.position.set(size, size * 0.5, -size);
+    keyLight.shadow.normalBias = 0.05;
+    keyLight.shadow.bias = -0.0001;
+    scene.add(keyLight);
+    const fill = new THREE.DirectionalLight('#deebff', 1.2);
+    fill.position.set(size, size, -size);
     scene.add(fill);
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(size * 18, size * 18),
-      new THREE.MeshStandardMaterial({ color: '#edf1eb', roughness: 1 }),
+      new THREE.PlaneGeometry(size * 8, size * 8),
+      new THREE.ShadowMaterial({ color: '#17283b', opacity: 0.16 }),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.03;
     ground.receiveShadow = true;
     scene.add(ground);
     const grid = new THREE.GridHelper(
-      size * 8,
-      Math.round(size * 8),
-      '#cbd4c6',
-      '#dce3d7',
+      size * 4,
+      Math.round(size * 2),
+      '#acb8c5',
+      '#bdc7d2',
     );
-    grid.position.y = -0.02;
+    grid.position.y = -0.04;
+    const gridMaterial = grid.material as THREE.Material;
+    gridMaterial.transparent = true;
+    gridMaterial.opacity = 0.24;
     scene.add(grid);
-    const bodyGeometry = new THREE.BoxGeometry(1, 1, 1);
-    const studGeometry = new THREE.CylinderGeometry(0.295, 0.3, 0.18, 16);
+    const bodyGeometry = new RoundedBoxGeometry(1, 1, 1, 2, 0.025),
+      studGeometry = new THREE.CylinderGeometry(0.295, 0.3, 0.17, 20);
     const object = new THREE.Object3D();
     const materials: THREE.Material[] = [];
+    const groups: {
+      bricks: Model['bricks'];
+      bodies: THREE.InstancedMesh;
+      studs: THREE.InstancedMesh;
+    }[] = [];
     PALETTE.forEach((color, index) => {
-      const bricks = model.bricks.filter(
-        (b) => b.color === index && b.y < layer,
-      );
+      const bricks = model.bricks.filter((b) => b.color === index);
       if (!bricks.length) return;
       const mat = new THREE.MeshStandardMaterial({
         color: color.hex,
-        roughness: 0.28,
-        metalness: 0.02,
+        roughness: 0.3,
+        metalness: 0,
       });
       materials.push(mat);
-      const bodies = new THREE.InstancedMesh(bodyGeometry, mat, bricks.length);
-      const studCount = bricks.reduce((n, b) => n + b.w * b.d, 0);
-      const studs = new THREE.InstancedMesh(studGeometry, mat, studCount);
-      let i = 0;
-      bricks.forEach((b, j) => {
-        const base = b.y * (exploded ? 2.0 : 1.2);
-        object.position.set(
-          b.x + b.w / 2 - model.width / 2,
-          base + 0.59,
-          b.z + b.d / 2 - model.depth / 2,
+      const bodies = new THREE.InstancedMesh(bodyGeometry, mat, bricks.length),
+        studs = new THREE.InstancedMesh(
+          studGeometry,
+          mat,
+          bricks.reduce((n, b) => n + b.w * b.d, 0),
         );
-        object.scale.set(b.w - 0.035, 1.17, b.d - 0.035);
-        object.updateMatrix();
-        bodies.setMatrixAt(j, object.matrix);
-        for (let x = 0; x < b.w; x++)
-          for (let z = 0; z < b.d; z++) {
-            object.position.set(
-              b.x + x + 0.5 - model.width / 2,
-              base + 1.25,
-              b.z + z + 0.5 - model.depth / 2,
-            );
-            object.scale.set(1, 1, 1);
-            object.updateMatrix();
-            studs.setMatrixAt(i++, object.matrix);
-          }
-      });
       bodies.castShadow = true;
       bodies.receiveShadow = true;
       studs.castShadow = true;
       studs.receiveShadow = true;
+      bodies.frustumCulled = false;
+      studs.frustumCulled = false;
       scene.add(bodies, studs);
+      groups.push({ bricks, bodies, studs });
     });
+    const update = (count: number, expand: boolean) => {
+      const limit = model.levels[Math.min(count, model.levels.length) - 1];
+      for (const { bricks, bodies, studs } of groups) {
+        let i = 0;
+        bricks.forEach((b, j) => {
+          const visible = b.y <= limit,
+            base = b.y * 0.4 * (expand ? 1.55 : 1);
+          object.position.set(
+            b.x + b.w / 2 - model.width / 2,
+            base + b.h * 0.2,
+            b.z + b.d / 2 - model.depth / 2,
+          );
+          object.scale.set(
+            visible ? b.w - 0.028 : 0,
+            visible ? b.h * 0.4 - 0.018 : 0,
+            visible ? b.d - 0.028 : 0,
+          );
+          object.updateMatrix();
+          bodies.setMatrixAt(j, object.matrix);
+          for (let x = 0; x < b.w; x++)
+            for (let z = 0; z < b.d; z++) {
+              object.position.set(
+                b.x + x + 0.5 - model.width / 2,
+                base + b.h * 0.4 + 0.075,
+                b.z + z + 0.5 - model.depth / 2,
+              );
+              object.scale.setScalar(visible ? 1 : 0);
+              object.updateMatrix();
+              studs.setMatrixAt(i++, object.matrix);
+            }
+        });
+        bodies.instanceMatrix.needsUpdate = true;
+        studs.instanceMatrix.needsUpdate = true;
+      }
+    };
+    control.current = {
+      zoom: (f) => {
+        const v = camera.position.clone().sub(orbit.target);
+        v.setLength(
+          THREE.MathUtils.clamp(
+            v.length() * f,
+            orbit.minDistance,
+            orbit.maxDistance,
+          ),
+        );
+        camera.position.copy(orbit.target).add(v);
+        orbit.update();
+      },
+      reset: fit,
+      update,
+    };
+    let initial = true;
     const resize = () => {
       const { width, height } = el.getBoundingClientRect();
       if (!width || !height) return;
       renderer.setSize(width, height);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      if (initial) {
+        fit();
+        initial = false;
+      }
     };
     const observer = new ResizeObserver(resize);
     observer.observe(el);
     resize();
+    update(viewState.current.layer, viewState.current.exploded);
     let frame = 0;
     const draw = () => {
       frame = requestAnimationFrame(draw);
@@ -174,7 +233,7 @@ export default function ModelViewer({
     setReady(true);
     const lost = (e: Event) => {
       e.preventDefault();
-      setError('3D 显示已中断，请刷新页面后重试。');
+      setError('3D 显示中断，请刷新页面重试。');
     };
     renderer.domElement.addEventListener('webglcontextlost', lost);
     return () => {
@@ -184,16 +243,26 @@ export default function ModelViewer({
       bodyGeometry.dispose();
       studGeometry.dispose();
       materials.forEach((m) => m.dispose());
+      groups.forEach((g) => {
+        g.bodies.dispose();
+        g.studs.dispose();
+      });
       ground.geometry.dispose();
       (ground.material as THREE.Material).dispose();
       grid.geometry.dispose();
-      (grid.material as THREE.Material).dispose();
+      gridMaterial.dispose();
       renderer.dispose();
       renderer.domElement.removeEventListener('webglcontextlost', lost);
       renderer.domElement.remove();
       control.current = null;
     };
-  }, [model, layer, exploded]);
+  }, [model]);
+  useEffect(() => {
+    control.current?.update(layer, exploded);
+  }, [layer, exploded]);
+  useEffect(() => {
+    control.current?.reset();
+  }, [exploded]);
   return (
     <div className="viewer">
       <div className="canvas-mount" ref={mount} />
@@ -208,12 +277,20 @@ export default function ModelViewer({
         </div>
       )}
       <div className="model-label">
-        <span className="live-dot" />{' '}
-        {model.source === 'sample' ? '示例模型' : '图片轮廓模型'}
+        <span className="live-dot" />
+        <span>
+          {model.source === 'sample'
+            ? '示例模型'
+            : model.shape === 'relief'
+              ? '轮廓浮雕'
+              : '圆润立体'}
+        </span>
         <span className="label-line" />
-        {model.name}
+        <span className="model-name" title={model.name}>
+          {model.name}
+        </span>
       </div>
-      <div className="viewer-controls">
+      <div className="viewer-controls" role="toolbar" aria-label="模型视图工具">
         <button
           title="放大"
           aria-label="放大模型"
@@ -230,14 +307,14 @@ export default function ModelViewer({
         </button>
         <i />
         <button
-          title="重置视角"
+          title="复位视角"
           aria-label="重置视角"
           onClick={() => control.current?.reset()}
         >
           <RotateCcw size={17} />
         </button>
         <button
-          title="分层展开"
+          title="展开各搭建层"
           aria-label="分层展开"
           aria-pressed={exploded}
           className={exploded ? 'active' : ''}
@@ -249,13 +326,12 @@ export default function ModelViewer({
           title="全屏预览"
           aria-label="全屏预览"
           onClick={() => {
-            const container = mount.current?.parentElement;
             if (document.fullscreenElement) void document.exitFullscreen();
             else
-              void container
+              void mount.current?.parentElement
                 ?.requestFullscreen()
                 .catch(() =>
-                  setError('此浏览器暂不支持全屏，请使用放大按钮。'),
+                  setError('当前浏览器不支持全屏，请使用缩放按钮。'),
                 );
           }}
         >
@@ -263,7 +339,7 @@ export default function ModelViewer({
         </button>
       </div>
       <div className="viewer-caption">
-        拖动旋转<span>·</span>滚轮缩放<span>·</span>含底座与支撑
+        拖动旋转<span>·</span>滚轮缩放<span>·</span>砖块 + 薄板
       </div>
       <div className="axis-label">
         <b>Y</b>

@@ -1,72 +1,108 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
 import {
   sampleModel,
   imageToModel,
   inventory,
   validateModel,
   toLDraw,
-  PARTS,
+  CATALOG,
+  type Model,
 } from './brick-engine.ts';
-test('all sample sizes are non-overlapping, supported, connected and use valid brick dimensions', () => {
-  for (const resolution of [12, 20, 28])
-    for (const depth of [2, 4, 6, 8, 10]) {
-      const m = sampleModel(resolution, depth);
-      assert.deepEqual(validateModel(m), {
-        collisions: 0,
-        unsupported: 0,
-        connected: true,
-        brickCount: m.bricks.length,
-      });
-      assert.equal(
-        inventory(m.bricks).reduce((n, p) => n + p.quantity, 0),
-        m.bricks.length,
+import { manualHTML, csv } from './manual.ts';
+const fixture = JSON.parse(
+  readFileSync(new URL('./fixtures/duck-raster.json', import.meta.url), 'utf8'),
+);
+const duck = {
+  width: fixture.width,
+  height: fixture.height,
+  data: Buffer.from(fixture.rgba, 'base64'),
+};
+function assertValid(m: Model) {
+  const v = validateModel(m);
+  assert.deepEqual(v, {
+    collisions: 0,
+    unsupported: 0,
+    invalidParts: 0,
+    connected: true,
+    brickCount: m.bricks.length,
+  });
+  assert.equal(
+    inventory(m.bricks).reduce((n, p) => n + p.quantity, 0),
+    m.bricks.length,
+  );
+  for (const b of m.bricks) {
+    assert.ok(CATALOG.some((p) => p.id === b.part));
+    assert.ok(
+      b.x >= 0 &&
+        b.x + b.w <= m.width &&
+        b.z >= 0 &&
+        b.z + b.d <= m.depth &&
+        b.y >= 0 &&
+        b.y + b.h <= m.height,
+    );
+  }
+}
+test('all supported sample sizes have a connected base and legal brick and plate geometry', () => {
+  for (const resolution of [20, 28, 36])
+    for (const depth of [4, 8, 12, 16, 20])
+      assertValid(sampleModel(resolution, depth));
+});
+test('actual uploaded duck: both shapes and all UI resolutions produce valid connected builds', () => {
+  for (const resolution of [20, 28, 36])
+    for (const shape of ['sculpture', 'relief'] as const) {
+      const m = imageToModel(
+        duck,
+        { resolution, depth: 12, threshold: 70, background: 'white', shape },
+        'test duck',
       );
-      for (const b of m.bricks) {
-        assert.ok(PARTS[b.part]);
-        assert.equal(
-          b.w * b.d,
-          b.part === '3010' ? 4 : b.part === '3004' ? 2 : 1,
-        );
-        assert.ok(
-          b.x >= 0 && b.x + b.w <= m.width && b.z >= 0 && b.z + b.d <= m.depth,
-        );
-      }
+      assertValid(m);
+      assert.ok(m.bricks.some((b) => b.h === 1 && b.y > 1));
+      assert.ok(m.bricks.some((b) => b.h === 3));
+      assert.ok(m.bricks.some((b) => b.w * b.d === 8));
+      assert.equal(m.source, 'image');
     }
 });
-test('different input silhouettes create different models and fill unsupported columns', () => {
-  const data = new Uint8ClampedArray(12 * 12 * 4).fill(255);
-  for (let y = 2; y < 10; y++)
-    for (let x = 2; x < 10; x++) {
-      const i = (y * 12 + x) * 4;
-      data[i] = 242;
-      data[i + 1] = 205;
-      data[i + 2] = 55;
-    }
+test('sculpture has variable cross sections and fewer subject voxels than the same extruded image', () => {
   const options = {
-    resolution: 12,
-    depth: 4,
+    resolution: 28,
+    depth: 12,
     threshold: 70,
     background: 'white' as const,
   };
-  const a = imageToModel({ width: 12, height: 12, data }, options, 'square');
-  for (let y = 4; y < 8; y++)
-    for (let x = 5; x < 10; x++) {
-      const i = (y * 12 + x) * 4;
-      data[i] = data[i + 1] = data[i + 2] = 255;
-    }
-  const b = imageToModel({ width: 12, height: 12, data }, options, 'notch');
-  assert.notDeepEqual(a.bricks, b.bricks);
-  assert.ok(b.supportCount > 0);
-  assert.equal(validateModel(b).connected, true);
-  assert.equal(validateModel(b).unsupported, 0);
+  const sculpture = imageToModel(
+    duck,
+    { ...options, shape: 'sculpture' },
+    'duck',
+  );
+  const relief = imageToModel(duck, { ...options, shape: 'relief' }, 'duck');
+  const volume = (m: Model) =>
+    m.bricks
+      .filter((b) => b.y > 1 && !b.support)
+      .reduce((n, b) => n + b.w * b.d * b.h, 0);
+  assert.ok(volume(sculpture) < volume(relief) * 0.85);
+  const byPixel = new Map<string, Set<number>>();
+  for (const b of sculpture.bricks.filter((b) => b.y > 1 && !b.support))
+    for (let dy = 0; dy < b.h; dy++)
+      for (let dx = 0; dx < b.w; dx++)
+        for (let dz = 0; dz < b.d; dz++) {
+          const k = `${b.x + dx},${b.y + dy}`;
+          const zs = byPixel.get(k) || new Set();
+          zs.add(b.z + dz);
+          byPixel.set(k, zs);
+        }
+  assert.ok(new Set([...byPixel.values()].map((z) => z.size)).size >= 4);
+  assert.ok(
+    sculpture.bricks.filter((b) => b.support).every((b) => b.color === 3),
+  );
 });
-test('blank images fail clearly; transparent images and tiny inputs stay bounded', () => {
+test('blank and transparent images fail clearly; opaque black PNG pixels survive and upscale without gaps', () => {
   assert.throws(
     () =>
       imageToModel(
         { width: 1, height: 1, data: [255, 255, 255, 255] },
-        { resolution: 12, depth: 2, threshold: 70, background: 'white' },
+        { resolution: 20, depth: 4, threshold: 70, background: 'white' },
         'blank',
       ),
     /没有找到主体/,
@@ -74,37 +110,84 @@ test('blank images fail clearly; transparent images and tiny inputs stay bounded
   assert.throws(() =>
     imageToModel(
       { width: 1, height: 1, data: [0, 0, 0, 0] },
-      { resolution: 12, depth: 2, threshold: 70, background: 'keep' },
-      'transparent',
+      { resolution: 20, depth: 4, threshold: 70, background: 'keep' },
+      'blank',
     ),
   );
-  const m = imageToModel(
-    { width: 1, height: 1, data: [242, 205, 55, 255] },
-    { resolution: 12, depth: 2, threshold: 70, background: 'white' },
-    'tiny',
-  );
-  assert.equal(validateModel(m).connected, true);
-});
-test('LDraw exports every brick and a step for every layer', () => {
-  const m = sampleModel(12, 4),
-    lines = toLDraw(m).split('\n');
-  assert.equal(lines.filter((l) => l.startsWith('1 ')).length, m.bricks.length);
-  assert.equal(lines.filter((l) => l === '0 STEP').length, m.height);
-  assert.ok(!toLDraw(m).includes('NaN'));
-});
-
-test('transparent background preserves black subjects and small inputs have no upscale gaps', () => {
   const data = new Uint8ClampedArray(3 * 3 * 4);
-  data[(1 * 3 + 1) * 4 + 3] = 255;
+  data[19] = 255;
   const m = imageToModel(
     { width: 3, height: 3, data },
-    { resolution: 12, depth: 2, threshold: 70, background: 'auto' },
-    'black pixel',
+    {
+      resolution: 20,
+      depth: 4,
+      threshold: 70,
+      background: 'auto',
+      shape: 'relief',
+    },
+    'black',
   );
-  const black = m.bricks.filter((b) => b.color === 1);
+  assertValid(m);
   assert.equal(
-    black.reduce((n, b) => n + b.w * b.d, 0),
-    (m.width - 2) * (m.height - 2) * 2,
+    m.bricks
+      .filter((b) => b.y > 1 && b.color === 1)
+      .reduce((n, b) => n + b.w * b.d * b.h, 0),
+    (m.width - 2) * (m.height - 2) * 4,
   );
-  assert.equal(validateModel(m).connected, true);
+});
+test('narrow and wide images keep every base piece connected', () => {
+  for (const [w, h] of [
+    [3, 18],
+    [18, 3],
+    [7, 12],
+    [12, 7],
+  ]) {
+    const data = new Uint8ClampedArray(w * h * 4);
+    for (let i = 0; i < w * h; i++) {
+      data[i * 4] = 242;
+      data[i * 4 + 1] = 205;
+      data[i * 4 + 2] = 55;
+      data[i * 4 + 3] = 255;
+    }
+    assertValid(
+      imageToModel(
+        { width: w, height: h, data },
+        { resolution: 20, depth: 8, threshold: 70, background: 'keep' },
+        'rectangle',
+      ),
+    );
+  }
+});
+test('LDraw has correct plate-unit heights, orientations and one placement for each BOM item', () => {
+  const m = sampleModel(20, 8);
+  const lines = toLDraw(m).split('\n'),
+    placements = lines.filter((l) => l.startsWith('1 '));
+  assert.equal(placements.length, m.bricks.length);
+  assert.equal(lines.filter((l) => l === '0 STEP').length, m.levels.length);
+  placements.forEach((line, i) => {
+    const b = m.bricks[i];
+    assert.equal(Number(line.split(' ')[3]), -(b.y + b.h) * 8);
+  });
+  assert.ok(!toLDraw(m).includes('NaN'));
+});
+test('manual includes every placement once, uses millimetres correctly and escapes user-entered names', () => {
+  const m = sampleModel(20, 8);
+  m.name = '<script>alert(1)</script>';
+  const html = manualHTML(m);
+  const ids = [...html.matchAll(/<tr><td>#(\d+)<\/td>/g)].map((i) =>
+    Number(i[1]),
+  );
+  assert.equal(ids.length, m.bricks.length);
+  assert.equal(new Set(ids).size, m.bricks.length);
+  assert.ok(html.includes((m.height * 3.2).toFixed(1) + ' mm'));
+  assert.ok(!html.includes('<script>alert(1)</script>'));
+  assert.ok(!html.includes('undefined'));
+  assert.ok(!html.includes('NaN'));
+  assert.equal(
+    csv(m)
+      .split('\r\n')
+      .slice(1)
+      .reduce((n, row) => n + Number(row.split(',').at(-1)), 0),
+    m.bricks.length,
+  );
 });

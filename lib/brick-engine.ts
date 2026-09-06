@@ -6,6 +6,7 @@ export const PALETTE = [
   { name: '亮蓝色', hex: '#0055BF', ldraw: 1, lego: 23 },
   { name: '深绿色', hex: '#237841', ldraw: 2, lego: 28 },
 ];
+// Coordinates use studs in X/Z and plate units (3.2 mm) in Y.
 export type Brick = {
   id: number;
   part: string;
@@ -14,6 +15,7 @@ export type Brick = {
   z: number;
   w: number;
   d: number;
+  h: number;
   color: number;
   support?: boolean;
 };
@@ -23,9 +25,11 @@ export type Model = {
   width: number;
   depth: number;
   height: number;
+  levels: number[];
   supportCount: number;
   source: 'image' | 'sample';
   resolution: number;
+  shape: 'sculpture' | 'relief';
 };
 export type Raster = { width: number; height: number; data: ArrayLike<number> };
 export type Options = {
@@ -33,12 +37,25 @@ export type Options = {
   depth: number;
   threshold: number;
   background: 'auto' | 'white' | 'keep';
+  shape?: 'sculpture' | 'relief';
 };
-export const PARTS: Record<string, string> = {
-  '3005': '砖块 1 × 1',
-  '3004': '砖块 1 × 2',
-  '3010': '砖块 1 × 4',
-};
+export const CATALOG = [
+  { id: '3001', name: '砖块 2 × 4', w: 4, d: 2, h: 3 },
+  { id: '3003', name: '砖块 2 × 2', w: 2, d: 2, h: 3 },
+  { id: '3010', name: '砖块 1 × 4', w: 4, d: 1, h: 3 },
+  { id: '3004', name: '砖块 1 × 2', w: 2, d: 1, h: 3 },
+  { id: '3005', name: '砖块 1 × 1', w: 1, d: 1, h: 3 },
+  { id: '3020', name: '薄板 2 × 4', w: 4, d: 2, h: 1 },
+  { id: '3022', name: '薄板 2 × 2', w: 2, d: 2, h: 1 },
+  { id: '3710', name: '薄板 1 × 4', w: 4, d: 1, h: 1 },
+  { id: '3023', name: '薄板 1 × 2', w: 2, d: 1, h: 1 },
+  { id: '3024', name: '薄板 1 × 1', w: 1, d: 1, h: 1 },
+];
+export const PARTS: Record<string, string> = Object.fromEntries(
+  CATALOG.map((p) => [p.id, p.name]),
+);
+type Cell = { color: number; support: boolean };
+type Cells = Map<string, Cell>;
 const key = (x: number, y: number, z: number) => `${x},${y},${z}`;
 export function nearestColor(r: number, g: number, b: number) {
   let best = 0,
@@ -57,14 +74,11 @@ export function nearestColor(r: number, g: number, b: number) {
   return best;
 }
 function pack(
-  cells: Map<string, { color: number; support: boolean }>,
+  cells: Cells,
   width: number,
   height: number,
   depth: number,
-  source: Model['source'],
-  name: string,
-  resolution: number,
-): Model {
+): Brick[] {
   const bricks: Brick[] = [];
   const used = new Set<string>();
   for (let y = 0; y < height; y++)
@@ -72,44 +86,123 @@ function pack(
       for (let x = 0; x < width; x++) {
         const start = cells.get(key(x, y, z));
         if (!start || used.has(key(x, y, z))) continue;
-        const alongZ = y === 1 || (y > 1 && y % 2 === 1);
-        let length = 1;
-        for (const n of [4, 2, 1]) {
-          // Offset seams on the first base layer so the crossed upper layer joins the whole base.
-          if (y === 0 && z % 2 === 1 && x === 0 && n > 1) continue;
+        const base = y < 2;
+        const candidates = CATALOG.flatMap((p) => {
+          if (base && (p.h !== 1 || (y === 0 && p.d !== 1))) return [];
+          const rotations =
+            p.w === p.d ? [false] : [Boolean(y % 2), !Boolean(y % 2)];
+          return rotations
+            .filter((rot) => y !== 0 || !rot)
+            .map((rot) => ({ ...p, w: rot ? p.d : p.w, d: rot ? p.w : p.d }));
+        });
+        let chosen = candidates[candidates.length - 1];
+        let bestScore = -Infinity;
+        for (const p of candidates) {
+          if (base && y === 0 && z % 2 === 1 && x === 0 && p.w > 1) continue;
+          if (y === 1 && Math.floor(x / 2) % 2 === 1 && z === 0 && p.d > 2)
+            continue;
           let valid = true;
-          for (let i = 0; i < n; i++) {
-            const k = key(x + (alongZ ? 0 : i), y, z + (alongZ ? i : 0));
-            const cell = cells.get(k);
-            if (
-              !cell ||
-              cell.color !== start.color ||
-              cell.support !== start.support ||
-              used.has(k)
-            ) {
-              valid = false;
+          for (let dy = 0; dy < p.h && valid; dy++)
+            for (let dz = 0; dz < p.d && valid; dz++)
+              for (let dx = 0; dx < p.w; dx++) {
+                const k = key(x + dx, y + dy, z + dz),
+                  c = cells.get(k);
+                if (
+                  !c ||
+                  c.color !== start.color ||
+                  c.support !== start.support ||
+                  used.has(k)
+                ) {
+                  valid = false;
+                  break;
+                }
+              }
+          if (valid) {
+            if (base) {
+              chosen = p;
               break;
             }
-          }
-          if (valid) {
-            length = n;
-            break;
+            let contact = 0;
+            for (let dx = 0; dx < p.w; dx++)
+              for (let dz = 0; dz < p.d; dz++)
+                if (cells.has(key(x + dx, y - 1, z + dz))) contact++;
+            const score =
+              (contact > 0 ? 1000 : 0) + p.w * p.d * p.h + (p.h === 3 ? 2 : 0);
+            if (score > bestScore) {
+              chosen = p;
+              bestScore = score;
+            }
           }
         }
-        for (let i = 0; i < length; i++)
-          used.add(key(x + (alongZ ? 0 : i), y, z + (alongZ ? i : 0)));
+        for (let dy = 0; dy < chosen.h; dy++)
+          for (let dz = 0; dz < chosen.d; dz++)
+            for (let dx = 0; dx < chosen.w; dx++)
+              used.add(key(x + dx, y + dy, z + dz));
         bricks.push({
           id: bricks.length + 1,
-          part: length === 4 ? '3010' : length === 2 ? '3004' : '3005',
+          part: chosen.id,
           x,
           y,
           z,
-          w: alongZ ? 1 : length,
-          d: alongZ ? length : 1,
+          w: chosen.w,
+          d: chosen.d,
+          h: chosen.h,
           color: start.color,
           support: start.support,
         });
       }
+  return bricks;
+}
+function finishModel(
+  subject: Cells,
+  width: number,
+  height: number,
+  depth: number,
+  source: Model['source'],
+  name: string,
+  resolution: number,
+): Model {
+  for (let x = 0; x < width; x++)
+    for (let z = 0; z < depth; z++)
+      for (let y = 0; y < 2; y++)
+        subject.set(key(x, y, z), { color: 0, support: false });
+  let bricks = pack(subject, width, height, depth);
+  const counts = Array(PALETTE.length).fill(0);
+  subject.forEach((c, k) => {
+    if (Number(k.split(',')[1]) >= 2) counts[c.color]++;
+  });
+  const coreColor = counts.indexOf(Math.max(...counts));
+  // Only add a column when a whole packed piece lacks a stud connection below.
+  // Anchor towards the centre of the model and prefer the shortest visible gap.
+  for (let pass = 0; pass < 8; pass++) {
+    let added = false;
+    for (const b of bricks) {
+      if (!b.y) continue;
+      let supported = false;
+      for (let dx = 0; dx < b.w; dx++)
+        for (let dz = 0; dz < b.d; dz++)
+          if (subject.has(key(b.x + dx, b.y - 1, b.z + dz))) supported = true;
+      if (supported) continue;
+      let best = { x: b.x, z: b.z, bottom: 1, score: Infinity };
+      for (let dx = 0; dx < b.w; dx++)
+        for (let dz = 0; dz < b.d; dz++) {
+          const x = b.x + dx,
+            z = b.z + dz;
+          let bottom = b.y - 1;
+          while (bottom > 0 && !subject.has(key(x, bottom, z))) bottom--;
+          const score = b.y - bottom + Math.abs(z + 0.5 - depth / 2) * 2;
+          if (score < best.score) best = { x, z, bottom, score };
+        }
+      for (let y = best.bottom + 1; y < b.y; y++)
+        subject.set(key(best.x, y, best.z), {
+          color: coreColor,
+          support: true,
+        });
+      added = true;
+    }
+    if (!added) break;
+    bricks = pack(subject, width, height, depth);
+  }
   return {
     name,
     bricks,
@@ -118,55 +211,42 @@ function pack(
     depth,
     source,
     resolution,
+    levels: [...new Set(bricks.map((b) => b.y))].sort((a, b) => a - b),
     supportCount: bricks.filter((b) => b.support).length,
+    shape: 'sculpture',
   };
 }
-function makeSolid(
-  subject: Map<string, { color: number; support: boolean }>,
-  width: number,
-  height: number,
-  depth: number,
-  source: Model['source'],
-  name: string,
-  resolution: number,
-) {
-  // Every occupied column rests on the base. Missing voxels underneath become explicit white supports.
-  for (let x = 0; x < width; x++)
-    for (let z = 0; z < depth; z++) {
-      let top = 1;
-      for (let y = 2; y < height; y++) if (subject.has(key(x, y, z))) top = y;
-      for (let y = 2; y < top; y++)
-        if (!subject.has(key(x, y, z)))
-          subject.set(key(x, y, z), { color: 0, support: true });
-      for (let y = 0; y < 2; y++)
-        subject.set(key(x, y, z), { color: 0, support: false });
-    }
-  return pack(subject, width, height, depth, source, name, resolution);
-}
-export function sampleModel(resolution = 20, depth = 8): Model {
+export function sampleModel(resolution = 28, depth = 12): Model {
   const width = resolution + 2,
-    height = Math.round(resolution * 0.8) + 3,
-    cells = new Map<string, { color: number; support: boolean }>();
+    height = Math.round(resolution * 1.9) + 2,
+    cells: Cells = new Map();
   for (let x = 1; x < width - 1; x++)
     for (let y = 2; y < height; y++)
-      for (let z = 1; z < depth + 1; z++) {
-        const u = (x - 1) / resolution,
-          v = (y - 2) / (height - 3),
-          q = (z - (depth + 1) / 2) / (depth / 2);
-        const body = ((u - 0.43) / 0.41) ** 2 + ((v - 0.3) / 0.3) ** 2 + q * q;
+      for (let z = 1; z <= depth; z++) {
+        const u = (x - 0.5) / resolution,
+          v = (y - 1.5) / (height - 2),
+          q = (z + 0.5 - (depth + 2) / 2) / (depth / 2);
+        const body =
+          ((u - 0.43) / 0.42) ** 2 + ((v - 0.29) / 0.29) ** 2 + q * q;
         const head =
-          ((u - 0.65) / 0.23) ** 2 + ((v - 0.72) / 0.27) ** 2 + (q / 0.77) ** 2;
+          ((u - 0.65) / 0.23) ** 2 + ((v - 0.73) / 0.27) ** 2 + (q / 0.8) ** 2;
         const beak =
-          u > 0.79 && u < 0.99 && v > 0.61 && v < 0.73 && Math.abs(q) < 0.55;
-        const tail = u < 0.19 && v > 0.33 && v < 0.56 && Math.abs(q) < 0.55;
+          u > 0.8 && u < 0.99 && v > 0.6 && v < 0.72 && Math.abs(q) < 0.47;
+        const tail = u < 0.2 && v > 0.3 && v < 0.52 && Math.abs(q) < 0.45;
         if (body < 1 || head < 1 || beak || tail) {
           let color = beak ? 2 : 3;
-          if (u > 0.67 && u < 0.77 && v > 0.76 && v < 0.86 && Math.abs(q) > 0.3)
+          if (
+            u > 0.69 &&
+            u < 0.77 &&
+            v > 0.75 &&
+            v < 0.84 &&
+            Math.abs(q) > 0.38
+          )
             color = 1;
           cells.set(key(x, y, z), { color, support: false });
         }
       }
-  return makeSolid(
+  return finishModel(
     cells,
     width,
     height,
@@ -253,10 +333,9 @@ export function imageToModel(
     minY = Math.min(minY, p.y);
     maxY = Math.max(maxY, p.y);
   });
-  const scale =
-    options.resolution / Math.max(maxX - minX + 1, (maxY - minY + 1) * 0.8333);
+  const scale = options.resolution / Math.max(maxX - minX + 1, maxY - minY + 1);
   const w = Math.max(2, Math.round((maxX - minX + 1) * scale)),
-    h = Math.max(2, Math.round((maxY - minY + 1) * scale * 0.8333));
+    h = Math.max(2, Math.round((maxY - minY + 1) * scale * 2.5));
   const pixels = new Map<string, { sum: number[]; n: number }>();
   // Sample each output cell, so upscaling a small source never creates gaps.
   for (let y = 0; y < h; y++)
@@ -282,14 +361,65 @@ export function imageToModel(
         }
       if (value.n > 0) pixels.set(`${x},${y}`, value);
     }
-  const cells = new Map<string, { color: number; support: boolean }>();
-  pixels.forEach((p, k) => {
-    const [x, py] = k.split(',').map(Number);
-    const color = p.sum.indexOf(Math.max(...p.sum));
-    for (let z = 1; z <= options.depth; z++)
-      cells.set(key(x + 1, h - py + 1, z), { color, support: false });
+  const flat = new Map<string, number>();
+  pixels.forEach((p, k) => flat.set(k, p.sum.indexOf(Math.max(...p.sum))));
+  const edge: [number, number][] = [];
+  flat.forEach((_, k) => {
+    const [x, y] = k.split(',').map(Number);
+    if (
+      !flat.has(`${x - 1},${y}`) ||
+      !flat.has(`${x + 1},${y}`) ||
+      !flat.has(`${x},${y - 1}`) ||
+      !flat.has(`${x},${y + 1}`)
+    )
+      edge.push([x, y]);
   });
-  return makeSolid(
+  const distances = new Map<string, number>();
+  let maxDistance = 0.5;
+  flat.forEach((_, k) => {
+    const [x, y] = k.split(',').map(Number);
+    let d = Infinity;
+    for (const [ex, ey] of edge)
+      d = Math.min(d, Math.hypot(x - ex, (y - ey) * 0.4));
+    d += 0.45;
+    distances.set(k, d);
+    maxDistance = Math.max(maxDistance, d);
+  });
+  const cells: Cells = new Map();
+  flat.forEach((color, k) => {
+    const [x, py] = k.split(',').map(Number);
+    const normalized = Math.min(1, distances.get(k)! / maxDistance);
+    const radius =
+      options.shape === 'relief'
+        ? options.depth / 2
+        : Math.max(
+            0.55,
+            (options.depth / 2) *
+              Math.sqrt(2 * normalized - normalized * normalized),
+          );
+    const z0 = Math.max(1, Math.ceil((options.depth + 2) / 2 - radius - 0.5));
+    const z1 = Math.min(
+      options.depth,
+      Math.floor((options.depth + 2) / 2 + radius - 0.5),
+    );
+    // Small dark details remain on both surfaces rather than tunnelling through the core.
+    let core = color;
+    if (color === 1) {
+      const nearby = Array(PALETTE.length).fill(0);
+      for (let dy = -4; dy <= 4; dy++)
+        for (let dx = -2; dx <= 2; dx++) {
+          const c = flat.get(`${x + dx},${py + dy}`);
+          if (c !== undefined && c !== 1) nearby[c]++;
+        }
+      if (Math.max(...nearby) > 0) core = nearby.indexOf(Math.max(...nearby));
+    }
+    for (let z = z0; z <= z1; z++)
+      cells.set(key(x + 1, h - py + 1, z), {
+        color: z === z0 || z === z1 ? color : core,
+        support: false,
+      });
+  });
+  const model = finishModel(
     cells,
     w + 2,
     h + 2,
@@ -298,6 +428,8 @@ export function imageToModel(
     name,
     options.resolution,
   );
+  model.shape = options.shape === 'relief' ? 'relief' : 'sculpture';
+  return model;
 }
 export function inventory(bricks: Brick[]) {
   const items = new Map<
@@ -315,14 +447,24 @@ export function inventory(bricks: Brick[]) {
 export function validateModel(model: Model) {
   const occupied = new Map<string, number>();
   let collisions = 0,
-    unsupported = 0;
-  for (const b of model.bricks)
-    for (let dx = 0; dx < b.w; dx++)
-      for (let dz = 0; dz < b.d; dz++) {
-        const k = key(b.x + dx, b.y, b.z + dz);
-        if (occupied.has(k)) collisions++;
-        occupied.set(k, b.id);
-      }
+    unsupported = 0,
+    invalidParts = 0;
+  for (const b of model.bricks) {
+    const p = CATALOG.find((p) => p.id === b.part);
+    if (
+      !p ||
+      p.h !== b.h ||
+      !((p.w === b.w && p.d === b.d) || (p.w === b.d && p.d === b.w))
+    )
+      invalidParts++;
+    for (let dy = 0; dy < b.h; dy++)
+      for (let dx = 0; dx < b.w; dx++)
+        for (let dz = 0; dz < b.d; dz++) {
+          const k = key(b.x + dx, b.y + dy, b.z + dz);
+          if (occupied.has(k)) collisions++;
+          occupied.set(k, b.id);
+        }
+  }
   const links = new Map<number, Set<number>>();
   model.bricks.forEach((b) => links.set(b.id, new Set()));
   for (const b of model.bricks) {
@@ -330,7 +472,7 @@ export function validateModel(model: Model) {
     for (let dx = 0; dx < b.w; dx++)
       for (let dz = 0; dz < b.d; dz++) {
         const below = occupied.get(key(b.x + dx, b.y - 1, b.z + dz));
-        if (below) {
+        if (below && below !== b.id) {
           supported = true;
           links.get(b.id)!.add(below);
           links.get(below)!.add(b.id);
@@ -338,8 +480,8 @@ export function validateModel(model: Model) {
       }
     if (!supported) unsupported++;
   }
-  const seen = new Set<number>();
-  const queue = model.bricks.length ? [model.bricks[0].id] : [];
+  const seen = new Set<number>(),
+    queue = model.bricks.length ? [model.bricks[0].id] : [];
   while (queue.length) {
     const id = queue.pop()!;
     if (seen.has(id)) continue;
@@ -349,22 +491,25 @@ export function validateModel(model: Model) {
   return {
     collisions,
     unsupported,
+    invalidParts,
     connected: seen.size === model.bricks.length,
     brickCount: model.bricks.length,
   };
 }
 export function toLDraw(model: Model) {
   const lines = [
-    '0 Brickform model',
+    '0 Brickform V2 model',
     '0 Name: brickform.ldr',
     '0 Author: Brickform',
-    '0 Unverified physical prototype; dimensions in LDraw units',
+    '0 Coordinates: studs in X/Z, plate units in Y. Physical stability unverified.',
   ];
-  for (let y = 0; y < model.height; y++) {
+  for (const y of model.levels) {
     for (const b of model.bricks.filter((b) => b.y === y)) {
-      const matrix = b.d > 1 ? '0 0 -1 0 1 0 1 0 0' : '1 0 0 0 1 0 0 0 1';
+      const p = CATALOG.find((p) => p.id === b.part)!;
+      const rotated = p.w !== p.d && b.w !== p.w;
+      const matrix = rotated ? '0 0 -1 0 1 0 1 0 0' : '1 0 0 0 1 0 0 0 1';
       lines.push(
-        `1 ${PALETTE[b.color].ldraw} ${(b.x + b.w / 2 - model.width / 2) * 20} ${-(b.y + 1) * 24} ${(b.z + b.d / 2 - model.depth / 2) * 20} ${matrix} ${b.part}.dat`,
+        `1 ${PALETTE[b.color].ldraw} ${(b.x + b.w / 2 - model.width / 2) * 20} ${-(b.y + b.h) * 8} ${(b.z + b.d / 2 - model.depth / 2) * 20} ${matrix} ${b.part}.dat`,
       );
     }
     lines.push('0 STEP');

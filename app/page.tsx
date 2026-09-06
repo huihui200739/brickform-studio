@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Upload,
@@ -66,8 +66,9 @@ const backgroundItems = [
 ];
 export default function Home() {
   const [model, setModel] = useState(() => sampleModel());
-  const [resolution, setResolution] = useState(20);
-  const [depth, setDepth] = useState(8);
+  const [resolution, setResolution] = useState(28);
+  const [depth, setDepth] = useState(12);
+  const [shape, setShape] = useState<'sculpture' | 'relief'>('sculpture');
   const [threshold, setThreshold] = useState(70);
   const [background, setBackground] = useState<Options['background']>('auto');
   const [source, setSource] = useState<{
@@ -75,7 +76,7 @@ export default function Home() {
     url: string;
     name: string;
   } | null>(null);
-  const [layer, setLayer] = useState(model.height);
+  const [layer, setLayer] = useState(model.levels.length);
   const [exploded, setExploded] = useState(false);
   const [tab, setTab] = useState('parts');
   const [error, setError] = useState('');
@@ -94,7 +95,14 @@ export default function Home() {
     `${p.part} ${PARTS[p.part]} ${PALETTE[p.color].name}`.includes(search),
   );
   const colors = [...new Set(model.bricks.map((b) => b.color))];
-  const layerParts = model.bricks.filter((b) => b.y === layer - 1);
+  const layerParts = model.bricks.filter(
+    (b) => b.y === model.levels[layer - 1],
+  );
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(''), 5000);
+    return () => clearTimeout(timer);
+  }, [notice]);
   async function upload(file?: File) {
     if (!file) return;
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
@@ -139,7 +147,9 @@ export default function Home() {
           data: pixels.data,
         },
         url,
-        name: file.name.replace(/\.[^.]+$/, '').slice(0, 60),
+        name: /^(exec-|codex-|image|IMG_|[a-f0-9-]{24})/i.test(file.name)
+          ? '我的积木作品'
+          : file.name.replace(/\.[^.]+$/, '').slice(0, 24),
       });
       setDirty(true);
       setNotice('图片已就绪，点击「生成积木设计」查看结果。');
@@ -163,19 +173,24 @@ export default function Home() {
       const next = source
         ? imageToModel(
             source.raster,
-            { resolution, depth, threshold, background },
+            { resolution, depth, threshold, background, shape },
             source.name,
           )
         : sampleModel(resolution, depth);
       const result = validateModel(next);
-      if (result.collisions || result.unsupported || !result.connected)
+      if (
+        result.collisions ||
+        result.unsupported ||
+        result.invalidParts ||
+        !result.connected
+      )
         throw new Error('模型未通过连接检查，请降低精细度或更换图片。');
       setModel(next);
-      setLayer(next.height);
+      setLayer(next.levels.length);
       setExploded(false);
       setDirty(false);
       setNotice(
-        `设计已生成，共 ${next.bricks.length} 块积木，${next.height} 层。`,
+        `设计已生成，共 ${next.bricks.length} 块积木，${next.levels.length} 组搭建步骤。`,
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : '生成失败，请重试。');
@@ -221,7 +236,7 @@ export default function Home() {
             <Blocks size={22} />
           </span>
           brickform<span className="brand-cn">积木工坊</span>
-          <span className="beta">BETA 01</span>
+          <span className="beta">BETA 02</span>
         </a>
         <nav>
           <span className="nav-active">设计工作台</span>
@@ -235,11 +250,11 @@ export default function Home() {
       </header>
       <div className="page-heading">
         <div>
-          <p className="eyebrow">YOUR NEXT LITTLE CREATION</p>
+          <p className="eyebrow">IMAGE TO BRICKS · STUDIO 02</p>
           <h1>
-            把喜欢的事物，拼出来<span className="title-dot">。</span>
+            让想象，多一个维度<span className="title-dot">。</span>
           </h1>
-          <p>一张参考图，一份属于你的积木设计。</p>
+          <p>从参考图片到立体积木，细节与形状由你掌握。</p>
         </div>
         <div className="flow">
           <span className="flow-current">
@@ -323,6 +338,45 @@ export default function Home() {
             </div>
           )}
           <div className="divider" />
+          <div className="shape-field">
+            <label className="field-title" id="shape-label">
+              生成方式 <span>V2</span>
+            </label>
+            <RadioGroup
+              className="shape-options"
+              value={shape}
+              disabled={busy || !source}
+              aria-labelledby="shape-label"
+              onValueChange={(v) => {
+                setShape(v as 'sculpture' | 'relief');
+                setDirty(true);
+              }}
+            >
+              {[
+                {
+                  value: 'sculpture',
+                  title: '圆润立体',
+                  hint: '边缘收窄 · 中部饱满',
+                },
+                {
+                  value: 'relief',
+                  title: '轮廓浮雕',
+                  hint: '均匀厚度 · 保留正面',
+                },
+              ].map((o) => (
+                <label
+                  className={shape === o.value ? 'chosen' : ''}
+                  key={o.value}
+                >
+                  <RadioGroupItem value={o.value} />
+                  <span>
+                    <b>{o.title}</b>
+                    <small>{o.hint}</small>
+                  </span>
+                </label>
+              ))}
+            </RadioGroup>
+          </div>
           <label className="field-title" id="resolution-label">
             模型精细度 <span>{resolution} 凸点</span>
           </label>
@@ -337,9 +391,9 @@ export default function Home() {
             disabled={busy}
           >
             {[
-              { v: 12, t: '简约' },
-              { v: 20, t: '标准' },
-              { v: 28, t: '精细' },
+              { v: 20, t: '简约' },
+              { v: 28, t: '标准' },
+              { v: 36, t: '精细' },
             ].map((o) => (
               <label key={o.v} className={resolution === o.v ? 'chosen' : ''}>
                 <RadioGroupItem value={String(o.v)} />
@@ -354,8 +408,8 @@ export default function Home() {
           <Slider
             aria-labelledby="depth-label"
             value={[depth]}
-            min={2}
-            max={10}
+            min={4}
+            max={20}
             step={2}
             disabled={busy}
             onValueChange={(v) => {
@@ -441,7 +495,7 @@ export default function Home() {
             {busy ? '正在构建…' : dirty ? '生成积木设计' : '重新生成设计'}{' '}
             {!busy && <ArrowRight size={17} />}
           </button>
-          <p className="below-action">使用 3 种基础砖块 · 自动加入底座</p>
+          <p className="below-action">10 种砖块与薄板 · 自动加入底座</p>
           <div className="tip">
             <Info size={16} />
             <p>选择主体完整、背景干净的侧面图片，轮廓效果更好。</p>
@@ -465,22 +519,23 @@ export default function Home() {
             />
             <div className="layer-control">
               <span>
-                <Layers3 size={16} /> 显示层数
+                <Layers3 size={16} /> 搭建进度
               </span>
               <Slider
-                aria-label="显示层数"
+                aria-label="搭建进度"
                 value={[layer]}
                 min={1}
-                max={model.height}
+                max={model.levels.length}
                 step={1}
                 onValueChange={(v) => setLayer(Array.isArray(v) ? v[0] : v)}
               />
               <b>
-                {String(layer).padStart(2, '0')} <small>/ {model.height}</small>
+                {String(layer).padStart(2, '0')}{' '}
+                <small>/ {model.levels.length}</small>
               </b>
               <button
                 onClick={() => {
-                  setLayer(model.height);
+                  setLayer(model.levels.length);
                   setExploded(false);
                 }}
               >
@@ -505,7 +560,7 @@ export default function Home() {
               </div>
               <TabsContent value="parts">
                 <div className="table-intro">
-                  <span>包含主体、底座及白色支撑</span>
+                  <span>包含主体、底座及同色辅助支撑</span>
                   <input
                     aria-label="搜索零件或颜色"
                     placeholder="搜索编号 / 颜色"
@@ -581,10 +636,11 @@ export default function Home() {
               <TabsContent value="steps">
                 <div className="step-navigation">
                   <div>
-                    <b>第 {String(layer).padStart(2, '0')} 层</b>
+                    <b>第 {String(layer).padStart(2, '0')} 组</b>
                     <span>
                       {layer <= 2 ? '交错拼接底座' : '向上搭建主体与支撑'} ·
-                      新增 {layerParts.length} 块
+                      新增 {layerParts.length} 块 · 基准高度{' '}
+                      {(model.levels[layer - 1] * 3.2).toFixed(1)} mm
                     </span>
                   </div>
                   <div>
@@ -597,7 +653,7 @@ export default function Home() {
                     </button>
                     <button
                       aria-label="下一层"
-                      disabled={layer >= model.height}
+                      disabled={layer >= model.levels.length}
                       onClick={() => setLayer((v) => v + 1)}
                     >
                       <ChevronRight size={18} />
@@ -651,11 +707,22 @@ export default function Home() {
             <div className="section-kicker">
               02 <span>你的积木设计</span>
             </div>
-            <h2>{model.name}</h2>
+            <input
+              className="design-name"
+              aria-label="设计名称"
+              title="点击修改设计名称"
+              key={model.name}
+              defaultValue={model.name}
+              maxLength={24}
+              onBlur={(e) => {
+                const name = e.target.value.trim() || '我的积木作品';
+                if (name !== model.name) setModel((m) => ({ ...m, name }));
+              }}
+            />
             <p>
               {model.source === 'sample'
                 ? '参数化示例 · 可调尺寸'
-                : '轮廓拉伸 · 背面为推测'}
+                : '立体厚度推测 · 可调整形状'}
             </p>
             <div className="big-stat">
               <strong>{model.bricks.length.toLocaleString()}</strong>
@@ -669,8 +736,8 @@ export default function Home() {
               </div>
               <div>
                 <Layers3 size={16} />
-                <b>{model.height}</b>
-                <span>层搭建</span>
+                <b>{model.levels.length}</b>
+                <span>组步骤</span>
               </div>
             </div>
             <div className="dimension">
@@ -678,7 +745,7 @@ export default function Home() {
               <span>
                 {(model.width * 0.8).toFixed(1)} ×{' '}
                 {(model.depth * 0.8).toFixed(1)} ×{' '}
-                {(model.height * 0.96).toFixed(1)} cm
+                {(model.height * 0.32).toFixed(1)} cm
                 <small>宽 × 深 × 高，含底座，不含凸点</small>
               </span>
             </div>
@@ -703,7 +770,7 @@ export default function Home() {
               </li>
             </ul>
             <div className="support-note">
-              已加入 <b>{model.supportCount}</b> 块白色支撑。
+              已加入 <b>{model.supportCount}</b> 块同色辅助支撑。
               <br />
               物理稳定性与实物拼装尚未验证。
             </div>
@@ -727,9 +794,9 @@ export default function Home() {
             <span className="export-formats">图文步骤 · 完整清单 · 可打印</span>
           </section>
           <div className="version-note">
-            <span className="tiny-tag">V1</span>
+            <span className="tiny-tag">V2</span>
             <p>
-              当前支持基础砖块轮廓摆件。照片中的背面与真实结构仍需人工判断。
+              轮廓估算立体厚度，薄板细化曲面。背面与物理稳定性仍需人工验证。
             </p>
           </div>
         </aside>
@@ -759,7 +826,7 @@ export default function Home() {
         <span>
           独立创作工具，与 LEGO Group 无关联或认证。
           <button onClick={() => setHelp(true)}>
-            了解第一版能力 <ArrowUpRight size={12} />
+            了解 V2 能力 <ArrowUpRight size={12} />
           </button>
         </span>
       </footer>
@@ -767,7 +834,8 @@ export default function Home() {
         <DialogContent className="help-dialog">
           <DialogTitle>从参考图到积木摆件</DialogTitle>
           <DialogDescription>
-            第一版生成的是图片轮廓的积木化摆件。推荐使用背景干净、主体完整的侧面图片。
+            V2
+            使用轮廓距离估算圆润厚度，并用薄板和砖块拼出更细的曲面。推荐使用背景干净、主体完整的侧面图片。
           </DialogDescription>
           <ol className="help-steps">
             <li>
@@ -779,7 +847,7 @@ export default function Home() {
             <li>
               <b>检查 3D 与支撑</b>
               <p>
-                旋转预览，拖动层数滑块查看结构。白色支撑会填补悬空区域，模型下方自动加入两层底座。
+                旋转预览，拖动层数滑块查看结构。支撑优先安排在模型中部，只为缺少下方连接的零件补入；底座改为两层薄板。
               </p>
             </li>
             <li>
@@ -794,10 +862,10 @@ export default function Home() {
             <strong>这版的能力边界</strong>
             <p>
               没有使用 AI
-              还原三维背面。图片模型采用等厚拉伸，示例小黄鸭为独立参数模型。算法只检查网格重叠、承托与连通，未验证抗倾倒、夹持力或实物拼装。
+              还原三维背面。圆润模式根据轮廓距离推测厚度，浮雕模式保持均匀厚度。示例小黄鸭为独立参数模型。算法检查网格重叠、承托与连通，未验证抗倾倒、夹持力或实物拼装。
             </p>
             <p>
-              内置 3005（1×1）、3004（1×2）、3010（1×4）和 6
+              内置 10 种基础零件：1×1、1×2、1×4、2×2、2×4 砖块与对应薄板，使用 6
               种基础色。尚未接入完整零件 / 颜色组合库及实时库存，购买前请到{' '}
               <a
                 href="https://www.lego.com/en-us/pick-and-build/pick-a-brick"
@@ -815,8 +883,8 @@ export default function Home() {
         <DialogContent className="export-dialog">
           <DialogTitle>带走你的拼装设计</DialogTitle>
           <DialogDescription>
-            {model.name} · {model.bricks.length} 块零件 · {model.height}{' '}
-            层。说明书包含编号、颜色、坐标与分层俯视图。
+            {model.name} · {model.bricks.length} 块零件 · {model.levels.length}{' '}
+            组搭建步骤。说明书包含编号、颜色、坐标与分层俯视图。
           </DialogDescription>
           <button className="export-option" onClick={printManual}>
             <FileText />
@@ -841,7 +909,7 @@ export default function Home() {
             </span>
           </button>
           <p className="export-disclaimer">
-            包含白色支撑及底座。请核对零件与颜色组合，并先做小规模试拼。
+            包含同色辅助支撑及底座。请核对零件与颜色组合，并先做小规模试拼。
           </p>
         </DialogContent>
       </Dialog>
