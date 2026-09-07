@@ -1,3 +1,5 @@
+import { ASSEMBLY_PARTS, type Pose } from './assembly-catalog.ts';
+import { validateAssembly } from './assembly-validation.ts';
 export const PALETTE = [
   { name: '白色', hex: '#F4F4F4', ldraw: 15, lego: 1 },
   { name: '黑色', hex: '#242424', ldraw: 0, lego: 26 },
@@ -5,6 +7,7 @@ export const PALETTE = [
   { name: '亮黄色', hex: '#F2CD37', ldraw: 14, lego: 24 },
   { name: '亮蓝色', hex: '#0055BF', ldraw: 1, lego: 23 },
   { name: '深绿色', hex: '#237841', ldraw: 2, lego: 28 },
+  { name: '亮橙色', hex: '#FE8A18', ldraw: 25, lego: 106 },
 ];
 // Coordinates use studs in X/Z and plate units (3.2 mm) in Y.
 export type Brick = {
@@ -18,6 +21,9 @@ export type Brick = {
   h: number;
   color: number;
   support?: boolean;
+  pose?: Pose;
+  section?: string;
+  step?: number;
 };
 export type Model = {
   name: string;
@@ -30,6 +36,17 @@ export type Model = {
   source: 'image' | 'sample';
   resolution: number;
   shape: 'sculpture' | 'relief';
+  assembly?: {
+    sections: { id: string; name: string }[];
+    steps: { name: string; description: string; section: string }[];
+    reference: string;
+    parameters: {
+      bodyLength: number;
+      headWidth: number;
+      bodyColor: number;
+      beakColor: number;
+    };
+  };
 };
 export type Raster = { width: number; height: number; data: ArrayLike<number> };
 export type Options = {
@@ -51,9 +68,10 @@ export const CATALOG = [
   { id: '3023', name: '薄板 1 × 2', w: 2, d: 1, h: 1 },
   { id: '3024', name: '薄板 1 × 1', w: 1, d: 1, h: 1 },
 ];
-export const PARTS: Record<string, string> = Object.fromEntries(
-  CATALOG.map((p) => [p.id, p.name]),
-);
+export const PARTS: Record<string, string> = Object.fromEntries([
+  ...CATALOG.map((p) => [p.id, p.name]),
+  ...Object.entries(ASSEMBLY_PARTS).map(([id, p]) => [id, p.name]),
+]);
 type Cell = { color: number; support: boolean };
 type Cells = Map<string, Cell>;
 const key = (x: number, y: number, z: number) => `${x},${y},${z}`;
@@ -89,8 +107,7 @@ function pack(
         const base = y < 2;
         const candidates = CATALOG.flatMap((p) => {
           if (base && (p.h !== 1 || (y === 0 && p.d !== 1))) return [];
-          const rotations =
-            p.w === p.d ? [false] : [Boolean(y % 2), !Boolean(y % 2)];
+          const rotations = p.w === p.d ? [false] : [Boolean(y % 2), !(y % 2)];
           return rotations
             .filter((rot) => y !== 0 || !rot)
             .map((rot) => ({ ...p, w: rot ? p.d : p.w, d: rot ? p.w : p.d }));
@@ -445,6 +462,14 @@ export function inventory(bricks: Brick[]) {
   return [...items.values()].sort((a, b) => b.quantity - a.quantity);
 }
 export function validateModel(model: Model) {
+  if (model.assembly) {
+    const {
+      badIds: _badIds,
+      overlapIds: _overlapIds,
+      ...validation
+    } = validateAssembly(model);
+    return validation;
+  }
   const occupied = new Map<string, number>();
   let collisions = 0,
     unsupported = 0,
@@ -498,13 +523,22 @@ export function validateModel(model: Model) {
 }
 export function toLDraw(model: Model) {
   const lines = [
-    '0 Brickform V2 model',
+    '0 Brickform V3 model',
     '0 Name: brickform.ldr',
     '0 Author: Brickform',
     '0 Coordinates: studs in X/Z, plate units in Y. Physical stability unverified.',
   ];
   for (const y of model.levels) {
-    for (const b of model.bricks.filter((b) => b.y === y)) {
+    if (model.assembly) lines.push(`0 // ${model.assembly.steps[y].name}`);
+    for (const b of model.bricks.filter((b) =>
+      model.assembly ? b.step === y : b.y === y,
+    )) {
+      if (b.pose) {
+        lines.push(
+          `1 ${PALETTE[b.color].ldraw} ${b.pose.position.join(' ')} ${b.pose.matrix.join(' ')} ${b.part}.dat`,
+        );
+        continue;
+      }
       const p = CATALOG.find((p) => p.id === b.part)!;
       const rotated = p.w !== p.d && b.w !== p.w;
       const matrix = rotated ? '0 0 -1 0 1 0 1 0 0' : '1 0 0 0 1 0 0 0 1';

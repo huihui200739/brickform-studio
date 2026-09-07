@@ -5,6 +5,7 @@ import {
   type Brick,
   type Model,
 } from './brick-engine.ts';
+import { assemblyDiagram, orientationLabel } from './assembly-diagram.ts';
 const esc = (s: string) =>
   s.replace(
     /[&<>"']/g,
@@ -14,6 +15,7 @@ const esc = (s: string) =>
       ]!,
   );
 export function layerSVG(model: Model, layer: number, highlight?: number[]) {
+  if (model.assembly) return assemblyDiagram(model, layer, highlight);
   const unit = 24,
     pad = 28;
   const elevation = model.levels[layer];
@@ -51,6 +53,7 @@ export function csv(model: Model) {
   );
 }
 export function manualHTML(model: Model) {
+  if (model.assembly) return assemblyManual(model);
   const rows = (bricks: Brick[]) =>
     bricks
       .map(
@@ -82,4 +85,28 @@ export function manualHTML(model: Model) {
     .join(
       '',
     )}</tbody></table><footer>独立设计工具，与 LEGO Group 无关联或认证。<br/>零件核对：<a href="https://www.lego.com/en-us/pick-and-build/pick-a-brick">LEGO Pick a Brick</a></footer></section>${pages}</body></html>`;
+}
+
+function assemblyManual(model: Model) {
+  const a = model.assembly!;
+  const pages = a.steps
+    .map((s, i) => {
+      const batch = model.bricks.filter((b) => b.step === i);
+      return `<section class="page"><header>BRICKFORM / BUILDING GUIDE <span>${esc(model.name)}</span></header><h2>${String(i + 1).padStart(2, '0')} · ${esc(s.name)}</h2><p>${esc(s.description)} 彩色是本步新增零件，灰色是已搭建部分。图为简化外形示意，3D 与 LDraw 文件使用完整零件几何。</p><div class="diagram">${assemblyDiagram(model, i)}</div><table><thead><tr><th>序号 / 零件</th><th>颜色</th><th>定位 X / Z</th><th>底部高度</th><th>安装方向</th></tr></thead><tbody>${batch.map((b) => `<tr><td>#${b.id} · ${b.part}<small>${esc(PARTS[b.part])}</small></td><td>${PALETTE[b.color].name}</td><td>${(b.x + 1).toFixed(2)} / ${(b.z + 1).toFixed(2)}</td><td>${(b.y * 3.2).toFixed(1)} mm</td><td>${orientationLabel(b)}</td></tr>`).join('')}</tbody></table><footer>坐标取零件外包框左后角；X 向右，Z 向前（鸭嘴方向）；1 格 = 8 mm。侧装件底部高度为外包框最低点。</footer></section>`;
+    })
+    .join('');
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${esc(model.name)} · 拼装说明书</title><style>*{box-sizing:border-box}body{margin:0;background:#edf1f5;color:#233342;font:14px Arial,'PingFang SC',sans-serif}.page{max-width:840px;margin:24px auto;padding:34px;background:white;break-before:page}header{border-bottom:1px solid #dde4ea;padding-bottom:12px;font:11px monospace;letter-spacing:1px}header span{float:right}h1{font-size:36px;margin:40px 0 18px}h2{font-size:25px}p{line-height:1.8;color:#526372}.diagram{max-width:600px;margin:16px auto}.diagram svg{width:100%;max-height:310px}table{border-collapse:collapse;width:100%;font-size:12px}td,th{padding:7px 5px;text-align:left;border-bottom:1px solid #dfe6ed}td small{display:block;font-size:10px;color:#6a7985}footer{margin-top:18px;font-size:11px;line-height:1.7;color:#6a7985}button{display:block;margin:20px auto;padding:12px 24px;border:0;border-radius:8px;background:#17664b;color:white;cursor:pointer}.note{padding:18px;background:#f0f5f2;line-height:1.8}@page{size:A4;margin:12mm}@media print{body{background:white}.page{margin:0;padding:8px}button{display:none}tr{break-inside:avoid}.diagram svg{max-height:255px}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><button onclick="window.print()">打印 / 另存为 PDF</button><section class="page"><header>BRICKFORM / BUILDING GUIDE</header><h1>${esc(model.name)}</h1><p>${model.bricks.length} 块零件 · ${new Set(model.bricks.map((b) => b.part)).size} 种零件 · ${a.steps.length} 个步骤<br/>${(model.width * 8).toFixed(1)} × ${(model.depth * 8).toFixed(1)} × ${(model.height * 3.2).toFixed(1)} mm（外包尺寸，不含凸点）</p><div class="diagram">${assemblyDiagram(
+    model,
+    a.steps.length - 1,
+    model.bricks.map((b) => b.id),
+  )}</div><div class="note">${esc(a.reference)}<br/>已检查零件外包框、凸点连接与步骤依赖。侧向零件按所列方向安装。未做受力仿真或实物试拼；零件与颜色组合、在售情况需购买前核对。</div><h2>搭建顺序</h2><p>${a.steps.map((s, i) => `${i + 1}. ${esc(s.name)}`).join(' → ')}</p></section><section class="page"><header>BRICKFORM / PARTS LIST</header><h2>完整零件清单</h2><table><thead><tr><th>设计编号</th><th>名称</th><th>颜色 / LEGO 色号</th><th>数量</th></tr></thead><tbody>${inventory(
+    model.bricks,
+  )
+    .map(
+      (p) =>
+        `<tr><td>${p.part}</td><td>${esc(PARTS[p.part])}</td><td>${PALETTE[p.color].name} / ${PALETTE[p.color].lego}</td><td>${p.quantity}</td></tr>`,
+    )
+    .join(
+      '',
+    )}</tbody></table><footer>几何来源：LDraw.org 官方零件库（社区维护），原作者与 CC BY 授权见平台零件来源说明。独立设计工具，与 LEGO Group 无关联或认证。</footer></section>${pages}</body></html>`;
 }

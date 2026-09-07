@@ -3,7 +3,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Brickform 积木工坊 · 图片变成积木设计',
   description:
-    '上传参考图片，生成积木轮廓摆件，查看 3D 模型、零件清单与分层拼装说明。',
+    '用参考图片设计小鸭积木摆件，查看真实零件 3D、分部件结构、零件清单与拼装步骤。保留图片轮廓生成模式。',
 };
 export default function RootLayout({
   children,

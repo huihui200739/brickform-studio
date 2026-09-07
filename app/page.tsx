@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
-  Upload,
   ArrowRight,
   Layers3,
   FileText,
@@ -17,12 +16,13 @@ import {
   ArrowUpRight,
   X,
   LoaderCircle,
-  Ruler,
-  Palette,
-  ShieldCheck,
   BookOpen,
+  ShieldCheck,
 } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
 import ModelViewer from '@/components/model-viewer';
+import AssemblyViewer from '@/components/assembly-viewer';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import {
@@ -48,7 +48,6 @@ import {
   TableHead,
 } from '@/components/ui/table';
 import {
-  sampleModel,
   imageToModel,
   inventory,
   validateModel,
@@ -58,51 +57,76 @@ import {
   type Raster,
   type Options,
 } from '@/lib/brick-engine';
+import {
+  designDuck,
+  referenceDuck,
+  DEFAULT_DUCK,
+  type DuckParameters,
+} from '@/lib/duck-designer';
+import { orientationLabel } from '@/lib/assembly-diagram';
 import { csv, download, layerSVG, manualHTML } from '@/lib/manual';
 const backgroundItems = [
-  { value: 'auto', label: '自动识别背景' },
+  { value: 'auto', label: '自动去除背景' },
   { value: 'white', label: '去除白色背景' },
   { value: 'keep', label: '保留完整图片' },
 ];
+type Mode = 'duck' | 'sculpture' | 'relief';
 export default function Home() {
-  const [model, setModel] = useState(() => sampleModel());
-  const [resolution, setResolution] = useState(28);
-  const [depth, setDepth] = useState(12);
-  const [shape, setShape] = useState<'sculpture' | 'relief'>('sculpture');
-  const [threshold, setThreshold] = useState(70);
-  const [background, setBackground] = useState<Options['background']>('auto');
+  const [model, setModel] = useState(() => designDuck());
+  const [mode, setMode] = useState<Mode>('duck');
+  const [duck, setDuck] = useState<DuckParameters>(DEFAULT_DUCK);
+  const [autoReference, setAutoReference] = useState(true);
+  const [resolution, setResolution] = useState(28),
+    [depth, setDepth] = useState(12);
+  const [threshold, setThreshold] = useState(70),
+    [background, setBackground] = useState<Options['background']>('auto');
   const [source, setSource] = useState<{
     raster: Raster;
     url: string;
     name: string;
   } | null>(null);
-  const [layer, setLayer] = useState(model.levels.length);
-  const [exploded, setExploded] = useState(false);
-  const [tab, setTab] = useState('parts');
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  const [help, setHelp] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false);
-  const [drag, setDrag] = useState(false);
-  const [search, setSearch] = useState('');
-  const input = useRef<HTMLInputElement>(null);
-  const uploadToken = useRef(0);
+  const [layer, setLayer] = useState(model.levels.length),
+    [exploded, setExploded] = useState(false),
+    [section, setSection] = useState('all');
+  const [tab, setTab] = useState('parts'),
+    [search, setSearch] = useState('');
+  const [error, setError] = useState(''),
+    [notice, setNotice] = useState(''),
+    [busy, setBusy] = useState(false),
+    [dirty, setDirty] = useState(false);
+  const [help, setHelp] = useState(false),
+    [exportOpen, setExportOpen] = useState(false),
+    [drag, setDrag] = useState(false);
+  const input = useRef<HTMLInputElement>(null),
+    uploadToken = useRef(0),
+    sourceUrl = useRef('');
   const parts = useMemo(() => inventory(model.bricks), [model]);
   const validation = useMemo(() => validateModel(model), [model]);
   const shownParts = parts.filter((p) =>
-    `${p.part} ${PARTS[p.part]} ${PALETTE[p.color].name}`.includes(search),
+    `${p.part} ${PARTS[p.part]} ${PALETTE[p.color].name}`.includes(
+      search.trim(),
+    ),
   );
-  const colors = [...new Set(model.bricks.map((b) => b.color))];
-  const layerParts = model.bricks.filter(
-    (b) => b.y === model.levels[layer - 1],
+  const layerParts = model.bricks.filter((b) =>
+    model.assembly ? b.step === layer - 1 : b.y === model.levels[layer - 1],
   );
+  const currentStep = model.assembly?.steps[layer - 1];
+  const changeDuck = (patch: Partial<DuckParameters>) => {
+    setDuck((p) => ({ ...p, ...patch }));
+    setAutoReference(false);
+    setDirty(true);
+  };
   useEffect(() => {
     if (!notice) return;
-    const timer = setTimeout(() => setNotice(''), 5000);
+    const timer = setTimeout(() => setNotice(''), 5500);
     return () => clearTimeout(timer);
   }, [notice]);
+  useEffect(
+    () => () => {
+      if (sourceUrl.current) URL.revokeObjectURL(sourceUrl.current);
+    },
+    [],
+  );
   async function upload(file?: File) {
     if (!file) return;
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
@@ -119,27 +143,28 @@ export default function Home() {
     let url = '';
     try {
       url = URL.createObjectURL(file);
-      const img = new Image();
+      const img = new window.Image();
       img.src = url;
       await img.decode();
       if (img.naturalWidth * img.naturalHeight > 40000000)
-        throw new Error('图片尺寸过大，请缩小到 4000 万像素以内。');
+        throw Error('图片尺寸过大，请缩小到 4000 万像素以内。');
       const ratio = Math.min(
-        1,
-        128 / Math.max(img.naturalWidth, img.naturalHeight),
-      );
-      const canvas = document.createElement('canvas');
+          1,
+          128 / Math.max(img.naturalWidth, img.naturalHeight),
+        ),
+        canvas = document.createElement('canvas');
       canvas.width = Math.max(1, Math.round(img.naturalWidth * ratio));
       canvas.height = Math.max(1, Math.round(img.naturalHeight * ratio));
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      if (!ctx) throw new Error('浏览器无法读取图片，请更换浏览器后重试。');
+      if (!ctx) throw Error('浏览器无法读取图片，请换一张图片。');
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
       if (token !== uploadToken.current) {
         URL.revokeObjectURL(url);
         return;
       }
-      if (source) URL.revokeObjectURL(source.url);
+      if (sourceUrl.current) URL.revokeObjectURL(sourceUrl.current);
+      sourceUrl.current = url;
       setSource({
         raster: {
           width: pixels.width,
@@ -148,19 +173,33 @@ export default function Home() {
         },
         url,
         name: /^(exec-|codex-|image|IMG_|[a-f0-9-]{24})/i.test(file.name)
-          ? '我的积木作品'
+          ? '参考图片'
           : file.name.replace(/\.[^.]+$/, '').slice(0, 24),
       });
+      setAutoReference(true);
       setDirty(true);
-      setNotice('图片已就绪，点击「生成积木设计」查看结果。');
+      setNotice(
+        mode === 'duck'
+          ? '参考图已就绪。生成时会提取配色和比例，应用到小鸭结构。'
+          : '图片已就绪，点击生成查看模型。',
+      );
     } catch (e) {
       if (url) URL.revokeObjectURL(url);
-      setError(
-        e instanceof Error ? e.message : '无法读取图片，请更换图片重试。',
-      );
+      setError(e instanceof Error ? e.message : '无法读取图片，请重试。');
     } finally {
       if (token === uploadToken.current) setBusy(false);
     }
+  }
+  function resetSample() {
+    if (sourceUrl.current) URL.revokeObjectURL(sourceUrl.current);
+    sourceUrl.current = '';
+    setSource(null);
+    setMode('duck');
+    setDuck(DEFAULT_DUCK);
+    setAutoReference(true);
+    setDirty(true);
+    setError('');
+    setNotice('已恢复小黄鸭示例，点击生成应用。');
   }
   async function generate() {
     setBusy(true);
@@ -170,40 +209,39 @@ export default function Home() {
       requestAnimationFrame(() => requestAnimationFrame(() => r())),
     );
     try {
-      const next = source
-        ? imageToModel(
-            source.raster,
-            { resolution, depth, threshold, background, shape },
-            source.name,
-          )
-        : sampleModel(resolution, depth);
-      const result = validateModel(next);
-      if (
-        result.collisions ||
-        result.unsupported ||
-        result.invalidParts ||
-        !result.connected
-      )
-        throw new Error('模型未通过连接检查，请降低精细度或更换图片。');
+      if (mode !== 'duck' && !source)
+        throw Error('请先上传参考图片，再使用图片轮廓模式。');
+      const parameters =
+        mode === 'duck' && source && autoReference
+          ? referenceDuck(source.raster, { background, threshold })
+          : duck;
+      const next =
+        mode === 'duck'
+          ? designDuck(parameters, !!source)
+          : imageToModel(
+              source!.raster,
+              { resolution, depth, threshold, background, shape: mode },
+              source!.name,
+            );
+      if (mode === 'duck') setDuck(parameters);
+      if (next.assembly && source && !autoReference)
+        next.assembly.reference = '使用手动配色与比例；参考图片仅供对照。';
+      const v = validateModel(next);
+      if (v.collisions || v.unsupported || v.invalidParts || !v.connected)
+        throw Error('模型未通过连接检查，请调整参数后重试。');
       setModel(next);
-      setLayer(next.levels.length);
+      setLayer(tab === 'steps' ? 1 : next.levels.length);
+      setSection('all');
       setExploded(false);
       setDirty(false);
       setNotice(
-        `设计已生成，共 ${next.bricks.length} 块积木，${next.levels.length} 组搭建步骤。`,
+        `设计已生成：${next.bricks.length} 块零件，${next.levels.length} 个步骤。`,
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : '生成失败，请重试。');
     } finally {
       setBusy(false);
     }
-  }
-  function resetSample() {
-    if (source) URL.revokeObjectURL(source.url);
-    setSource(null);
-    setError('');
-    setNotice('已选择小黄鸭示例，可调整参数后生成。');
-    setDirty(true);
   }
   function save(kind: 'csv' | 'ldr' | 'html') {
     if (kind === 'csv')
@@ -215,78 +253,61 @@ export default function Home() {
         'brickform-guide.html',
         'text/html;charset=utf-8',
       );
-    setNotice('文件已导出。说明书 HTML 可用浏览器打开，打印或另存为 PDF。');
+    setNotice('已导出当前模型。离线说明书可用浏览器打开并打印为 PDF。');
   }
   function printManual() {
     const win = window.open('', '_blank');
     if (!win) {
-      setNotice('浏览器拦截了新窗口，请下载 HTML 说明书后打开打印。');
+      setNotice('浏览器拦截了新窗口，请下载离线说明书后打印。');
       return;
     }
     win.opener = null;
-    win.document.write(manualHTML(model));
-    win.document.close();
+    const url = URL.createObjectURL(
+      new Blob([manualHTML(model)], { type: 'text/html;charset=utf-8' }),
+    );
+    win.location.href = url;
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
     setExportOpen(false);
   }
+  function selectLayer(n: number) {
+    setLayer(n);
+    setSection('all');
+  }
   return (
-    <main className="studio">
+    <main className="studio studio-v3">
       <header className="topbar">
-        <a className="brand" href="/">
+        <Link className="brand" href="/">
           <span className="brand-icon">
-            <Blocks size={22} />
+            <Blocks size={21} />
           </span>
           brickform<span className="brand-cn">积木工坊</span>
-          <span className="beta">BETA 02</span>
-        </a>
-        <nav>
-          <span className="nav-active">设计工作台</span>
-          <button onClick={() => setHelp(true)}>
-            <BookOpen size={16} /> 使用说明
-          </button>
-        </nav>
-        <span className="local-badge">
-          <span className="live-dot" /> 图片仅在本机处理
-        </span>
+          <span className="beta">V3</span>
+        </Link>
+        <span className="workspace-title">设计工作台</span>
+        <button className="header-help" onClick={() => setHelp(true)}>
+          <BookOpen size={16} />
+          使用说明
+        </button>
       </header>
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">IMAGE TO BRICKS · STUDIO 02</p>
-          <h1>
-            让想象，多一个维度<span className="title-dot">。</span>
-          </h1>
-          <p>从参考图片到立体积木，细节与形状由你掌握。</p>
-        </div>
-        <div className="flow">
-          <span className="flow-current">
-            <b>1</b> 参考图片
-          </span>
-          <ChevronRight />
-          <span>
-            <b>2</b> 积木模型
-          </span>
-          <ChevronRight />
-          <span>
-            <b>3</b> 开始拼搭
-          </span>
-        </div>
-      </div>
-      <div className="workspace">
-        <aside className="input-panel">
-          <h2>
-            01 <span>参考与设置</span>
-          </h2>
+      <div className="studio-layout">
+        <aside className="settings-card">
+          <div className="settings-heading">
+            <h1>从图片开始</h1>
+            <span className="tiny-tag">本机处理</span>
+          </div>
           <input
             className="sr-only"
             ref={input}
             type="file"
             accept="image/png,image/jpeg,image/webp"
+            aria-label="上传参考图片"
             onChange={(e) => {
               void upload(e.target.files?.[0]);
               e.target.value = '';
             }}
-            aria-label="上传参考图片"
           />
           <button
+            className={`reference-upload ${drag ? 'dragging' : ''}`}
             disabled={busy}
             onClick={() => input.current?.click()}
             onDragOver={(e) => {
@@ -299,168 +320,281 @@ export default function Home() {
               setDrag(false);
               if (!busy) void upload(e.dataTransfer.files[0]);
             }}
-            className={`upload-zone ${drag ? 'dragging' : ''} ${source ? 'has-image' : ''}`}
           >
-            {source ? (
-              <>
-                <img src={source.url} alt={`参考图片：${source.name}`} />
-                <span className="replace-image">
-                  <ImagePlus size={14} /> 更换图片
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="upload-icon">
-                  <Upload size={23} />
-                </span>
-                <strong>点击上传，或拖入图片</strong>
-                <span>PNG / JPG / WebP，最大 10 MB</span>
-              </>
-            )}
+            <Image
+              unoptimized
+              width={256}
+              height={190}
+              src={source?.url || '/reference-duck.png'}
+              alt={source ? `参考图：${source.name}` : '小黄鸭示例参考图'}
+            />
+            <span className="reference-badge">
+              {source ? '你的参考图' : '示例参考图'}
+            </span>
+            <span className="reference-upload-action">
+              <ImagePlus size={15} />
+              {source ? '更换图片' : '上传你的图片'}
+            </span>
           </button>
-          {source ? (
-            <div className="file-caption">
-              <span>{source.name}</span>
+          <div className="reference-caption">
+            <span>{source?.name || 'PNG / JPG / WebP · 最大 10 MB'}</span>
+            {source && (
               <button
-                aria-label="移除参考图片"
+                aria-label="移除图片并恢复示例"
                 disabled={busy}
                 onClick={resetSample}
               >
-                <X size={14} />
+                <X size={15} />
               </button>
-            </div>
-          ) : (
-            <div className="sample-row">
-              <span>先试试看</span>
-              <button disabled={busy} onClick={resetSample}>
-                小黄鸭示例 <ArrowUpRight size={14} />
-              </button>
-            </div>
-          )}
-          <div className="divider" />
-          <div className="shape-field">
-            <label className="field-title" id="shape-label">
-              生成方式 <span>V2</span>
-            </label>
-            <RadioGroup
-              className="shape-options"
-              value={shape}
-              disabled={busy || !source}
-              aria-labelledby="shape-label"
-              onValueChange={(v) => {
-                setShape(v as 'sculpture' | 'relief');
-                setDirty(true);
-              }}
-            >
-              {[
-                {
-                  value: 'sculpture',
-                  title: '圆润立体',
-                  hint: '边缘收窄 · 中部饱满',
-                },
-                {
-                  value: 'relief',
-                  title: '轮廓浮雕',
-                  hint: '均匀厚度 · 保留正面',
-                },
-              ].map((o) => (
-                <label
-                  className={shape === o.value ? 'chosen' : ''}
-                  key={o.value}
-                >
-                  <RadioGroupItem value={o.value} />
-                  <span>
-                    <b>{o.title}</b>
-                    <small>{o.hint}</small>
-                  </span>
-                </label>
-              ))}
-            </RadioGroup>
+            )}
           </div>
-          <label className="field-title" id="resolution-label">
-            模型精细度 <span>{resolution} 凸点</span>
-          </label>
+          <div className="field-title" id="mode-label">
+            生成方式
+          </div>
           <RadioGroup
-            className="detail-options"
-            value={String(resolution)}
+            className="design-modes"
+            value={mode}
+            aria-labelledby="mode-label"
+            disabled={busy}
             onValueChange={(v) => {
-              setResolution(Number(v));
+              setMode(v as Mode);
               setDirty(true);
             }}
-            aria-labelledby="resolution-label"
-            disabled={busy}
           >
             {[
-              { v: 20, t: '简约' },
-              { v: 28, t: '标准' },
-              { v: 36, t: '精细' },
-            ].map((o) => (
-              <label key={o.v} className={resolution === o.v ? 'chosen' : ''}>
-                <RadioGroupItem value={String(o.v)} />
-                <span>{o.t}</span>
+              ['duck', '小鸭部件设计', '完整立体造型 · 曲面与侧装零件'],
+              ['sculpture', '图片轮廓立体', '按轮廓推测厚度'],
+              ['relief', '图片轮廓浮雕', '保留正面 · 均匀厚度'],
+            ].map(([v, t, h]) => (
+              <label
+                className={mode === v ? 'chosen' : ''}
+                key={v}
+                htmlFor={`choice-${t}`}
+              >
+                <RadioGroupItem id={`choice-${t}`} value={v} />
+                <span>
+                  <b>{t}</b>
+                  <small>{h}</small>
+                </span>
               </label>
             ))}
           </RadioGroup>
-          <p className="field-hint">越精细，轮廓越清晰，所需零件越多。</p>
-          <label className="field-title" id="depth-label">
-            模型厚度 <span>{depth} 凸点</span>
-          </label>
-          <Slider
-            aria-labelledby="depth-label"
-            value={[depth]}
-            min={4}
-            max={20}
-            step={2}
-            disabled={busy}
-            onValueChange={(v) => {
-              setDepth(Array.isArray(v) ? v[0] : v);
-              setDirty(true);
-            }}
-          />
-          <div className="range-label">
-            <span>轻巧</span>
-            <span>饱满</span>
-          </div>
-          <label className="field-title" id="background-label">
-            图片背景
-          </label>
-          <Select
-            items={backgroundItems}
-            value={background}
-            disabled={busy || !source}
-            onValueChange={(v) => {
-              if (v) {
-                setBackground(v as Options['background']);
-                setDirty(true);
-              }
-            }}
-          >
-            <SelectTrigger
-              aria-labelledby="background-label"
-              className="background-select"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {backgroundItems.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {source && background !== 'keep' && (
-            <div className="threshold-field">
-              <label className="field-title" id="threshold-label">
+          {mode === 'duck' ? (
+            <>
+              <p className="design-scope">
+                当前部件设计支持小鸭。其他物体请使用图片轮廓模式。
+              </p>
+              {source && (
+                <RadioGroup
+                  className="parameter-origin"
+                  aria-label="设计参数来源"
+                  value={autoReference ? 'image' : 'manual'}
+                  onValueChange={(v) => {
+                    setAutoReference(v === 'image');
+                    setDirty(true);
+                  }}
+                  disabled={busy}
+                >
+                  <label htmlFor="reference-auto">
+                    <RadioGroupItem id="reference-auto" value="image" />
+                    从参考图提取配色与比例
+                  </label>
+                  <label htmlFor="reference-manual">
+                    <RadioGroupItem id="reference-manual" value="manual" />
+                    使用下方手动参数
+                  </label>
+                </RadioGroup>
+              )}
+              <div className="field-title" id="head-size-label">
+                头身比例{' '}
+                <span>{duck.headWidth === 6 ? '大头萌趣' : '小头轻巧'}</span>
+              </div>
+              <RadioGroup
+                className="detail-options"
+                aria-labelledby="head-size-label"
+                disabled={busy}
+                value={String(duck.headWidth)}
+                onValueChange={(v) => changeDuck({ headWidth: Number(v) })}
+              >
+                {[
+                  [4, '轻巧'],
+                  [6, '萌趣'],
+                ].map(([v, t]) => (
+                  <label
+                    key={v}
+                    className={duck.headWidth === v ? 'chosen' : ''}
+                    htmlFor={`choice-${t}`}
+                  >
+                    <RadioGroupItem id={`choice-${t}`} value={String(v)} />
+                    <span>{t}</span>
+                  </label>
+                ))}
+              </RadioGroup>
+              <div className="field-title" id="body-size-label">
+                身体比例
+              </div>
+              <RadioGroup
+                className="detail-options"
+                aria-labelledby="body-size-label"
+                disabled={busy}
+                value={String(duck.bodyLength)}
+                onValueChange={(v) => changeDuck({ bodyLength: Number(v) })}
+              >
+                {[
+                  [8, '圆短'],
+                  [10, '修长'],
+                ].map(([v, t]) => (
+                  <label
+                    key={v}
+                    className={duck.bodyLength === v ? 'chosen' : ''}
+                    htmlFor={`choice-${t}`}
+                  >
+                    <RadioGroupItem id={`choice-${t}`} value={String(v)} />
+                    <span>{t}</span>
+                  </label>
+                ))}
+              </RadioGroup>
+              <div className="field-title" id="body-color-label">
+                主体配色 <span>{PALETTE[duck.bodyColor].name}</span>
+              </div>
+              <RadioGroup
+                className="color-choice"
+                aria-labelledby="body-color-label"
+                disabled={busy}
+                value={String(duck.bodyColor)}
+                onValueChange={(v) => changeDuck({ bodyColor: Number(v) })}
+              >
+                {PALETTE.map((p, i) => (
+                  <label
+                    title={p.name}
+                    className={duck.bodyColor === i ? 'selected' : ''}
+                    key={p.name}
+                    style={{ '--swatch': p.hex } as React.CSSProperties}
+                    htmlFor={`palette-${i}`}
+                  >
+                    <RadioGroupItem
+                      id={`palette-${i}`}
+                      value={String(i)}
+                      aria-label={p.name}
+                    />
+                  </label>
+                ))}
+              </RadioGroup>
+              <div className="field-title" id="beak-color-label">
+                鸭嘴配色
+              </div>
+              <RadioGroup
+                className="detail-options"
+                aria-labelledby="beak-color-label"
+                disabled={busy}
+                value={String(duck.beakColor)}
+                onValueChange={(v) => changeDuck({ beakColor: Number(v) })}
+              >
+                {[
+                  [6, '亮橙色'],
+                  [2, '亮红色'],
+                ].map(([v, t]) => (
+                  <label
+                    key={v}
+                    className={duck.beakColor === v ? 'chosen' : ''}
+                    htmlFor={`choice-${t}`}
+                  >
+                    <RadioGroupItem id={`choice-${t}`} value={String(v)} />
+                    <span>{t}</span>
+                  </label>
+                ))}
+              </RadioGroup>
+            </>
+          ) : (
+            <>
+              <div className="field-title" id="resolution-label">
+                模型精细度 <span>{resolution} 凸点</span>
+              </div>
+              <RadioGroup
+                className="detail-options"
+                aria-labelledby="resolution-label"
+                disabled={busy}
+                value={String(resolution)}
+                onValueChange={(v) => {
+                  setResolution(Number(v));
+                  setDirty(true);
+                }}
+              >
+                {[
+                  [20, '简约'],
+                  [28, '标准'],
+                  [36, '精细'],
+                ].map(([v, t]) => (
+                  <label
+                    key={v}
+                    className={resolution === v ? 'chosen' : ''}
+                    htmlFor={`choice-${t}`}
+                  >
+                    <RadioGroupItem id={`choice-${t}`} value={String(v)} />
+                    <span>{t}</span>
+                  </label>
+                ))}
+              </RadioGroup>
+              <div className="field-title" id="depth-label">
+                模型厚度 <span>{depth} 凸点</span>
+              </div>
+              <Slider
+                aria-labelledby="depth-label"
+                value={[depth]}
+                min={4}
+                max={20}
+                step={2}
+                disabled={busy}
+                onValueChange={(v) => {
+                  setDepth(Array.isArray(v) ? v[0] : v);
+                  setDirty(true);
+                }}
+              />
+              <p className="field-hint">
+                轮廓模式保留原有能力，背面形状按厚度估算。
+              </p>
+            </>
+          )}
+          {source && (
+            <div className="background-settings">
+              <div className="field-title" id="background-label">
+                参考图背景
+              </div>
+              <Select
+                items={backgroundItems}
+                value={background}
+                disabled={busy}
+                onValueChange={(v) => {
+                  if (v) {
+                    setBackground(v as Options['background']);
+                    setDirty(true);
+                  }
+                }}
+              >
+                <SelectTrigger
+                  className="background-select"
+                  aria-labelledby="background-label"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {backgroundItems.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="field-title" id="threshold-label">
                 去除强度 <span>{threshold}</span>
-              </label>
+              </div>
               <Slider
                 aria-labelledby="threshold-label"
-                disabled={busy}
+                value={[threshold]}
                 min={10}
                 max={180}
                 step={5}
-                value={[threshold]}
+                disabled={busy || background === 'keep'}
                 onValueChange={(v) => {
                   setThreshold(Array.isArray(v) ? v[0] : v);
                   setDirty(true);
@@ -468,58 +602,124 @@ export default function Home() {
               />
             </div>
           )}
-          <div className="palette-field">
-            <label className="field-title">
-              基础配色 <span>6 色</span>
-            </label>
-            <div className="swatches">
-              {PALETTE.map((c) => (
-                <span
-                  key={c.name}
-                  style={{ background: c.hex }}
-                  title={`${c.name} · LEGO ${c.lego}`}
-                />
-              ))}
-            </div>
-          </div>
-          <button
-            className="primary generate"
-            onClick={() => void generate()}
-            disabled={busy}
-          >
-            {busy ? (
-              <LoaderCircle size={17} className="spin" />
-            ) : (
-              <Sparkles size={17} />
-            )}{' '}
-            {busy ? '正在构建…' : dirty ? '生成积木设计' : '重新生成设计'}{' '}
-            {!busy && <ArrowRight size={17} />}
-          </button>
-          <p className="below-action">10 种砖块与薄板 · 自动加入底座</p>
-          <div className="tip">
-            <Info size={16} />
-            <p>选择主体完整、背景干净的侧面图片，轮廓效果更好。</p>
+          <div className="generate-area">
+            <button
+              className="primary"
+              disabled={busy}
+              onClick={() => void generate()}
+            >
+              {busy ? (
+                <LoaderCircle className="spin" size={18} />
+              ) : (
+                <Sparkles size={18} />
+              )}{' '}
+              {busy ? '正在构建设计' : '生成积木设计'}
+              <ArrowRight size={18} />
+            </button>
+            <p>
+              {dirty
+                ? '参数已改变，生成后更新预览'
+                : '模型、清单与说明书已同步'}
+            </p>
           </div>
         </aside>
-        <div className="main-column">
+        <div className="studio-main">
           <section className="preview-panel">
-            <div className="panel-toolbar">
-              <strong>
-                <Box size={17} /> 设计预览 <span className="tiny-tag">3D</span>
-              </strong>
+            <div className="design-topline">
+              <div className="design-title-group">
+                <span className="design-type">
+                  {model.assembly ? '部件设计 / 小鸭' : '图片轮廓设计'}
+                </span>
+                <input
+                  className="design-name"
+                  aria-label="设计名称"
+                  title="点击修改设计名称"
+                  key={model.name}
+                  defaultValue={model.name}
+                  maxLength={24}
+                  onBlur={(e) => {
+                    const name = e.target.value.trim() || '我的积木作品';
+                    if (name !== model.name) setModel((m) => ({ ...m, name }));
+                  }}
+                />
+              </div>
+              <button
+                className="primary export-main"
+                onClick={() => setExportOpen(true)}
+              >
+                <Download size={16} />
+                导出设计
+              </button>
+            </div>
+            <div className="design-metrics">
               <span>
-                {dirty ? '参考或参数已改变 · 待生成' : '模型与清单已同步'}
+                <b>{model.bricks.length.toLocaleString()}</b> 块零件
+              </span>
+              <span>
+                <b>{new Set(model.bricks.map((b) => b.part)).size}</b> 种零件
+              </span>
+              <span>
+                <b>{model.levels.length}</b> 个步骤
+              </span>
+              <span className="metric-dimensions">
+                {(model.width * 0.8).toFixed(1)} ×{' '}
+                {(model.depth * 0.8).toFixed(1)} ×{' '}
+                {(model.height * 0.32).toFixed(1)} cm
+              </span>
+              <span className={`sync-pill ${dirty ? 'pending' : ''}`}>
+                {dirty ? '待生成更新' : '已同步'}
               </span>
             </div>
-            <ModelViewer
-              model={model}
-              layer={layer}
-              exploded={exploded}
-              onExplode={() => setExploded((v) => !v)}
-            />
+            {model.assembly ? (
+              <AssemblyViewer
+                model={model}
+                layer={layer}
+                exploded={exploded}
+                section={section}
+                onExplode={() => setExploded((v) => !v)}
+              />
+            ) : (
+              <ModelViewer
+                model={model}
+                layer={layer}
+                exploded={exploded}
+                onExplode={() => setExploded((v) => !v)}
+              />
+            )}
+            {model.assembly && (
+              <div className="section-filter">
+                <span>单独查看</span>
+                <fieldset aria-label="查看模型部件">
+                  {[
+                    { id: 'all', name: '完整模型' },
+                    ...model.assembly.sections,
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      aria-pressed={section === s.id}
+                      onClick={() => {
+                        setSection(s.id);
+                        setLayer(model.levels.length);
+                      }}
+                    >
+                      {s.name}
+                      {s.id !== 'all' && (
+                        <small>
+                          {
+                            model.bricks.filter((b) => b.section === s.id)
+                              .length
+                          }
+                        </small>
+                      )}
+                    </button>
+                  ))}
+                </fieldset>
+              </div>
+            )}
             <div className="layer-control">
               <span>
-                <Layers3 size={16} /> 搭建进度
+                <Layers3 size={16} />
+                搭建进度
               </span>
               <Slider
                 aria-label="搭建进度"
@@ -527,40 +727,76 @@ export default function Home() {
                 min={1}
                 max={model.levels.length}
                 step={1}
-                onValueChange={(v) => setLayer(Array.isArray(v) ? v[0] : v)}
+                onValueChange={(v) => selectLayer(Array.isArray(v) ? v[0] : v)}
               />
               <b>
-                {String(layer).padStart(2, '0')}{' '}
-                <small>/ {model.levels.length}</small>
+                {layer}
+                <small> / {model.levels.length}</small>
               </b>
               <button
                 onClick={() => {
-                  setLayer(model.levels.length);
+                  selectLayer(model.levels.length);
                   setExploded(false);
                 }}
               >
                 完整模型
               </button>
             </div>
+            <div className="validation-strip">
+              <span>
+                <ShieldCheck size={15} />
+                {validation.collisions === 0 &&
+                validation.unsupported === 0 &&
+                validation.connected
+                  ? '连接与重叠检查通过'
+                  : '结构需要检查'}
+              </span>
+              <span>
+                {model.assembly
+                  ? '实物稳定性尚未验证'
+                  : '厚度由轮廓估算 · 实物稳定性尚未验证'}
+              </span>
+              <button onClick={() => setHelp(true)}>
+                了解检查范围
+                <ArrowUpRight size={12} />
+              </button>
+            </div>
           </section>
           <section className="output-panel">
-            <Tabs value={tab} onValueChange={(v) => setTab(String(v))}>
+            <Tabs
+              value={tab}
+              onValueChange={(v) => {
+                setTab(String(v));
+                if (v === 'steps') {
+                  setLayer(1);
+                  setSection('all');
+                  setExploded(false);
+                }
+              }}
+            >
               <div className="output-header">
                 <TabsList variant="line">
                   <TabsTrigger value="parts">
-                    <Blocks /> 零件清单 <span>{parts.length}</span>
+                    <Blocks />
+                    零件清单<span>{parts.length}</span>
                   </TabsTrigger>
                   <TabsTrigger value="steps">
-                    <FileText /> 拼装步骤
+                    <FileText />
+                    拼装步骤
                   </TabsTrigger>
                 </TabsList>
                 <button className="text-button" onClick={() => save('csv')}>
-                  <Download size={14} /> 导出 CSV
+                  <Download size={14} />
+                  导出 CSV
                 </button>
               </div>
               <TabsContent value="parts">
                 <div className="table-intro">
-                  <span>包含主体、底座及同色辅助支撑</span>
+                  <span>
+                    {model.assembly
+                      ? '包含全部部件，侧装连接件已计入'
+                      : '包含主体、底座及辅助支撑'}
+                  </span>
                   <input
                     aria-label="搜索零件或颜色"
                     placeholder="搜索编号 / 颜色"
@@ -584,36 +820,32 @@ export default function Home() {
                         <TableRow key={`${p.part}-${p.color}`}>
                           <TableCell>
                             <span className="part-name">
-                              <Blocks
-                                size={23}
-                                style={{
-                                  color:
-                                    PALETTE[p.color].hex === '#F4F4F4'
-                                      ? '#87958b'
-                                      : PALETTE[p.color].hex,
-                                }}
+                              <Box
+                                size={20}
+                                style={{ color: PALETTE[p.color].hex }}
                               />
                               {PARTS[p.part]}
                             </span>
                           </TableCell>
-                          <TableCell className="mono">{p.part}</TableCell>
+                          <TableCell className="part-code">{p.part}</TableCell>
                           <TableCell>
-                            <span className="color-name">
+                            <span className="color-cell">
                               <i style={{ background: PALETTE[p.color].hex }} />
                               {PALETTE[p.color].name}
                             </span>
                           </TableCell>
-                          <TableCell className="quantity mono">
+                          <TableCell className="quantity">
                             {p.quantity}
                           </TableCell>
                           <TableCell>
                             <a
-                              href={`https://www.lego.com/en-us/pick-and-build/pick-a-brick?query=${p.part}`}
+                              className="part-link"
+                              href={`https://www.lego.com/en-us/pick-and-build/pick-a-brick?query=${p.part.replace(/b$/, '')}`}
                               target="_blank"
                               rel="noreferrer"
-                              aria-label={`在乐高官网核对 ${p.part} ${PALETTE[p.color].name}`}
+                              aria-label={`到乐高官网核对 ${p.part}`}
                             >
-                              <ArrowUpRight size={14} />
+                              <ArrowUpRight size={15} />
                             </a>
                           </TableCell>
                         </TableRow>
@@ -622,12 +854,12 @@ export default function Home() {
                   </Table>
                   {!shownParts.length && (
                     <p className="empty-search">
-                      没有匹配的零件，试试编号 3005 或「白色」。
+                      没有匹配的零件，请更换编号或颜色。
                     </p>
                   )}
                 </div>
                 <div className="table-foot">
-                  设计编号可核查 · 色号与在售组合需购买前核对{' '}
+                  零件与颜色组合、在售情况需购买前核对
                   <span>
                     总计 <b>{model.bricks.length}</b> 块
                   </span>
@@ -636,30 +868,33 @@ export default function Home() {
               <TabsContent value="steps">
                 <div className="step-navigation">
                   <div>
-                    <b>第 {String(layer).padStart(2, '0')} 组</b>
-                    <span>
-                      {layer <= 2 ? '交错拼接底座' : '向上搭建主体与支撑'} ·
-                      新增 {layerParts.length} 块 · 基准高度{' '}
-                      {(model.levels[layer - 1] * 3.2).toFixed(1)} mm
-                    </span>
+                    <b>
+                      {String(layer).padStart(2, '0')} ·{' '}
+                      {currentStep?.name || `第 ${layer} 组`}
+                    </b>
+                    <span>本步新增 {layerParts.length} 块</span>
                   </div>
                   <div>
                     <button
-                      aria-label="上一层"
+                      aria-label="上一步"
                       disabled={layer <= 1}
-                      onClick={() => setLayer((v) => v - 1)}
+                      onClick={() => selectLayer(layer - 1)}
                     >
                       <ChevronLeft size={18} />
                     </button>
                     <button
-                      aria-label="下一层"
+                      aria-label="下一步"
                       disabled={layer >= model.levels.length}
-                      onClick={() => setLayer((v) => v + 1)}
+                      onClick={() => selectLayer(layer + 1)}
                     >
                       <ChevronRight size={18} />
                     </button>
                   </div>
                 </div>
+                <p className="step-description">
+                  {currentStep?.description || '按俯视图中的坐标依次放置零件。'}
+                  {model.assembly ? ' 彩色为本步零件，灰色为已搭建部分。' : ''}
+                </p>
                 <div
                   className="step-plan"
                   dangerouslySetInnerHTML={{
@@ -667,7 +902,9 @@ export default function Home() {
                   }}
                 />
                 <p className="plan-caption">
-                  俯视图 · 上方为 X 坐标，左侧为 Z 坐标 · 数字对应下方零件序号
+                  {model.assembly
+                    ? '等轴测简图 · 省略底部空腔 · 鸭嘴方向为前方'
+                    : '俯视图 · 数字对应零件序号'}
                 </p>
                 <div className="step-table">
                   <Table>
@@ -675,8 +912,8 @@ export default function Home() {
                       <TableRow>
                         <TableHead>序号</TableHead>
                         <TableHead>零件 / 颜色</TableHead>
-                        <TableHead>左上角 X / Z</TableHead>
-                        <TableHead>X × Z</TableHead>
+                        <TableHead>安装方向</TableHead>
+                        <TableHead>底部高度</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -685,14 +922,9 @@ export default function Home() {
                           <TableCell>#{b.id}</TableCell>
                           <TableCell>
                             {b.part} · {PALETTE[b.color].name}
-                            {b.support ? '（支撑）' : ''}
                           </TableCell>
-                          <TableCell>
-                            {b.x + 1} / {b.z + 1}
-                          </TableCell>
-                          <TableCell>
-                            {b.w} × {b.d}
-                          </TableCell>
+                          <TableCell>{orientationLabel(b)}</TableCell>
+                          <TableCell>{(b.y * 3.2).toFixed(1)} mm</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -701,105 +933,14 @@ export default function Home() {
               </TabsContent>
             </Tabs>
           </section>
+          <p className="model-provenance">
+            {model.assembly?.reference ||
+              '图片轮廓估算厚度；尚未从单张图片还原真实三维结构。'}{' '}
+            <a href="/parts/ATTRIBUTION.txt" target="_blank" rel="noreferrer">
+              零件几何来源 <ArrowUpRight size={12} />
+            </a>
+          </p>
         </div>
-        <aside className="summary-column">
-          <section className="summary-card">
-            <div className="section-kicker">
-              02 <span>你的积木设计</span>
-            </div>
-            <input
-              className="design-name"
-              aria-label="设计名称"
-              title="点击修改设计名称"
-              key={model.name}
-              defaultValue={model.name}
-              maxLength={24}
-              onBlur={(e) => {
-                const name = e.target.value.trim() || '我的积木作品';
-                if (name !== model.name) setModel((m) => ({ ...m, name }));
-              }}
-            />
-            <p>
-              {model.source === 'sample'
-                ? '参数化示例 · 可调尺寸'
-                : '立体厚度推测 · 可调整形状'}
-            </p>
-            <div className="big-stat">
-              <strong>{model.bricks.length.toLocaleString()}</strong>
-              <span>块积木</span>
-            </div>
-            <div className="stat-grid">
-              <div>
-                <Palette size={16} />
-                <b>{colors.length}</b>
-                <span>种颜色</span>
-              </div>
-              <div>
-                <Layers3 size={16} />
-                <b>{model.levels.length}</b>
-                <span>组步骤</span>
-              </div>
-            </div>
-            <div className="dimension">
-              <Ruler size={16} />
-              <span>
-                {(model.width * 0.8).toFixed(1)} ×{' '}
-                {(model.depth * 0.8).toFixed(1)} ×{' '}
-                {(model.height * 0.32).toFixed(1)} cm
-                <small>宽 × 深 × 高，含底座，不含凸点</small>
-              </span>
-            </div>
-            <div className="divider" />
-            <h3>
-              <ShieldCheck size={17} /> 结构检查
-            </h3>
-            <ul className="check-list">
-              <li>
-                <Check />{' '}
-                {validation.collisions === 0 ? '没有零件重叠' : '存在重叠'}
-              </li>
-              <li>
-                <Check />{' '}
-                {validation.unsupported === 0
-                  ? '每块均有下方承托'
-                  : '存在悬空零件'}
-              </li>
-              <li>
-                <Check />{' '}
-                {validation.connected ? '完整模型连为一体' : '模型尚未连通'}
-              </li>
-            </ul>
-            <div className="support-note">
-              已加入 <b>{model.supportCount}</b> 块同色辅助支撑。
-              <br />
-              物理稳定性与实物拼装尚未验证。
-            </div>
-          </section>
-          <section className="export-card">
-            <span className="export-icon">
-              <BookOpen size={23} />
-            </span>
-            <h3>准备好，开始拼搭。</h3>
-            <p>
-              按层定位每一块零件，
-              <br />
-              让屏幕里的创意来到手中。
-            </p>
-            <button className="primary" onClick={() => setExportOpen(true)}>
-              <Download size={16} /> 导出拼装说明书
-            </button>
-            <button className="secondary" onClick={() => save('ldr')}>
-              <Box size={15} /> 下载 LDraw 模型
-            </button>
-            <span className="export-formats">图文步骤 · 完整清单 · 可打印</span>
-          </section>
-          <div className="version-note">
-            <span className="tiny-tag">V2</span>
-            <p>
-              轮廓估算立体厚度，薄板细化曲面。背面与物理稳定性仍需人工验证。
-            </p>
-          </div>
-        </aside>
       </div>
       {(notice || error) && (
         <div
@@ -821,95 +962,96 @@ export default function Home() {
       )}
       <footer className="site-footer">
         <span>
-          <Blocks size={15} /> Small bricks. Endless possibilities.
+          <Blocks size={15} />
+          Brickform Studio · V3
         </span>
-        <span>
-          独立创作工具，与 LEGO Group 无关联或认证。
-          <button onClick={() => setHelp(true)}>
-            了解 V2 能力 <ArrowUpRight size={12} />
-          </button>
-        </span>
+        <span>独立创作工具，与 LEGO Group 无关联或认证。</span>
       </footer>
       <Dialog open={help} onOpenChange={setHelp}>
         <DialogContent className="help-dialog">
-          <DialogTitle>从参考图到积木摆件</DialogTitle>
+          <DialogTitle>V3 · 部件设计工作台</DialogTitle>
           <DialogDescription>
-            V2
-            使用轮廓距离估算圆润厚度，并用薄板和砖块拼出更细的曲面。推荐使用背景干净、主体完整的侧面图片。
+            先把物体设计成可分解的部件，再用零件构建造型。当前部件设计支持小鸭。
           </DialogDescription>
           <ol className="help-steps">
             <li>
-              <b>上传并调整</b>
+              <b>参考图或手动设计</b>
               <p>
-                选择精细度、厚度和去除背景的强度，点击生成。复杂背景可选择「保留完整图片」。
+                小鸭模式使用图片的主要配色和粗略比例，应用到预设的小鸭结构。也可以手动选择头身比例和颜色。它不是任意物体识别，也没有接入
+                AI 三维重建。
               </p>
             </li>
             <li>
-              <b>检查 3D 与支撑</b>
+              <b>查看完整造型与部件</b>
               <p>
-                旋转预览，拖动层数滑块查看结构。支撑优先安排在模型中部，只为缺少下方连接的零件补入；底座改为两层薄板。
+                使用正面、侧面、背面、俯视按钮检查形状；单独查看六个部件，或展开观察。展开视图用于理解结构，不是实际安装位置。
               </p>
             </li>
             <li>
-              <b>导出并拼搭</b>
+              <b>带走设计</b>
               <p>
-                零件清单按设计编号和颜色汇总；说明书标出每个零件的坐标及方向。下载
-                HTML 后可打印为 PDF。
+                3D 使用 LDraw.org 社区维护的官方库几何，LDraw
+                导出、数量清单与安装位置来自同一份模型。说明书使用简化示意图，支持下载
+                HTML 或打印为 PDF。
               </p>
             </li>
           </ol>
           <div className="help-limits">
-            <strong>这版的能力边界</strong>
+            <strong>检查范围</strong>
             <p>
-              没有使用 AI
-              还原三维背面。圆润模式根据轮廓距离推测厚度，浮雕模式保持均匀厚度。示例小黄鸭为独立参数模型。算法检查网格重叠、承托与连通，未验证抗倾倒、夹持力或实物拼装。
+              小鸭模式检查零件外包框重叠、顶部与侧面凸点连接，以及步骤中的连接依赖。未做受力、抗倾倒、夹持力仿真或实物试拼。轮廓模式仍使用基础砖与薄板，检查网格承托和连通。
             </p>
             <p>
-              内置 10 种基础零件：1×1、1×2、1×4、2×2、2×4 砖块与对应薄板，使用 6
-              种基础色。尚未接入完整零件 / 颜色组合库及实时库存，购买前请到{' '}
-              <a
-                href="https://www.lego.com/en-us/pick-and-build/pick-a-brick"
-                target="_blank"
-                rel="noreferrer"
-              >
-                LEGO Pick a Brick 核对
-              </a>
-              。图片仅在浏览器内处理，刷新页面会清空本次设计。
+              零件编号来自 LDraw，带 b 等后缀的编号表示其库中的形态版本。具体
+              LEGO
+              设计编号、颜色组合与库存需购买前核对。图片仅在本机处理，刷新后本次设计会清空。
             </p>
           </div>
         </DialogContent>
       </Dialog>
       <Dialog open={exportOpen} onOpenChange={setExportOpen}>
         <DialogContent className="export-dialog">
-          <DialogTitle>带走你的拼装设计</DialogTitle>
+          <DialogTitle>带走你的积木设计</DialogTitle>
           <DialogDescription>
             {model.name} · {model.bricks.length} 块零件 · {model.levels.length}{' '}
-            组搭建步骤。说明书包含编号、颜色、坐标与分层俯视图。
+            个步骤。导出的是当前预览对应的完整模型。
           </DialogDescription>
+          {dirty && (
+            <p className="export-disclaimer">
+              参数有未应用的修改。若要导出新参数的结果，请先关闭此窗口并生成设计。
+            </p>
+          )}
           <button className="export-option" onClick={printManual}>
             <FileText />
             <span>
               <b>打开说明书 · 打印为 PDF</b>
-              <small>在新窗口中点击「打印 / 另存为 PDF」</small>
+              <small>包含步骤示意、零件方向与完整清单</small>
             </span>
             <ArrowUpRight />
           </button>
           <button className="export-option" onClick={() => save('html')}>
-            <Download />
+            <BookOpen />
             <span>
               <b>下载离线说明书</b>
               <small>HTML 格式，无需联网即可浏览与打印</small>
             </span>
           </button>
+          <button className="export-option" onClick={() => save('ldr')}>
+            <Box />
+            <span>
+              <b>下载 LDraw 模型</b>
+              <small>保留每个零件的位置、旋转与搭建步骤</small>
+            </span>
+          </button>
           <button className="export-option" onClick={() => save('csv')}>
             <Blocks />
             <span>
-              <b>下载完整零件清单</b>
+              <b>下载零件清单</b>
               <small>CSV 格式，可在 Excel 中查看</small>
             </span>
           </button>
           <p className="export-disclaimer">
-            包含同色辅助支撑及底座。请核对零件与颜色组合，并先做小规模试拼。
+            请先核对零件与颜色组合，并做实物试拼。
           </p>
         </DialogContent>
       </Dialog>
