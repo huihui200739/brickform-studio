@@ -3,6 +3,7 @@ import { strict as assert } from 'node:assert';
 import { roundedDuck } from './rounded-duck.ts';
 import { designDuck } from './duck-designer.ts';
 import {
+  partThumbnail,
   placementContext,
   stageBricks,
   gridAddress,
@@ -63,4 +64,41 @@ void test('print guide has an offline positioning map for every group and at mos
     assert.ok(count >= 1 && count <= 4);
   }
   assert.ok(html.length < 12_000_000);
+});
+
+void test('a 2 by 4 plate shows eight raised studs and a downward placement arrow', () => {
+  const m = roundedDuck(),
+    b = m.bricks.find((b) => b.part === '3020')!;
+  const thumb = partThumbnail(b);
+  assert.equal((thumb.match(/data-stud-top=/g) || []).length, 8);
+  const stage = b.step!,
+    index = stageBricks(m, stage).findIndex((p) => p.id === b.id);
+  const svg = detailDiagram(m, stage, index);
+  const arrow = svg.match(
+    /data-placement-arrow="true"><path d="M ([\d.-]+) ([\d.-]+) L ([\d.-]+) ([\d.-]+)/,
+  )!;
+  assert.ok(arrow);
+  assert.equal(Number(arrow[1]), Number(arrow[3]));
+  assert.ok(Number(arrow[4]) > Number(arrow[2]));
+  assert.ok(
+    !detailDiagram(m, stage, index, true).includes('data-placement-arrow'),
+  );
+});
+void test('side placement marks real connection points and local maps keep global addresses', () => {
+  const m = roundedDuck();
+  // Find a front-facing mounted panel independently of assembly order.
+  const panel = m.bricks
+    .filter((b) => b.part === '15068' && b.section === 'body')
+    .at(-1)!;
+  const stage = panel.step!,
+    i = stageBricks(m, stage).findIndex((p) => p.id === panel.id);
+  const svg = detailDiagram(m, stage, i);
+  assert.equal((svg.match(/data-connection-ring=/g) || []).length, 2);
+  assert.ok(!svg.includes('NaN'));
+  const first = m.bricks[0],
+    local = topDiagram(m, first.step!, 0, false, true);
+  const address = gridAddress(m, first),
+    [letter, row] = [address.match(/[A-Z]+/)![0], address.match(/\d+/)![0]];
+  assert.ok(local.includes(`>${letter}</text>`));
+  assert.ok(local.includes(`>${row}</text>`));
 });

@@ -5,7 +5,12 @@ import {
   type V3,
 } from './assembly-catalog.ts';
 import { PALETTE, type Model, type Brick } from './brick-engine.ts';
-type Face = { points: V3[]; shade: number };
+type Face = {
+  points: V3[];
+  shade: number;
+  detail?: 'stud-top' | 'stud-side';
+  smooth?: boolean;
+};
 // Lightweight solid diagrams for offline instructions. The interactive viewer
 // uses the original LDraw mesh; these diagrams omit underside cavities.
 export function brickFaces(b: Brick): Face[] {
@@ -16,8 +21,18 @@ export function brickFaces(b: Brick): Face[] {
     top = p.bottom - p.h * 8,
     bottom = p.bottom;
   const result: Face[] = [];
-  const face = (points: V3[], shade: number) =>
-    result.push({ points: points.map((pt) => worldPoint(b.pose!, pt)), shade });
+  const face = (
+    points: V3[],
+    shade: number,
+    detail?: Face['detail'],
+    smooth = false,
+  ) =>
+    result.push({
+      points: points.map((pt) => worldPoint(b.pose!, pt)),
+      shade,
+      detail,
+      smooth,
+    });
   if (p.kind === 'round') {
     const ring = Array.from(
       { length: 20 },
@@ -46,6 +61,8 @@ export function brickFaces(b: Brick): Face[] {
           [-x, y(zs[i + 1]), zs[i + 1]],
         ],
         0.94 + i * 0.007,
+        undefined,
+        true,
       );
     for (const xx of [-x, x])
       face(
@@ -124,38 +141,40 @@ export function brickFaces(b: Brick): Face[] {
       ],
       0.9,
     );
-    if (['brick', 'plate', 'side'].includes(p.kind))
-      for (let i = 0; i < p.w; i++)
-        for (let j = 0; j < p.d; j++) {
-          const cx = (i + 0.5 - p.w / 2) * 20,
-            zz = (j + 0.5 - p.d / 2) * 20 + cz;
-          face(
-            Array.from(
-              { length: 12 },
-              (_, k) =>
-                [
-                  cx + 6 * Math.cos((k * Math.PI) / 6),
-                  -4,
-                  zz + 6 * Math.sin((k * Math.PI) / 6),
-                ] as V3,
-            ),
-            0.96,
-          );
-        }
   }
-  if (p.kind === 'side')
-    face(
-      Array.from(
-        { length: 16 },
-        (_, i) =>
-          [
-            6 * Math.cos((i * Math.PI) / 8),
-            10 + 6 * Math.sin((i * Math.PI) / 8),
-            -14,
-          ] as V3,
-      ),
-      0.95,
+  const stud = (center: V3, normal: V3, u: V3, v: V3) => {
+    const ring = Array.from(
+      { length: 32 },
+      (_, i) =>
+        center.map(
+          (c, k) =>
+            c +
+            normal[k] * 4 +
+            6 *
+              (u[k] * Math.cos((i * Math.PI) / 16) +
+                v[k] * Math.sin((i * Math.PI) / 16)),
+        ) as V3,
     );
+    // The diagram renderer takes the projected convex hull of these two rings.
+    face(
+      [...ring, ...ring.map((a) => a.map((n, k) => n - normal[k] * 4) as V3)],
+      0.86,
+      'stud-side',
+    );
+    face(ring, 0.98, 'stud-top');
+  };
+  if (['brick', 'plate', 'side'].includes(p.kind) || p.kind === 'slope')
+    for (let i = 0; i < p.w; i++)
+      for (let j = 0; j < p.d; j++) {
+        if (p.kind === 'slope' && j !== p.d - 1) continue;
+        stud(
+          [(i + 0.5 - p.w / 2) * 20, 0, (j + 0.5 - p.d / 2) * 20 + cz],
+          [0, -1, 0],
+          [1, 0, 0],
+          [0, 0, 1],
+        );
+      }
+  if (p.kind === 'side') stud([0, 10, -10], [0, 0, -1], [1, 0, 0], [0, 1, 0]);
   return result;
 }
 export function assemblyDiagram(
@@ -166,30 +185,32 @@ export function assemblyDiagram(
   const list = model.bricks.filter((b) => (b.step || 0) <= step);
   if (!list.length) return '';
   const projected = list.flatMap((b) =>
-    brickFaces(b).map((f) => {
-      const active = highlight ? highlight.includes(b.id) : b.step === step;
-      const rgb = active ? PALETTE[b.color].hex : '#cbd3dc';
-      const color =
-        '#' +
-        [1, 3, 5]
-          .map((i) =>
-            Math.round(parseInt(rgb.slice(i, i + 2), 16) * f.shade)
-              .toString(16)
-              .padStart(2, '0'),
-          )
-          .join('');
-      return {
-        points: f.points.map(([x, y, z]) => [
-          (x - z) * 0.707,
-          (x + z) * 0.32 + y * 0.85,
-        ]),
-        depth:
-          f.points.reduce((s, p) => s + p[0] - p[1] + p[2], 0) /
-          f.points.length,
-        color,
-        active,
-      };
-    }),
+    brickFaces(b)
+      .filter((f) => f.detail !== 'stud-side')
+      .map((f) => {
+        const active = highlight ? highlight.includes(b.id) : b.step === step;
+        const rgb = active ? PALETTE[b.color].hex : '#cbd3dc';
+        const color =
+          '#' +
+          [1, 3, 5]
+            .map((i) =>
+              Math.round(parseInt(rgb.slice(i, i + 2), 16) * f.shade)
+                .toString(16)
+                .padStart(2, '0'),
+            )
+            .join('');
+        return {
+          points: f.points.map(([x, y, z]) => [
+            (x - z) * 0.707,
+            (x + z) * 0.32 + y * 0.85,
+          ]),
+          depth:
+            f.points.reduce((s, p) => s + p[0] - p[1] + p[2], 0) /
+            f.points.length,
+          color,
+          active,
+        };
+      }),
   );
   const pts = projected.flatMap((p) => p.points),
     xs = pts.map((p) => p[0]),
@@ -215,14 +236,16 @@ export function orientationLabel(b: Brick) {
       ? '侧装 · 向左'
       : normal[0] > 0
         ? '侧装 · 向右'
-        : '侧向安装';
+        : normal[2] > 0
+          ? '侧装 · 朝前'
+          : '侧装 · 朝后';
   if (p.kind === 'curve' || p.kind === 'slope') {
     const high = transform(b.pose.matrix, [0, 0, 1]);
     return `高边朝${high[0] > 0 ? '右' : high[0] < 0 ? '左' : high[2] > 0 ? '前' : '后'}`;
   }
   if (p.kind === 'side') {
     const side = transform(b.pose.matrix, [0, 0, -1]);
-    return `侧凸点朝${side[0] < 0 ? '左' : '右'}`;
+    return `侧凸点朝${side[0] < 0 ? '左' : side[0] > 0 ? '右' : side[2] > 0 ? '前' : '后'}`;
   }
   return `${b.w} × ${b.d} 凸点`;
 }

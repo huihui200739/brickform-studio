@@ -126,10 +126,25 @@ export function connectedBelow(model: Model, b: Brick) {
   );
 }
 const num = (v: number) => v.toFixed(1);
+function hull(points: number[][]) {
+  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o: number[], a: number[], b: number[]) =>
+    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const half = (ps: number[][]) => {
+    const out: number[][] = [];
+    for (const p of ps) {
+      while (out.length > 1 && cross(out.at(-2)!, out.at(-1)!, p) <= 0)
+        out.pop();
+      out.push(p);
+    }
+    return out.slice(0, -1);
+  };
+  return [...half(sorted), ...half(sorted.toReversed())];
+}
 function sceneSVG(
   bricks: Brick[],
   activeId: number | undefined,
-  opts: { thumbnail?: boolean; side?: number } = {},
+  opts: { thumbnail?: boolean; side?: number; placement?: boolean } = {},
 ) {
   if (!bricks.length) return '';
   const side = opts.side || 1;
@@ -137,17 +152,29 @@ function sceneSVG(
     (side * x - z) * 0.707,
     (side * x + z) * 0.32 + y * 0.85,
   ];
-  const polys = bricks.flatMap((b) =>
-    brickFaces(b)
-      .filter(
-        (f) =>
-          b.id === activeId ||
-          opts.thumbnail ||
-          (f.shade !== 0.96 && f.shade !== 0.95),
-      )
+  const active = bricks.find((b) => b.id === activeId);
+  const normal = active
+    ? transform(active.pose!.matrix, [0, -1, 0])
+    : [0, -1, 0];
+  const lift = opts.placement ? 38 : 0;
+  const polys = bricks.flatMap((b) => {
+    const current = b.id === activeId || !!opts.thumbnail;
+    const moved =
+      current && lift
+        ? {
+            ...b,
+            pose: {
+              ...b.pose!,
+              position: b.pose!.position.map(
+                (v, i) => v + normal[i] * lift,
+              ) as V3,
+            },
+          }
+        : b;
+    return brickFaces(moved)
+      .filter((f) => current || !f.detail)
       .map((f) => {
-        const active = b.id === activeId || !!opts.thumbnail,
-          rgb = active ? PALETTE[b.color].hex : '#dbe2e8';
+        const rgb = current ? PALETTE[b.color].hex : '#dbe2e8';
         const color =
           '#' +
           [1, 3, 5]
@@ -157,46 +184,106 @@ function sceneSVG(
                 .padStart(2, '0'),
             )
             .join('');
+        const points = f.points.map(project);
         return {
-          points: f.points.map(project),
+          points: f.detail === 'stud-side' ? hull(points) : points,
           depth:
             f.points.reduce((s, p) => s + side * p[0] - p[1] + p[2], 0) /
             f.points.length,
+          detail:
+            f.detail === 'stud-top' ? 2 : f.detail === 'stud-side' ? 1 : 0,
+          smooth: f.smooth,
           color,
-          active,
+          active: current,
         };
-      }),
-  );
-  const pts = polys.flatMap((p) => p.points),
-    xs = pts.map((p) => p[0]),
+      });
+  });
+  const targetFaces =
+    active && lift
+      ? brickFaces(active)
+          .filter((f) => !f.detail)
+          .map((f) => f.points.map(project))
+      : [];
+  const pts = [...polys.flatMap((p) => p.points), ...targetFaces.flat()];
+  const xs = pts.map((p) => p[0]),
     ys = pts.map((p) => p[1]);
   const minX = Math.min(...xs),
     minY = Math.min(...ys),
     maxX = Math.max(...xs),
     maxY = Math.max(...ys);
-  const pad = Math.max(12, (maxX - minX) * 0.08),
+  const pad = Math.max(14, (maxX - minX) * 0.12),
     width = maxX - minX + pad * 2,
     height = maxY - minY + pad * 2;
-  const active = bricks.find((b) => b.id === activeId);
+  const polygon = (points: number[][]) =>
+    points.map((p) => p.map(num).join(',')).join(' ');
   let marker = '';
-  if (active && !opts.thumbnail) {
-    const fs = brickFaces(active);
-    const face =
-      fs.find((f) => f.shade === 1) || fs[Math.min(3, fs.length - 1)];
-    const faces = face.points.map(project);
-    const ax = faces.reduce((s, p) => s + p[0], 0) / faces.length,
-      ay = faces.reduce((s, p) => s + p[1], 0) / faces.length;
-    const r = width * 0.021,
-      sy = minY - pad * 0.5,
-      sx = Math.min(maxX, Math.max(minX, ax + width * 0.16));
-    marker = `<path d="M ${num(sx)} ${num(sy + r)} L ${num(ax)} ${num(ay)}" stroke="#dc6025" stroke-width="${num(width * 0.005)}" fill="none"/><circle cx="${num(ax)}" cy="${num(ay)}" r="${num(r * 0.45)}" fill="#dc6025"/><circle cx="${num(sx)}" cy="${num(sy)}" r="${num(r)}" fill="#dc6025"/><text x="${num(sx)}" y="${num(sy + r * 0.36)}" text-anchor="middle" fill="white" font-family="Arial" font-size="${num(r * 1.25)}">1</text>`;
+  if (active && lift) {
+    const sockets = connectors(active).sockets;
+    const center = sockets.length
+      ? (sockets
+          .reduce((sum, s) => sum.map((v, i) => v + s.point[i]) as V3, [
+            0, 0, 0,
+          ] as V3)
+          .map((v) => v / sockets.length) as V3)
+      : active.pose!.position;
+    const target = project(center),
+      source = project(center.map((v, i) => v + normal[i] * lift) as V3);
+    const dx = target[0] - source[0],
+      dy = target[1] - source[1],
+      len = Math.hypot(dx, dy),
+      ux = dx / len,
+      uy = dy / len;
+    const start = [source[0] + dx * 0.25, source[1] + dy * 0.25],
+      end = [target[0] - ux * 3, target[1] - uy * 3];
+    const arrow = 5;
+    marker = `<g data-placement-arrow="true"><path d="M ${start.map(num).join(' ')} L ${end.map(num).join(' ')}" stroke="#dc6025" stroke-width="2.2"/><polygon points="${polygon([end, [end[0] - ux * arrow - uy * arrow * 0.6, end[1] - uy * arrow + ux * arrow * 0.6], [end[0] - ux * arrow + uy * arrow * 0.6, end[1] - uy * arrow - ux * arrow * 0.6]])}" fill="#dc6025"/></g>`;
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${num(minX - pad)} ${num(minY - pad)} ${num(width)} ${num(height)}" role="img" aria-label="${opts.thumbnail ? '待取零件外形' : '安装位置局部放大图，箭头指向本次安装的零件'}"><rect x="${num(minX - pad)}" y="${num(minY - pad)}" width="${num(width)}" height="${num(height)}" rx="5" fill="#f7f9fb"/>${polys
-    .sort((a, b) => Number(a.active) - Number(b.active) || a.depth - b.depth)
-    .map(
-      (f) =>
-        `<polygon points="${f.points.map((p) => p.map(num).join(',')).join(' ')}" fill="${f.color}" stroke="${f.active ? '#51462b' : '#b3bec8'}" stroke-width="${opts.thumbnail ? 0.3 : 0.45}" stroke-linejoin="round"/>`,
-    )
+  const render = (f: (typeof polys)[number]) =>
+    `<polygon ${f.detail === 2 ? 'data-stud-top="true" ' : ''}points="${polygon(f.points)}" fill="${f.color}" stroke="${f.detail === 1 || f.smooth ? 'none' : f.active ? '#716034' : '#b3bec8'}" stroke-width="${f.detail === 2 ? 0.22 : 0.32}" stroke-linejoin="round"/>`;
+  const order = (a: (typeof polys)[number], b: (typeof polys)[number]) =>
+    a.detail - b.detail || a.depth - b.depth;
+  const ghosts = targetFaces.length
+    ? `<polygon points="${polygon(hull(targetFaces.flat()))}" fill="#f6c266" fill-opacity=".16" stroke="#dc6025" stroke-width=".8" stroke-dasharray="2 2"/>`
+    : '';
+  const previousStuds = bricks
+    .filter((b) => b.id !== activeId)
+    .flatMap((b) => connectors(b).studs);
+  const mounts =
+    active && lift
+      ? connectors(active).sockets.filter((s) =>
+          previousStuds.some(
+            (c) =>
+              c.point.every((v, i) => Math.abs(v - s.point[i]) < 0.001) &&
+              c.normal.every((v, i) => Math.abs(v - s.normal[i]) < 0.001),
+          ),
+        )
+      : [];
+  const rings = mounts
+    .map((s) => {
+      const u = transform(active!.pose!.matrix, [1, 0, 0]),
+        v = transform(active!.pose!.matrix, [0, 0, 1]);
+      const points = Array.from({ length: 24 }, (_, i) =>
+        project(
+          s.point.map(
+            (n, k) =>
+              n +
+              4 *
+                (u[k] * Math.cos((i * Math.PI) / 12) +
+                  v[k] * Math.sin((i * Math.PI) / 12)),
+          ) as V3,
+        ),
+      );
+      return `<polygon data-connection-ring="true" points="${polygon(points)}" fill="#fff8e8" stroke="#dc6025" stroke-width=".8"/>`;
+    })
+    .join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${num(minX - pad)} ${num(minY - pad)} ${num(width)} ${num(height)}" role="img" aria-label="${opts.thumbnail ? '待取零件外形' : lift ? '悬空零件沿橙色箭头装入虚线位置' : '当前零件安装后的外观'}"><rect x="${num(minX - pad)}" y="${num(minY - pad)}" width="${num(width)}" height="${num(height)}" rx="5" fill="#f7f9fb"/>${polys
+    .filter((f) => !f.active)
+    .sort(order)
+    .map(render)
+    .join('')}${ghosts}${rings}${polys
+    .filter((f) => f.active)
+    .sort(order)
+    .map(render)
     .join('')}${marker}</svg>`;
 }
 export function partThumbnail(b: Brick) {
@@ -207,7 +294,12 @@ export function partThumbnail(b: Brick) {
     thumbnail: true,
   });
 }
-export function detailDiagram(model: Model, stage: number, index: number) {
+export function detailDiagram(
+  model: Model,
+  stage: number,
+  index: number,
+  placed = false,
+) {
   const { active, visible } = placementContext(model, stage, index);
   if (!active) return '';
   const distance = (b: Brick) =>
@@ -216,18 +308,31 @@ export function detailDiagram(model: Model, stage: number, index: number) {
       b.z + b.d / 2 - (active.z + active.d / 2),
       (b.y - active.y) * 0.4,
     );
-  const near = visible
-    .filter((b) => b.id === active.id || distance(b) < 6)
-    .sort((a, b) => distance(a) - distance(b))
-    .slice(0, 18);
+  const supports = new Set(connectedBelow(model, active).map((b) => b.id));
+  const priority = visible.filter(
+    (b) => b.id === active.id || supports.has(b.id),
+  );
+  const near = [
+    ...priority,
+    ...visible
+      .filter(
+        (b) => b.id !== active.id && !supports.has(b.id) && distance(b) < 6,
+      )
+      .sort((a, b) => distance(a) - distance(b))
+      .slice(0, Math.max(0, 12 - priority.length)),
+  ];
   const normal = transform(active.pose!.matrix, [0, -1, 0]);
-  return sceneSVG(near, active.id, { side: normal[0] < 0 ? -1 : 1 });
+  return sceneSVG(near, active.id, {
+    side: normal[0] < 0 ? -1 : 1,
+    placement: !placed,
+  });
 }
 export function topDiagram(
   model: Model,
   stage: number,
   index: number,
   overview = false,
+  local = false,
 ) {
   const { batch, active, visible } = placementContext(
     model,
@@ -236,26 +341,49 @@ export function topDiagram(
     overview,
   );
   if (!active) return '';
-  const origin = gridOrigin(model),
+  const globalOrigin = gridOrigin(model);
+  const startX = local
+    ? Math.max(0, Math.floor(active.x - globalOrigin.x) - 2)
+    : 0;
+  const startZ = local
+    ? Math.max(0, Math.floor(active.z - globalOrigin.z) - 2)
+    : 0;
+  const origin = { x: globalOrigin.x + startX, z: globalOrigin.z + startZ },
     unit = 22,
     pad = 37;
-  const cols = Math.ceil(model.width),
-    rows = Math.ceil(model.depth),
+  const cols = local
+      ? Math.min(
+          Math.ceil(model.width) - startX,
+          Math.ceil(active.x + active.w - globalOrigin.x) + 2 - startX,
+        )
+      : Math.ceil(model.width),
+    rows = local
+      ? Math.min(
+          Math.ceil(model.depth) - startZ,
+          Math.ceil(active.z + active.d - globalOrigin.z) + 2 - startZ,
+        )
+      : Math.ceil(model.depth),
     width = cols * unit + pad * 2,
     height = rows * unit + pad * 2;
   const px = (x: number) => pad + (x - origin.x) * unit,
     py = (z: number) => pad + (rows - (z - origin.z)) * unit;
-  const rect = (b: Brick, active = false) =>
-    `<rect x="${num(px(b.x))}" y="${num(py(b.z + b.d))}" width="${num(b.w * unit)}" height="${num(b.d * unit)}" rx="1.5" fill="${active ? PALETTE[b.color].hex : '#dce3e9'}" stroke="${active ? '#bd4b12' : '#aebbc6'}" stroke-width="${active ? 2.2 : 0.7}"/>`;
+  const rect = (b: Brick, active = false) => {
+    const x = Math.max(origin.x, b.x),
+      z = Math.max(origin.z, b.z);
+    const w = Math.min(origin.x + cols, b.x + b.w) - x,
+      d = Math.min(origin.z + rows, b.z + b.d) - z;
+    if (w <= 0 || d <= 0) return '';
+    return `<rect x="${num(px(x))}" y="${num(py(z + d))}" width="${num(w * unit)}" height="${num(d * unit)}" rx="1.5" fill="${active ? PALETTE[b.color].hex : '#dce3e9'}" stroke="${active ? '#bd4b12' : '#aebbc6'}" stroke-width="${active ? 2.2 : 0.7}"/>`;
+  };
   let grid = '';
   for (let x = 0; x <= cols; x++)
     grid += `<path d="M ${pad + x * unit} ${pad} v ${rows * unit}" stroke="#a5b4c3" stroke-width=".45" stroke-dasharray="2 3"/>`;
   for (let z = 0; z <= rows; z++)
     grid += `<path d="M ${pad} ${pad + z * unit} h ${cols * unit}" stroke="#a5b4c3" stroke-width=".45" stroke-dasharray="2 3"/>`;
   for (let x = 0; x < cols; x++)
-    grid += `<text x="${pad + (x + 0.5) * unit}" y="${height - 12}" text-anchor="middle" font-size="14" fill="#4b6374">${column(x)}</text>`;
+    grid += `<text x="${pad + (x + 0.5) * unit}" y="${height - 12}" text-anchor="middle" font-size="14" fill="#4b6374">${column(x + startX)}</text>`;
   for (let z = 0; z < rows; z++)
-    grid += `<text x="20" y="${py(origin.z + z + 0.5) + 4}" text-anchor="middle" font-size="14" fill="#4b6374">${z + 1}</text>`;
+    grid += `<text x="20" y="${py(origin.z + z + 0.5) + 4}" text-anchor="middle" font-size="14" fill="#4b6374">${z + startZ + 1}</text>`;
   const current = overview ? batch : [active];
   const badges = overview
     ? current

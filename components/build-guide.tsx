@@ -34,7 +34,7 @@ export default function BuildGuide({
     done: boolean;
     confirmed: number[];
   }>({ model, stage, index: 0, done: false, confirmed: [] });
-  type View = 'detail' | 'top' | 'overview';
+  type View = 'detail' | 'placed' | 'top' | 'overview';
   const [viewState, setViewState] = useState<{
     model: Model;
     stage: number;
@@ -59,8 +59,8 @@ export default function BuildGuide({
   const parts = useMemo(() => inventory(batch), [batch]);
   const diagram = useMemo(
     () =>
-      view === 'detail'
-        ? detailDiagram(guide, stage, index)
+      view === 'detail' || view === 'placed'
+        ? detailDiagram(guide, stage, index, view === 'placed')
         : topDiagram(guide, stage, index, view === 'overview'),
     [guide, stage, index, view],
   );
@@ -215,7 +215,8 @@ export default function BuildGuide({
           <div className="guide-drawing">
             <fieldset className="guide-view-tabs" aria-label="拼装图视角">
               {[
-                ['detail', '局部放大'],
+                ['detail', '怎么装'],
+                ['placed', '装好后'],
                 ['top', '俯视定位'],
                 ['overview', '整组总览'],
               ].map(([v, t]) => (
@@ -232,15 +233,59 @@ export default function BuildGuide({
               ))}
             </fieldset>
             <div
-              className="guide-svg"
-              dangerouslySetInnerHTML={{ __html: diagram }}
-            />
+              className={
+                view === 'detail' || view === 'placed'
+                  ? 'guide-diagram-pair'
+                  : ''
+              }
+            >
+              <div className="guide-main-diagram">
+                {(view === 'detail' || view === 'placed') && (
+                  <h4>
+                    {view === 'placed'
+                      ? '装好后，应当是这样'
+                      : isSideMounted(active)
+                        ? '沿箭头向内按入'
+                        : active.y === 0
+                          ? '先平放到虚线位置'
+                          : '对准虚线位置，向下按紧'}
+                  </h4>
+                )}
+                <div
+                  className="guide-svg"
+                  dangerouslySetInnerHTML={{ __html: diagram }}
+                />
+              </div>
+              {(view === 'detail' || view === 'placed') && (
+                <aside className="guide-inline-map">
+                  <h4>
+                    {isSideMounted(active)
+                      ? '连接位置 · 从上方看'
+                      : `定位 ${gridAddress(guide, active)} · 从上方看`}
+                  </h4>
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: topDiagram(guide, stage, index, false, true),
+                    }}
+                  />
+                  <p>
+                    鸭嘴朝上；橙框是这一块的位置。
+                    <br />
+                    {isSideMounted(active)
+                      ? '按左图从侧面连接。'
+                      : '左后角对准橙色小圆点。'}
+                  </p>
+                </aside>
+              )}
+            </div>
             <p className="guide-legend">
               <span>
                 <i className="legend-current" />
                 {view === 'overview'
                   ? '橙框数字：本组安装顺序'
-                  : '彩色 + 橙色标记：这一块'}
+                  : view === 'placed'
+                    ? '彩色：刚装好的这一块'
+                    : '彩色：这一块 · 橙色虚线：放置位置'}
               </span>
               <span>
                 <i />
@@ -249,10 +294,12 @@ export default function BuildGuide({
             </p>
             <p className="guide-view-note">
               {view === 'detail'
-                ? '局部放大示意；只显示附近零件。前后位置请对照俯视定位图。'
-                : view === 'top'
-                  ? '从正上方看：鸭嘴朝上。将零件左后角对齐橙色小圆点。'
-                  : '这是整组完成后的外观，数字对应本组第几块。'}
+                ? '彩色零件悬空展示；沿箭头装入橙色虚线位置，灰色部分保持不动。'
+                : view === 'placed'
+                  ? '对照安装后的外观与右侧定位图，检查方向和位置。'
+                  : view === 'top'
+                    ? '从正上方看：鸭嘴朝上。将零件左后角对齐橙色小圆点。'
+                    : '这是整组完成后的外观，数字对应本组第几块。'}
             </p>
           </div>
         </div>

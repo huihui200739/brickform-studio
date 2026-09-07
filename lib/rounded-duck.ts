@@ -356,6 +356,82 @@ export function roundedDuck(
       section: 'head',
     });
   }
+  // Mount broad curved panels vertically at the breast and forehead. These
+  // replace stepped surface cells, using real side studs and internal carriers.
+  const frontPanels: Brick[] = [];
+  for (const region of [
+    { section: 'body', y: Math.max(3, Math.round(body.y) - 2), center: body.z },
+    {
+      section: 'head',
+      y: Math.max(beakY + 3, Math.round(head.y) + 2),
+      center: head.z,
+    },
+  ]) {
+    const y = region.y,
+      x0 = -2,
+      span = 4;
+    let z = depth - 2;
+    const fits = (zz: number) =>
+      Array.from({ length: span }, (_, dx) => x0 + dx).every(
+        (x) =>
+          Array.from({ length: 7 }, (_, dy) => y - 1 + dy).every(
+            (yy) =>
+              cells.get(key(x, yy, zz)) === fit.bodyColor &&
+              !reserved.has(key(x, yy, zz)),
+          ) &&
+          cells.get(key(x, y - 1, zz - 1)) === fit.bodyColor &&
+          !reserved.has(key(x, y - 1, zz - 1)),
+      );
+    while (z > region.center && !fits(z)) z--;
+    if (z <= region.center) continue;
+    // Clear the panel's protruding volume before packing any interior bricks.
+    for (let x = x0; x < x0 + span; x++) {
+      for (let yy = y; yy < y + 6; yy++)
+        for (let zz = z + 1; zz < depth; zz++) cells.delete(key(x, yy, zz));
+      for (let dy = 0; dy < 3; dy++) reserved.add(key(x, y + dy, z));
+      planned.push({
+        part: '87087',
+        x,
+        y,
+        z,
+        q: 2,
+        color: fit.bodyColor,
+        section: region.section,
+      });
+      for (const zz of [z - 1, z]) reserved.add(key(x, y - 1, zz));
+    }
+    planned.push({
+      part: '3020',
+      x: x0,
+      y: y - 1,
+      z: z - 1,
+      q: 0,
+      color: fit.bodyColor,
+      section: region.section,
+    });
+    for (const x of [-1, 1]) {
+      const hostPose: Pose = {
+        matrix: rotate(2),
+        position: [(x + 0.5) * 20, -(y + 3) * 8, (z + 0.5) * 20],
+      };
+      const matrix = multiply(hostPose.matrix, [1, 0, 0, 0, 0, -1, 0, 1, 0]);
+      const socket = transform(matrix, [-10, 0, -10]),
+        face = worldPoint(hostPose, [0, 10, -10]);
+      const pose: Pose = {
+        matrix,
+        position: face.map((v, i) => v - socket[i]) as V3,
+      };
+      frontPanels.push({
+        id: 0,
+        part: '15068',
+        color: fit.bodyColor,
+        pose,
+        section: region.section,
+        step: height + 2,
+        ...envelope('15068', pose),
+      });
+    }
+  }
   // Fit real curved slopes to top stair transitions, preserving their raised rear socket.
   const tops = new Map<string, number>();
   for (const k of cells.keys()) {
@@ -397,6 +473,18 @@ export function roundedDuck(
       base < eyeY + 4 &&
       base + ph > eyeY &&
       coords.some((c) => c.z === eyeZ && (c.x > eyeX || c.x < -eyeX - 1))
+    )
+      return false;
+    if (
+      frontPanels.some(
+        (p) =>
+          x < p.x + p.w &&
+          x + cw > p.x &&
+          z < p.z + p.d &&
+          z + cd > p.z &&
+          base < p.y + p.h &&
+          base + ph > p.y,
+      )
     )
       return false;
     const rear = coords.filter(
@@ -623,7 +711,8 @@ export function roundedDuck(
       put(p.part, p.x, p.y, p.z, p.color, p.q, p.section);
   }
   const eyeHosts = bricks.filter(
-    (b) => b.part === '87087' && b.section === 'head',
+    (b) =>
+      b.part === '87087' && b.section === 'head' && b.pose!.matrix[0] === 0,
   );
   for (const host of eyeHosts) {
     const matrix = multiply(host.pose!.matrix, [1, 0, 0, 0, 0, -1, 0, 1, 0]);
@@ -664,6 +753,8 @@ export function roundedDuck(
         ...envelope('15068', pose),
       });
     }
+  for (const panel of frontPanels)
+    bricks.push({ ...panel, id: bricks.length + 1 });
   // Finish the exposed upper bill with real tiles, not a row of visible studs.
   const topBill = bricks.filter(
     (b) =>
@@ -730,17 +821,21 @@ export function roundedDuck(
   const layers = [...new Set(bricks.map((b) => b.step!))].sort((a, b) => a - b);
   const steps = layers.map((y, i) => ({
     name:
-      y === height + 1
-        ? '安装两侧弧面翅膀'
-        : y === height
-          ? '安装两侧圆形眼睛'
-          : `第 ${i + 1} 步 · ${y < 12 ? '腹部与尾部' : y < beakY ? '肩部与颈部' : y < beakY + 3 ? '头部与鸭嘴' : '圆润头顶'}`,
+      y === height + 2
+        ? '安装胸前与额头弧面'
+        : y === height + 1
+          ? '安装两侧弧面翅膀'
+          : y === height
+            ? '安装两侧圆形眼睛'
+            : `第 ${i + 1} 步 · ${y < 12 ? '腹部与尾部' : y < beakY ? '肩部与颈部' : y < beakY + 3 ? '头部与鸭嘴' : '圆润头顶'}`,
     description:
-      y === height + 1
-        ? '将四块弧面件侧装到身体侧凸点上，高边朝上，弧面朝外。'
-        : y === height
-          ? '将黑色圆形光面板侧装到头部两侧凸点。'
-          : '按图放置高亮零件；外缘薄板跨接下层凸点，弧面件高边朝内。',
+      y === height + 2
+        ? '将弧面件背面的孔对准正面侧凸点，弧面朝外，向模型内侧按紧。'
+        : y === height + 1
+          ? '将四块弧面件侧装到身体侧凸点上，高边朝上，弧面朝外。'
+          : y === height
+            ? '将黑色圆形光面板侧装到头部两侧凸点。'
+            : '按图放置高亮零件；外缘薄板跨接下层凸点，弧面件高边朝内。',
     section:
       y === height + 1
         ? 'wings'

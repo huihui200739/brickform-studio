@@ -3122,3 +3122,62 @@ h1 {
   color: #7b8c95;
   font-size: 12px;
 }
+
+.guide-drawing {
+  container-type: inline-size;
+}
+.guide-diagram-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(210px, 1fr);
+  gap: 16px;
+  flex: 1;
+  align-items: start;
+}
+.guide-main-diagram {
+  min-width: 0;
+}
+.guide-main-diagram h4,
+.guide-inline-map h4 {
+  font-size: 13px;
+  color: #31576a;
+  margin: 10px 0 14px;
+  font-weight: 650;
+}
+.guide-diagram-pair .guide-svg {
+  min-height: 250px;
+}
+.guide-inline-map {
+  min-width: 0;
+  background: white;
+  border: 1px solid #e0e7ec;
+  border-radius: 10px;
+  padding: 12px;
+}
+.guide-inline-map svg {
+  width: 100%;
+  max-height: 280px;
+}
+.guide-inline-map p {
+  color: #7a8892;
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 8px 0 0;
+}
+@container (max-width: 570px) {
+  .guide-diagram-pair {
+    grid-template-columns: 1fr;
+  }
+  .guide-inline-map {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    column-gap: 12px;
+  }
+  .guide-inline-map h4 {
+    grid-column: 1 / -1;
+    margin-bottom: 8px;
+  }
+  .guide-inline-map svg {
+    max-height: 200px;
+  }
+}
