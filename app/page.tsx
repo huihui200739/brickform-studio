@@ -22,6 +22,7 @@ import Image from 'next/image';
 import ModelViewer from '@/components/model-viewer';
 import AssemblyViewer from '@/components/assembly-viewer';
 import BuildGuide from '@/components/build-guide';
+import { previewRange, type PreviewMode } from '@/lib/preview-state';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import {
@@ -89,6 +90,7 @@ export default function Home() {
   const [layer, setLayer] = useState(model.levels.length),
     [exploded, setExploded] = useState(false),
     [section, setSection] = useState('all');
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('complete');
   const [tab, setTab] = useState('parts'),
     [search, setSearch] = useState('');
   const [error, setError] = useState(''),
@@ -119,6 +121,12 @@ export default function Home() {
         ? guideFocus.id
         : model.bricks.find((b) => b.step === layer - 1)?.id
       : undefined;
+  const preview = previewRange(
+    previewMode,
+    model.levels.length,
+    layer,
+    focusId,
+  );
   const changeDuck = (patch: Partial<DuckParameters>) => {
     setDuck((p) => ({ ...p, ...patch }));
     setAutoReference(false);
@@ -252,6 +260,7 @@ export default function Home() {
         throw Error('模型未通过连接检查，请调整参数后重试。');
       setModel(next);
       setLayer(tab === 'steps' ? 1 : next.levels.length);
+      setPreviewMode('complete');
       setSection('all');
       setExploded(false);
       setDirty(false);
@@ -757,11 +766,40 @@ export default function Home() {
                 {dirty ? '待生成更新' : '已同步'}
               </span>
             </div>
+            <div className="preview-mode-bar">
+              <fieldset aria-label="预览范围">
+                <button
+                  aria-pressed={previewMode === 'complete'}
+                  onClick={() => {
+                    setPreviewMode('complete');
+                    setSection('all');
+                    setExploded(false);
+                  }}
+                >
+                  完整作品
+                </button>
+                <button
+                  aria-pressed={previewMode === 'steps'}
+                  onClick={() => {
+                    setPreviewMode('steps');
+                    setSection('all');
+                    setExploded(false);
+                  }}
+                >
+                  跟随拼装
+                </button>
+              </fieldset>
+              <span>
+                {previewMode === 'complete'
+                  ? '阅读步骤时，完整作品保持可见'
+                  : `当前显示第 ${layer} 组的搭建进度`}
+              </span>
+            </div>
             {model.assembly ? (
               <AssemblyViewer
                 model={model}
-                layer={layer}
-                focusId={focusId}
+                layer={preview.layer}
+                focusId={preview.focusId}
                 exploded={exploded}
                 section={section}
                 onExplode={() => setExploded((v) => !v)}
@@ -769,7 +807,7 @@ export default function Home() {
             ) : (
               <ModelViewer
                 model={model}
-                layer={layer}
+                layer={preview.layer}
                 exploded={exploded}
                 onExplode={() => setExploded((v) => !v)}
               />
@@ -784,10 +822,12 @@ export default function Home() {
                   ].map((s) => (
                     <button
                       key={s.id}
-                      aria-pressed={section === s.id}
+                      aria-pressed={
+                        previewMode === 'complete' && section === s.id
+                      }
                       onClick={() => {
                         setSection(s.id);
-                        setLayer(model.levels.length);
+                        setPreviewMode('complete');
                       }}
                     >
                       {s.name}
@@ -815,7 +855,10 @@ export default function Home() {
                 min={1}
                 max={model.levels.length}
                 step={1}
-                onValueChange={(v) => selectLayer(Array.isArray(v) ? v[0] : v)}
+                onValueChange={(v) => {
+                  selectLayer(Array.isArray(v) ? v[0] : v);
+                  setPreviewMode('steps');
+                }}
               />
               <b>
                 {layer}
@@ -823,7 +866,8 @@ export default function Home() {
               </b>
               <button
                 onClick={() => {
-                  selectLayer(model.levels.length);
+                  setPreviewMode('complete');
+                  setSection('all');
                   setExploded(false);
                 }}
               >
@@ -855,6 +899,7 @@ export default function Home() {
               value={tab}
               onValueChange={(v) => {
                 setTab(String(v));
+                setPreviewMode('complete');
                 if (v === 'steps') {
                   setGuideFocus(null);
                   setLayer(1);

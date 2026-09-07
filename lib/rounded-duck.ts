@@ -363,20 +363,49 @@ export function roundedDuck(
     tops.set(`${x},${z}`, Math.max(tops.get(`${x},${z}`) || 0, y + 1));
   }
   const curved = new Set<string>();
-  const cap = (x: number, z: number, q: number, commit = false) => {
-    const coords = [0, 1].flatMap((dx) =>
-      [0, 1].map((dz) => ({ x: x + dx, z: z + dz })),
+  const cap = (
+    x: number,
+    z: number,
+    q: number,
+    narrow = false,
+    commit = false,
+  ) => {
+    const cw = narrow && !(q % 2) ? 1 : 2;
+    const cd = narrow && q % 2 ? 1 : 2;
+    const coords = Array.from({ length: cw }, (_, dx) => dx).flatMap((dx) =>
+      Array.from({ length: cd }, (_, dz) => ({ x: x + dx, z: z + dz })),
     );
     if (coords.some((c) => curved.has(`${c.x},${c.z}`))) return false;
     const ts = coords.map((c) => tops.get(`${c.x},${c.z}`) || 0),
       low = Math.min(...ts),
       high = Math.max(...ts);
     if (low < 3 || high - low < 1 || high - low > 6) return false;
-    const part = high - low > 3 ? '3039' : '15068',
+    if (narrow && high - low > 3) return false;
+    const part =
+        high - low > 3
+          ? narrow
+            ? '3040b'
+            : '3039'
+          : narrow
+            ? '11477'
+            : '15068',
       ph = ASSEMBLY_PARTS[part].h,
       base = low - 1;
+    // Side eyes protrude beyond the host cell; keep their full round-tile
+    // envelope clear before fitting caps into otherwise empty exterior cells.
+    if (
+      base < eyeY + 4 &&
+      base + ph > eyeY &&
+      coords.some((c) => c.z === eyeZ && (c.x > eyeX || c.x < -eyeX - 1))
+    )
+      return false;
     const rear = coords.filter(
-      (c) => transform(rotate(-q), [c.x - x - 0.5, 0, c.z - z - 0.5])[2] > 0,
+      (c) =>
+        transform(rotate(-q), [
+          c.x - x - (cw - 1) / 2,
+          0,
+          c.z - z - (cd - 1) / 2,
+        ])[2] > 0,
     );
     if (rear.some((c) => (tops.get(`${c.x},${c.z}`) || 0) <= low)) return false;
     if (
@@ -418,7 +447,7 @@ export function roundedDuck(
             ? 'head'
             : 'body',
     });
-    if (part === '15068')
+    if (ASSEMBLY_PARTS[part].kind === 'curve')
       for (const c of rear) {
         cells.set(key(c.x, base, c.z), color);
         reserved.delete(key(c.x, base, c.z));
@@ -427,18 +456,21 @@ export function roundedDuck(
   };
   // Commit matching left/right caps together; traversal order cannot create an
   // asymmetric shell on a symmetric reconstruction.
-  for (let z = 0; z < depth; z++)
-    for (let x = -width; x < 0; x++)
-      for (const q of [0, 1, 2, 3]) {
-        const mx = -x - 2,
-          mq = q === 1 ? 3 : q === 3 ? 1 : q;
-        if (mx === x && q % 2) continue;
-        if (cap(x, z, q) && (mx === x || cap(mx, z, mq))) {
-          cap(x, z, q, true);
-          if (mx !== x) cap(mx, z, mq, true);
-          break;
+  // Fill broad transitions first, then one-stud strips at cheeks, crown and tail.
+  for (const narrow of [false, true])
+    for (let z = 0; z < depth; z++)
+      for (let x = -width; x < 0; x++)
+        for (const q of [0, 1, 2, 3]) {
+          const cw = narrow && !(q % 2) ? 1 : 2;
+          const mx = -x - cw,
+            mq = q === 1 ? 3 : q === 3 ? 1 : q;
+          if (mx === x && q % 2) continue;
+          if (cap(x, z, q, narrow) && (mx === x || cap(mx, z, mq, narrow))) {
+            cap(x, z, q, narrow, true);
+            if (mx !== x) cap(mx, z, mq, narrow, true);
+            break;
+          }
         }
-      }
   const bricks: Brick[] = [],
     occupied = new Set<string>(),
     studs = new Set<string>(),
@@ -663,6 +695,25 @@ export function roundedDuck(
       } else put('3070b', x, b.y, z, b.color, 0, 'beak');
     };
     split(b.x, b.z, b.w, b.d);
+  }
+  // Finish isolated exposed terraces with same-footprint tiles. Never split a
+  // bridging plate or remove studs used by a higher part / raised curve socket.
+  const tileFor: Record<string, string> = {
+    '3022': '3068b',
+    '3023': '3069b',
+    '3024': '3070b',
+  };
+  for (const b of bricks) {
+    const tile = tileFor[b.part];
+    if (!tile || b.section === 'beak') continue;
+    const clear = Array.from({ length: b.w }, (_, dx) => dx).every((dx) =>
+      Array.from({ length: b.d }, (_, dz) => dz).every(
+        (dz) =>
+          !cells.has(key(b.x + dx, b.y + 1, b.z + dz)) &&
+          !reserved.has(key(b.x + dx, b.y + 1, b.z + dz)),
+      ),
+    );
+    if (clear) b.part = tile;
   }
   bricks.sort((a, b) => a.step! - b.step! || a.id - b.id);
   bricks.forEach((b, i) => (b.id = i + 1));

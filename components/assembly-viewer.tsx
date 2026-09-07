@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { PALETTE, type Model, type Brick } from '@/lib/brick-engine';
 
+import { visibleInPreview, previewFrame } from '@/lib/preview-state';
+
 type MeshData = Record<string, { positions: number[]; normals: number[] }>;
 let library: Promise<MeshData> | undefined;
 function loadParts() {
@@ -176,16 +178,13 @@ export default function AssemblyViewer({
         const m = new THREE.Matrix4(),
           convert = new THREE.Matrix4().makeScale(0.05, -0.05, 0.05),
           zero = new THREE.Matrix4().makeScale(0, 0, 0);
+        const visibleBounds = new THREE.Box3();
+        const partBounds = new THREE.Box3();
         const update = () => {
+          visibleBounds.makeEmpty();
           for (const g of groups) {
             g.parts.forEach((b, i) => {
-              const visible =
-                (b.step || 0) < live.current.layer &&
-                (live.current.focusId === undefined ||
-                  b.step !== live.current.layer - 1 ||
-                  b.id <= live.current.focusId) &&
-                (live.current.section === 'all' ||
-                  b.section === live.current.section);
+              const visible = visibleInPreview(b, live.current);
               if (!visible) {
                 g.mesh.setMatrixAt(i, zero);
                 g.edges[i].visible = false;
@@ -224,6 +223,10 @@ export default function AssemblyViewer({
                   m.elements[12] += Math.sign(p[0]) * 3;
                 if (b.section === 'tail') m.elements[14] -= 3;
               }
+              if (!g.mesh.geometry.boundingBox)
+                g.mesh.geometry.computeBoundingBox();
+              partBounds.copy(g.mesh.geometry.boundingBox!).applyMatrix4(m);
+              visibleBounds.union(partBounds);
               g.mesh.setMatrixAt(i, m);
               g.edges[i].matrix.copy(m);
               g.edges[i].visible = true;
@@ -241,28 +244,32 @@ export default function AssemblyViewer({
             back: [0, 0.13, -1],
             top: [0, 1, 0.001],
           };
-          const height = model.height * 0.4 + (live.current.exploded ? 5 : 0),
-            extra = live.current.exploded ? 6 : 0;
-          const radius =
-            Math.hypot(model.width + extra, model.depth + extra, height) / 2;
-          const fov = Math.min(
-            THREE.MathUtils.degToRad(camera.fov),
-            2 *
-              Math.atan(
-                Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) *
-                  camera.aspect,
-              ),
+          const bounds = visibleBounds.isEmpty()
+            ? new THREE.Box3(
+                new THREE.Vector3(-1, 0, -1),
+                new THREE.Vector3(1, 1, 1),
+              )
+            : visibleBounds;
+          const framing = previewFrame(
+            bounds.min.toArray(),
+            bounds.max.toArray(),
+            camera.aspect,
+            camera.fov,
           );
-          orbit.target.set(0, height / 2, 0);
+          orbit.minDistance = framing.minDistance;
+          orbit.target.fromArray(framing.target);
           camera.position
             .fromArray(dirs[name] || dirs.perspective)
             .normalize()
-            .multiplyScalar((radius / Math.sin(fov / 2)) * 1.06)
+            .multiplyScalar(framing.distance)
             .add(orbit.target);
           orbit.update();
         };
         control.current = {
-          update,
+          update: () => {
+            update();
+            fit();
+          },
           view: fit,
           zoom: (factor) => {
             camera.position
@@ -287,8 +294,8 @@ export default function AssemblyViewer({
         };
         const observer = new ResizeObserver(resize);
         observer.observe(el);
-        resize();
         update();
+        resize();
         let frame = 0;
         const draw = () => {
           frame = requestAnimationFrame(draw);

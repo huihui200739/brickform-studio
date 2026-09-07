@@ -3084,3 +3084,41 @@ h1 {
   margin: 0 0 10px;
   min-width: 0;
 }
+
+.preview-mode-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  border-top: 1px solid #e4eaf0;
+  background: #fafcfc;
+  flex-wrap: wrap;
+}
+.preview-mode-bar fieldset {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 0;
+  border: 0;
+  border-radius: 9px;
+  background: #edf2f3;
+}
+.preview-mode-bar button {
+  padding: 7px 13px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #71838e;
+  font-size: 13px;
+  cursor: pointer;
+}
+.preview-mode-bar button[aria-pressed='true'] {
+  background: #fff;
+  color: #196b55;
+  box-shadow: 0 1px 4px #233c4b14;
+  font-weight: 650;
+}
+.preview-mode-bar > span {
+  color: #7b8c95;
+  font-size: 12px;
+}

@@ -134,3 +134,23 @@ void test('blank, invalid and unsupported references fail explicitly instead of 
     /比例/,
   );
 });
+
+void test('surface finishing uses narrow real curves and body tiles without changing export counts', () => {
+  const model = roundedDuck(fitDuckImage(raster, options));
+  assert.ok(
+    model.bricks.some((b) => b.part === '11477' && b.section !== 'wings'),
+  );
+  assert.ok(
+    model.bricks.some(
+      (b) =>
+        b.section === 'body' && ['3068b', '3069b', '3070b'].includes(b.part),
+    ),
+  );
+  assert.equal(validateAssembly(model).unsupported, 0);
+  assert.equal(
+    toLDraw(model)
+      .split('\n')
+      .filter((l) => l.startsWith('1 ')).length,
+    model.bricks.length,
+  );
+});
