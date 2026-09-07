@@ -230,9 +230,9 @@ export default function AssemblyViewer({
         const fit = (name = angle) => {
           angle = name;
           const dirs: Record<string, number[]> = {
-            perspective: [1.3, 0.85, 1.6],
+            perspective: [-1.3, 0.85, 1.6],
             front: [0, 0.13, 1],
-            side: [1, 0.13, 0],
+            side: [-1, 0.13, 0],
             back: [0, 0.13, -1],
             top: [0, 1, 0.001],
           };
@@ -351,7 +351,9 @@ export default function AssemblyViewer({
       )}
       <div className="model-label">
         <span className="live-dot" />
-        <span>部件设计</span>
+        <span>
+          {model.reconstruction ? '体积重建 · 对称背面推测' : '部件模板'}
+        </span>
         <span className="label-line" />
         <span>{model.name}</span>
       </div>

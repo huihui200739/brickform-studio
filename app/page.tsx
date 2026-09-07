@@ -63,6 +63,7 @@ import {
   DEFAULT_DUCK,
   type DuckParameters,
 } from '@/lib/duck-designer';
+import { roundedDuck, fitDuckImage, SAMPLE_FIT } from '@/lib/rounded-duck';
 import { orientationLabel } from '@/lib/assembly-diagram';
 import { csv, download, layerSVG, manualHTML } from '@/lib/manual';
 const backgroundItems = [
@@ -70,10 +71,12 @@ const backgroundItems = [
   { value: 'white', label: '去除白色背景' },
   { value: 'keep', label: '保留完整图片' },
 ];
-type Mode = 'duck' | 'sculpture' | 'relief';
+type Mode = 'round' | 'duck' | 'relief';
 export default function Home() {
-  const [model, setModel] = useState(() => designDuck());
-  const [mode, setMode] = useState<Mode>('duck');
+  const [model, setModel] = useState(() => roundedDuck());
+  const [mode, setMode] = useState<Mode>('round');
+  const [roundSize, setRoundSize] = useState(18);
+  const [fullness, setFullness] = useState(1);
   const [duck, setDuck] = useState<DuckParameters>(DEFAULT_DUCK);
   const [autoReference, setAutoReference] = useState(true);
   const [resolution, setResolution] = useState(28),
@@ -179,9 +182,11 @@ export default function Home() {
       setAutoReference(true);
       setDirty(true);
       setNotice(
-        mode === 'duck'
-          ? '参考图已就绪。生成时会提取配色和比例，应用到小鸭结构。'
-          : '图片已就绪，点击生成查看模型。',
+        mode === 'round'
+          ? '参考图已就绪。生成时会测量小鸭比例并重建体积。'
+          : mode === 'duck'
+            ? '参考图已就绪。生成时会提取配色和比例，应用到小鸭结构。'
+            : '图片已就绪，点击生成查看模型。',
       );
     } catch (e) {
       if (url) URL.revokeObjectURL(url);
@@ -194,7 +199,9 @@ export default function Home() {
     if (sourceUrl.current) URL.revokeObjectURL(sourceUrl.current);
     sourceUrl.current = '';
     setSource(null);
-    setMode('duck');
+    setMode('round');
+    setRoundSize(18);
+    setFullness(1);
     setDuck(DEFAULT_DUCK);
     setAutoReference(true);
     setDirty(true);
@@ -209,22 +216,31 @@ export default function Home() {
       requestAnimationFrame(() => requestAnimationFrame(() => r())),
     );
     try {
-      if (mode !== 'duck' && !source)
+      if (mode === 'relief' && !source)
         throw Error('请先上传参考图片，再使用图片轮廓模式。');
       const parameters =
         mode === 'duck' && source && autoReference
           ? referenceDuck(source.raster, { background, threshold })
           : duck;
       const next =
-        mode === 'duck'
-          ? designDuck(parameters, !!source)
-          : imageToModel(
-              source!.raster,
-              { resolution, depth, threshold, background, shape: mode },
-              source!.name,
-            );
+        mode === 'round'
+          ? roundedDuck(
+              source
+                ? fitDuckImage(source.raster, { background, threshold })
+                : SAMPLE_FIT,
+              roundSize,
+              fullness,
+              !!source,
+            )
+          : mode === 'duck'
+            ? designDuck(parameters, !!source)
+            : imageToModel(
+                source!.raster,
+                { resolution, depth, threshold, background, shape: mode },
+                source!.name,
+              );
       if (mode === 'duck') setDuck(parameters);
-      if (next.assembly && source && !autoReference)
+      if (mode === 'duck' && next.assembly && source && !autoReference)
         next.assembly.reference = '使用手动配色与比例；参考图片仅供对照。';
       const v = validateModel(next);
       if (v.collisions || v.unsupported || v.invalidParts || !v.connected)
@@ -281,7 +297,7 @@ export default function Home() {
             <Blocks size={21} />
           </span>
           brickform<span className="brand-cn">积木工坊</span>
-          <span className="beta">V3</span>
+          <span className="beta">V4</span>
         </Link>
         <span className="workspace-title">设计工作台</span>
         <button className="header-help" onClick={() => setHelp(true)}>
@@ -358,13 +374,14 @@ export default function Home() {
             disabled={busy}
             onValueChange={(v) => {
               setMode(v as Mode);
+              if (v === 'round' && background === 'keep') setBackground('auto');
               setDirty(true);
             }}
           >
             {[
-              ['duck', '小鸭部件设计', '完整立体造型 · 曲面与侧装零件'],
-              ['sculpture', '图片轮廓立体', '按轮廓推测厚度'],
-              ['relief', '图片轮廓浮雕', '保留正面 · 均匀厚度'],
+              ['round', '圆润重建', '小鸭侧面图 · 测量比例与特征位置'],
+              ['duck', '部件模板', '旧版小鸭 · 手动搭配比例'],
+              ['relief', '平面浮雕', '其他图片 · 保留平面轮廓'],
             ].map(([v, t, h]) => (
               <label
                 className={mode === v ? 'chosen' : ''}
@@ -379,10 +396,68 @@ export default function Home() {
               </label>
             ))}
           </RadioGroup>
-          {mode === 'duck' ? (
+          {mode === 'round' ? (
+            <>
+              <div className="reconstruction-note">
+                <span className="tiny-tag">V4 · 小鸭重建实验</span>
+                <p>
+                  分别拟合头、身体、鸭嘴和眼睛。曲面与侧装零件塑形，薄板跨接外缘。
+                </p>
+                <small>
+                  目前支持干净背景、红 / 橙嘴的小鸭侧面图；背面按对称体积推测。
+                </small>
+              </div>
+              <div className="field-title" id="round-size-label">
+                作品尺寸 <span>{roundSize} 凸点基准</span>
+              </div>
+              <RadioGroup
+                className="detail-options"
+                aria-labelledby="round-size-label"
+                value={String(roundSize)}
+                disabled={busy}
+                onValueChange={(v) => {
+                  setRoundSize(Number(v));
+                  setDirty(true);
+                }}
+              >
+                {[
+                  [18, '小巧'],
+                  [20, '均衡'],
+                  [22, '细致'],
+                ].map(([v, t]) => (
+                  <label
+                    key={v}
+                    className={roundSize === v ? 'chosen' : ''}
+                    htmlFor={`round-size-${v}`}
+                  >
+                    <RadioGroupItem id={`round-size-${v}`} value={String(v)} />
+                    <span>{t}</span>
+                  </label>
+                ))}
+              </RadioGroup>
+              <div className="field-title" id="fullness-label">
+                身体饱满度 <span>{Math.round(fullness * 100)}%</span>
+              </div>
+              <Slider
+                aria-labelledby="fullness-label"
+                min={85}
+                max={115}
+                step={5}
+                value={[Math.round(fullness * 100)]}
+                disabled={busy}
+                onValueChange={(v) => {
+                  setFullness((Array.isArray(v) ? v[0] : v) / 100);
+                  setDirty(true);
+                }}
+              />
+              <p className="field-hint">
+                调节左右宽度；保留从侧面图测量的头、身体和鸭嘴比例。
+              </p>
+            </>
+          ) : mode === 'duck' ? (
             <>
               <p className="design-scope">
-                当前部件设计支持小鸭。其他物体请使用图片轮廓模式。
+                这是旧版部件模板，参考图只影响配色和粗略比例。新造型请选「圆润重建」。
               </p>
               {source && (
                 <RadioGroup
@@ -551,7 +626,7 @@ export default function Home() {
                 }}
               />
               <p className="field-hint">
-                轮廓模式保留原有能力，背面形状按厚度估算。
+                将图片做成有厚度的平面浮雕；不会重建物体真实背面。
               </p>
             </>
           )}
@@ -578,11 +653,13 @@ export default function Home() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {backgroundItems.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
+                  {backgroundItems
+                    .filter((o) => mode !== 'round' || o.value !== 'keep')
+                    .map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
               <div className="field-title" id="threshold-label">
@@ -628,7 +705,11 @@ export default function Home() {
             <div className="design-topline">
               <div className="design-title-group">
                 <span className="design-type">
-                  {model.assembly ? '部件设计 / 小鸭' : '图片轮廓设计'}
+                  {model.assembly
+                    ? model.reconstruction
+                      ? '体积重建 / 小鸭侧面图'
+                      : '部件模板 / 小鸭'
+                    : '平面浮雕设计'}
                 </span>
                 <input
                   className="design-name"
@@ -963,28 +1044,28 @@ export default function Home() {
       <footer className="site-footer">
         <span>
           <Blocks size={15} />
-          Brickform Studio · V3
+          Brickform Studio · V4
         </span>
         <span>独立创作工具，与 LEGO Group 无关联或认证。</span>
       </footer>
       <Dialog open={help} onOpenChange={setHelp}>
         <DialogContent className="help-dialog">
-          <DialogTitle>V3 · 部件设计工作台</DialogTitle>
+          <DialogTitle>V4 · 圆润重建工作台</DialogTitle>
           <DialogDescription>
-            先把物体设计成可分解的部件，再用零件构建造型。当前部件设计支持小鸭。
+            这一轮聚焦小鸭侧面图：从二维特征测量出发，推测对称体积，再铺设实际零件。
           </DialogDescription>
           <ol className="help-steps">
             <li>
               <b>参考图或手动设计</b>
               <p>
-                小鸭模式使用图片的主要配色和粗略比例，应用到预设的小鸭结构。也可以手动选择头身比例和颜色。它不是任意物体识别，也没有接入
-                AI 三维重建。
+                圆润重建测量头部、身体、嘴和眼睛的位置与比例，再拟合立体形状。它目前只适用于小鸭侧面图，背面通过对称假设推测，尚未接入通用
+                AI 图片理解。部件模板保留旧版设计方式。
               </p>
             </li>
             <li>
               <b>查看完整造型与部件</b>
               <p>
-                使用正面、侧面、背面、俯视按钮检查形状；单独查看六个部件，或展开观察。展开视图用于理解结构，不是实际安装位置。
+                使用正面、侧面、背面、俯视按钮检查形状；单独查看各个部件，或展开观察。展开视图用于理解结构，不是实际安装位置。
               </p>
             </li>
             <li>
@@ -999,7 +1080,7 @@ export default function Home() {
           <div className="help-limits">
             <strong>检查范围</strong>
             <p>
-              小鸭模式检查零件外包框重叠、顶部与侧面凸点连接，以及步骤中的连接依赖。未做受力、抗倾倒、夹持力仿真或实物试拼。轮廓模式仍使用基础砖与薄板，检查网格承托和连通。
+              立体模式检查零件外包框重叠、顶部与侧面凸点连接，以及步骤中的连接依赖。未做受力、抗倾倒、夹持力仿真或实物试拼。轮廓模式仍使用基础砖与薄板，检查网格承托和连通。
             </p>
             <p>
               零件编号来自 LDraw，带 b 等后缀的编号表示其库中的形态版本。具体

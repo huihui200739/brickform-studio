@@ -36,6 +36,12 @@ export type Model = {
   source: 'image' | 'sample';
   resolution: number;
   shape: 'sculpture' | 'relief';
+  reconstruction?: {
+    method: 'duck-profile';
+    size: number;
+    fullness: number;
+    trimmedFraction: number;
+  };
   assembly?: {
     sections: { id: string; name: string }[];
     steps: { name: string; description: string; section: string }[];
