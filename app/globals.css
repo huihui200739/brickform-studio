@@ -2704,3 +2704,383 @@ h1 {
   line-height: 1.7;
   color: #677c71;
 }
+
+.build-guide {
+  padding: 24px;
+  color: #273d4c;
+}
+.guide-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.guide-eyebrow {
+  font-size: 12px;
+  color: #527562;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+}
+.guide-heading h2 {
+  margin: 6px 0;
+  font-size: 23px;
+  letter-spacing: -0.02em;
+}
+.guide-heading p,
+.guide-complete p {
+  margin: 0;
+  color: #6b7f8d;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.build-guide button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 9px 13px;
+  border: 1px solid #dce5e9;
+  border-radius: 8px;
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+  color: #3d5b69;
+}
+.build-guide button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.build-guide button:focus-visible {
+  outline: 3px solid #98c5ad;
+  outline-offset: 2px;
+}
+.guide-group-nav {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.guide-parts {
+  border: 1px solid #dce6e2;
+  border-radius: 10px;
+  background: #f8fbf9;
+  margin-bottom: 20px;
+}
+.guide-parts summary,
+.guide-jump summary {
+  padding: 14px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+.guide-parts summary span {
+  margin-left: 12px;
+  color: #718578;
+  font-size: 12px;
+  font-weight: 400;
+}
+.guide-parts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  padding: 0 14px 14px;
+}
+.guide-part-chip {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: white;
+  padding: 10px;
+  border: 1px solid #e3eae7;
+  border-radius: 8px;
+}
+.guide-part-chip > div {
+  width: 64px;
+  height: 44px;
+  flex-shrink: 0;
+}
+.guide-part-chip svg {
+  width: 100%;
+  height: 100%;
+}
+.guide-part-chip b {
+  display: block;
+  font-size: 12px;
+}
+.guide-part-chip small {
+  font-size: 11px;
+  color: #73838e;
+}
+.guide-part-chip strong {
+  margin-left: auto;
+  font-size: 16px;
+}
+.guide-workspace {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  border: 1px solid #dde5ed;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.guide-action {
+  padding: 20px;
+  border-right: 1px solid #e2e9ed;
+  background: #fff;
+}
+.guide-action h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  margin: 20px 0 12px;
+}
+.guide-action h3 i {
+  display: inline-grid;
+  place-items: center;
+  font-style: normal;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e9f2ed;
+  color: #17664b;
+  font-size: 12px;
+}
+.guide-pick {
+  height: 115px;
+  padding: 8px;
+  background: #f7f9fb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.guide-pick svg {
+  width: 100%;
+  height: 100%;
+}
+.guide-part-title {
+  display: block;
+  font-size: 15px;
+}
+.guide-part-title span {
+  float: right;
+  color: #17664b;
+}
+.guide-part-meta {
+  font-size: 12px;
+  color: #6d808e;
+  margin: 6px 0;
+}
+.guide-action-text {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #476371;
+}
+.guide-address {
+  padding: 12px;
+  background: #fff6eb;
+  border-radius: 7px;
+  color: #99531f;
+  font-size: 14px;
+  font-weight: 650;
+}
+.guide-address small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.6;
+  margin-top: 5px;
+}
+.guide-drawing {
+  min-width: 0;
+  background: #f7f9fb;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+.guide-view-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.guide-view-tabs button {
+  background: transparent;
+  border-color: transparent;
+  min-height: 34px;
+  font-size: 12px;
+}
+.guide-view-tabs button[aria-pressed='true'] {
+  background: white;
+  border-color: #dce5e9;
+  color: #17664b;
+  font-weight: 650;
+}
+.guide-svg {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 330px;
+}
+.guide-svg svg {
+  width: 100%;
+  max-height: 450px;
+}
+.guide-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  font-size: 11px;
+  margin: 15px 0 8px;
+  color: #5c7080;
+}
+.guide-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.guide-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: #cbd3dc;
+}
+.guide-legend i.legend-current {
+  background: #f2cd37;
+  border: 1px solid #bd4b12;
+}
+.guide-view-note {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #738491;
+  margin: 0;
+}
+.guide-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 18px 0;
+}
+.guide-controls > span {
+  color: #728591;
+  font-size: 13px;
+}
+.build-guide .guide-next {
+  background: #17664b;
+  color: white;
+  border-color: #17664b;
+  font-weight: 600;
+}
+.guide-jump {
+  border-top: 1px solid #e6ecef;
+}
+.guide-jump summary {
+  padding-left: 0;
+  color: #5f7583;
+  font-size: 12px;
+}
+.guide-jump > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.guide-jump button {
+  min-width: 39px;
+  font-variant-numeric: tabular-nums;
+}
+.guide-jump button[aria-current='step'] {
+  border-color: #17664b;
+  background: #eaf4ee;
+  color: #17664b;
+}
+.guide-jump > p {
+  color: #7c8d97;
+  font-size: 11px;
+}
+.guide-complete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  background: #eff8f1;
+  border-radius: 10px;
+  color: #17664b;
+}
+.guide-complete > div {
+  flex: 1;
+  min-width: 160px;
+}
+.guide-summary-svg {
+  max-width: 600px;
+  margin: 20px auto;
+}
+.guide-summary-svg svg {
+  width: 100%;
+  max-height: 470px;
+}
+@media (max-width: 1100px) {
+  .guide-workspace {
+    grid-template-columns: 200px minmax(0, 1fr);
+  }
+  .build-guide {
+    padding: 18px;
+  }
+  .guide-action {
+    padding: 15px;
+  }
+  .guide-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 700px) {
+  .guide-workspace {
+    grid-template-columns: 1fr;
+  }
+  .guide-action {
+    border-right: 0;
+    border-bottom: 1px solid #e2e9ed;
+  }
+  .guide-pick {
+    float: right;
+    width: 110px;
+    height: 92px;
+    margin-left: 15px;
+  }
+  .guide-action h3 {
+    margin-top: 12px;
+  }
+  .guide-action h3:nth-of-type(2) {
+    clear: both;
+    padding-top: 15px;
+  }
+  .guide-svg {
+    min-height: 270px;
+  }
+  .guide-heading h2 {
+    font-size: 21px;
+  }
+  .guide-controls .guide-next {
+    width: 100%;
+    order: 3;
+  }
+  .guide-group-nav button {
+    min-height: 36px;
+  }
+  .guide-controls {
+    gap: 10px;
+  }
+  .guide-part-title span {
+    float: none;
+    margin-left: 12px;
+  }
+}
+
+.guide-view-tabs {
+  border: 0;
+  padding: 0;
+  margin: 0 0 10px;
+  min-width: 0;
+}

@@ -31,15 +31,17 @@ export default function AssemblyViewer({
   exploded,
   onExplode,
   section = 'all',
+  focusId,
 }: {
   model: Model;
   layer: number;
   exploded: boolean;
   onExplode: () => void;
   section?: string;
+  focusId?: number;
 }) {
   const mount = useRef<HTMLDivElement>(null),
-    live = useRef({ layer, exploded, section });
+    live = useRef({ layer, exploded, section, focusId });
   const control = useRef<{
     zoom: (factor: number) => void;
     view: (name: string) => void;
@@ -179,6 +181,9 @@ export default function AssemblyViewer({
             g.parts.forEach((b, i) => {
               const visible =
                 (b.step || 0) < live.current.layer &&
+                (live.current.focusId === undefined ||
+                  b.step !== live.current.layer - 1 ||
+                  b.id <= live.current.focusId) &&
                 (live.current.section === 'all' ||
                   b.section === live.current.section);
               if (!visible) {
@@ -329,9 +334,9 @@ export default function AssemblyViewer({
     };
   }, [model]);
   useEffect(() => {
-    live.current = { layer, exploded, section };
+    live.current = { layer, exploded, section, focusId };
     control.current?.update();
-  }, [layer, exploded, section]);
+  }, [layer, exploded, section, focusId]);
   useEffect(() => {
     control.current?.view(view);
   }, [exploded, view, readyModel]);

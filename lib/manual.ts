@@ -6,6 +6,15 @@ import {
   type Model,
 } from './brick-engine.ts';
 import { assemblyDiagram, orientationLabel } from './assembly-diagram.ts';
+import {
+  stageBricks,
+  cleanStageName,
+  partThumbnail,
+  detailDiagram,
+  installationText,
+  gridAddress,
+  topDiagram,
+} from './build-instructions.ts';
 const esc = (s: string) =>
   s.replace(
     /[&<>"']/g,
@@ -90,16 +99,33 @@ export function manualHTML(model: Model) {
 function assemblyManual(model: Model) {
   const a = model.assembly!;
   const pages = a.steps
-    .map((s, i) => {
-      const batch = model.bricks.filter((b) => b.step === i);
-      return `<section class="page"><header>BRICKFORM / BUILDING GUIDE <span>${esc(model.name)}</span></header><h2>${String(i + 1).padStart(2, '0')} · ${esc(s.name)}</h2><p>${esc(s.description)} 彩色是本步新增零件，灰色是已搭建部分。图为简化外形示意，3D 与 LDraw 文件使用完整零件几何。</p><div class="diagram">${assemblyDiagram(model, i)}</div><table><thead><tr><th>序号 / 零件</th><th>颜色</th><th>定位 X / Z</th><th>底部高度</th><th>安装方向</th></tr></thead><tbody>${batch.map((b) => `<tr><td>#${b.id} · ${b.part}<small>${esc(PARTS[b.part])}</small></td><td>${PALETTE[b.color].name}</td><td>${(b.x + 1).toFixed(2)} / ${(b.z + 1).toFixed(2)}</td><td>${(b.y * 3.2).toFixed(1)} mm</td><td>${orientationLabel(b)}</td></tr>`).join('')}</tbody></table><footer>坐标取零件外包框左后角；X 向右，Z 向前（鸭嘴方向）；1 格 = 8 mm。侧装件底部高度为外包框最低点。</footer></section>`;
+    .flatMap((s, i) => {
+      const batch = stageBricks(model, i),
+        pages: string[] = [];
+      pages.push(
+        `<section class="page"><header>BRICKFORM / 本组总览 <span>${esc(model.name)}</span></header><h2>${String(i + 1).padStart(2, '0')} · ${esc(cleanStageName(s.name))}</h2><p>本组共 ${batch.length} 块，先备好下列零件，再按下一页逐块安装。图中数字对应本组的安装顺序。</p><div class="diagram group-map">${topDiagram(model, i, batch.length - 1, true)}</div><p class="group-intro">↑ 前方是鸭嘴方向。字母从左向右，数字从后向前。定位格取零件的左后角；侧装件请看后面的局部图。</p><table><thead><tr><th>零件</th><th>颜色 / 编号</th><th>准备数量</th></tr></thead><tbody>${inventory(
+          batch,
+        )
+          .map(
+            (p) =>
+              `<tr><td>${esc(PARTS[p.part])}</td><td>${PALETTE[p.color].name} · ${p.part}</td><td>× ${p.quantity}</td></tr>`,
+          )
+          .join('')}</tbody></table></section>`,
+      );
+      for (let offset = 0; offset < batch.length; offset += 4) {
+        const group = batch.slice(offset, offset + 4);
+        pages.push(
+          `<section class="page instruction-page"><header>BRICKFORM / 跟着拼 <span>${esc(model.name)}</span></header><h2>${String(i + 1).padStart(2, '0')} · ${esc(cleanStageName(s.name))}</h2><p class="group-intro">第 ${i + 1} / ${a.steps.length} 组 · 本页安装第 ${offset + 1}–${offset + group.length} 块（本组共 ${batch.length} 块）<br/>按 ① 拿零件 → ② 对位置 → ③ 按紧的顺序，一块一块完成。彩色是当前零件，灰色是此前已装部分。</p><div class="instruction-grid">${group.map((b, j) => `<article class="instruction-card"><h3>第 ${offset + j + 1} 块 <small>□ 已装好</small></h3><div class="instruction-pick"><div>${partThumbnail(b)}</div><span><b>${esc(PARTS[b.part])} × 1</b><small>${PALETTE[b.color].name} · ${b.part}</small></span></div><div class="placement-diagram">${detailDiagram(model, i, offset + j)}</div><p>${esc(installationText(model, b))}</p><table><tbody><tr><td>#${b.id} · ${b.part}</td><td>${esc(gridAddress(model, b))}</td></tr><tr><td colspan="2">${orientationLabel(b)}</td></tr></tbody></table></article>`).join('')}</div><footer>局部放大示意，省略远处零件及底部空腔。定位格字母向右、数字向前；前方是鸭嘴方向。在线工作台可切换俯视定位图查看完整网格。</footer></section>`,
+        );
+      }
+      return pages;
     })
     .join('');
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${esc(model.name)} · 拼装说明书</title><style>*{box-sizing:border-box}body{margin:0;background:#edf1f5;color:#233342;font:14px Arial,'PingFang SC',sans-serif}.page{max-width:840px;margin:24px auto;padding:34px;background:white;break-before:page}header{border-bottom:1px solid #dde4ea;padding-bottom:12px;font:11px monospace;letter-spacing:1px}header span{float:right}h1{font-size:36px;margin:40px 0 18px}h2{font-size:25px}p{line-height:1.8;color:#526372}.diagram{max-width:600px;margin:16px auto}.diagram svg{width:100%;max-height:310px}table{border-collapse:collapse;width:100%;font-size:12px}td,th{padding:7px 5px;text-align:left;border-bottom:1px solid #dfe6ed}td small{display:block;font-size:10px;color:#6a7985}footer{margin-top:18px;font-size:11px;line-height:1.7;color:#6a7985}button{display:block;margin:20px auto;padding:12px 24px;border:0;border-radius:8px;background:#17664b;color:white;cursor:pointer}.note{padding:18px;background:#f0f5f2;line-height:1.8}@page{size:A4;margin:12mm}@media print{body{background:white}.page{margin:0;padding:8px}button{display:none}tr{break-inside:avoid}.diagram svg{max-height:255px}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><button onclick="window.print()">打印 / 另存为 PDF</button><section class="page"><header>BRICKFORM / BUILDING GUIDE</header><h1>${esc(model.name)}</h1><p>${model.bricks.length} 块零件 · ${new Set(model.bricks.map((b) => b.part)).size} 种零件 · ${a.steps.length} 个步骤<br/>${(model.width * 8).toFixed(1)} × ${(model.depth * 8).toFixed(1)} × ${(model.height * 3.2).toFixed(1)} mm（外包尺寸，不含凸点）</p><div class="diagram">${assemblyDiagram(
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${esc(model.name)} · 拼装说明书</title><style>*{box-sizing:border-box}body{margin:0;background:#edf1f5;color:#233342;font:14px Arial,'PingFang SC',sans-serif}.page{max-width:840px;margin:24px auto;padding:34px;background:white;break-before:page}header{border-bottom:1px solid #dde4ea;padding-bottom:12px;font:11px monospace;letter-spacing:1px}header span{float:right}h1{font-size:36px;margin:40px 0 18px}h2{font-size:25px}p{line-height:1.8;color:#526372}.diagram{max-width:600px;margin:16px auto}.diagram svg{width:100%;max-height:310px}table{border-collapse:collapse;width:100%;font-size:12px}td,th{padding:7px 5px;text-align:left;border-bottom:1px solid #dfe6ed}td small{display:block;font-size:10px;color:#6a7985}footer{margin-top:18px;font-size:11px;line-height:1.7;color:#6a7985}button{display:block;margin:20px auto;padding:12px 24px;border:0;border-radius:8px;background:#17664b;color:white;cursor:pointer}.note{padding:18px;background:#f0f5f2;line-height:1.8}.instruction-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.instruction-card{border:1px solid #dbe4e9;border-radius:8px;padding:12px;break-inside:avoid}.instruction-card h3{font-size:16px;margin:0 0 10px}.instruction-card h3 small{float:right;font-size:10px;color:#6a7b85;font-weight:400}.instruction-pick{display:flex;gap:8px;align-items:center}.instruction-pick>div{width:72px;height:52px;flex-shrink:0}.instruction-pick svg{width:100%;height:100%}.instruction-pick b{font-size:12px}.instruction-pick small{display:block;color:#6a7b85;font-size:10px;margin-top:4px}.placement-diagram{height:170px;margin:8px 0}.placement-diagram svg{width:100%;height:100%}.instruction-card p{font-size:11px;line-height:1.65;margin:6px 0}.instruction-card td{font-size:10px;padding:4px}.group-map svg{max-height:390px}.group-intro{font-size:12px;margin:10px 0 16px}.instruction-page h2{font-size:22px;margin:15px 0 8px}@page{size:A4;margin:12mm}@media print{body{background:white}.page{margin:0;padding:8px}button{display:none}tr{break-inside:avoid}.instruction-page{padding:4px}.placement-diagram{height:145px}.instruction-card{padding:9px}.instruction-card p{font-size:10px}.diagram svg{max-height:255px}.group-map svg{max-height:400px}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><button onclick="window.print()">打印 / 另存为 PDF</button><section class="page"><header>BRICKFORM / BUILDING GUIDE</header><h1>${esc(model.name)}</h1><p>${model.bricks.length} 块零件 · ${new Set(model.bricks.map((b) => b.part)).size} 种零件 · ${a.steps.length} 个步骤<br/>${(model.width * 8).toFixed(1)} × ${(model.depth * 8).toFixed(1)} × ${(model.height * 3.2).toFixed(1)} mm（外包尺寸，不含凸点）</p><div class="diagram">${assemblyDiagram(
     model,
     a.steps.length - 1,
     model.bricks.map((b) => b.id),
-  )}</div><div class="note">${esc(a.reference)}<br/>已检查零件外包框、凸点连接与步骤依赖。侧向零件按所列方向安装。未做受力仿真或实物试拼；零件与颜色组合、在售情况需购买前核对。</div><h2>搭建顺序</h2><p>${a.steps.map((s, i) => `${i + 1}. ${esc(s.name)}`).join(' → ')}</p></section><section class="page"><header>BRICKFORM / PARTS LIST</header><h2>完整零件清单</h2><table><thead><tr><th>设计编号</th><th>名称</th><th>颜色 / LEGO 色号</th><th>数量</th></tr></thead><tbody>${inventory(
+  )}</div><div class="note">${esc(a.reference)}<br/>已检查零件外包框、凸点连接与步骤依赖。侧向零件按所列方向安装。未做受力仿真或实物试拼；零件与颜色组合、在售情况需购买前核对。</div><h2>先读这三个提示</h2><p>1. 每张小图只新增一块零件；其他彩色零件要等后面的图。<br/>2. 左侧零件小图用于找零件，安装姿态以局部放大图为准。<br/>3. 顶装向下按，眼睛和翅膀等侧装件从侧面按入。完成一块后勾选“已装好”。</p><h2>搭建顺序</h2><p>${a.steps.map((s, i) => `${i + 1}. ${esc(s.name)}`).join(' → ')}</p></section><section class="page"><header>BRICKFORM / PARTS LIST</header><h2>完整零件清单</h2><table><thead><tr><th>设计编号</th><th>名称</th><th>颜色 / LEGO 色号</th><th>数量</th></tr></thead><tbody>${inventory(
     model.bricks,
   )
     .map(

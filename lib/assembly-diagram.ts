@@ -8,7 +8,7 @@ import { PALETTE, type Model, type Brick } from './brick-engine.ts';
 type Face = { points: V3[]; shade: number };
 // Lightweight solid diagrams for offline instructions. The interactive viewer
 // uses the original LDraw mesh; these diagrams omit underside cavities.
-function faces(b: Brick): Face[] {
+export function brickFaces(b: Brick): Face[] {
   const p = ASSEMBLY_PARTS[b.part],
     x = p.w * 10,
     z = p.d * 10,
@@ -143,6 +143,19 @@ function faces(b: Brick): Face[] {
           );
         }
   }
+  if (p.kind === 'side')
+    face(
+      Array.from(
+        { length: 16 },
+        (_, i) =>
+          [
+            6 * Math.cos((i * Math.PI) / 8),
+            10 + 6 * Math.sin((i * Math.PI) / 8),
+            -14,
+          ] as V3,
+      ),
+      0.95,
+    );
   return result;
 }
 export function assemblyDiagram(
@@ -153,7 +166,7 @@ export function assemblyDiagram(
   const list = model.bricks.filter((b) => (b.step || 0) <= step);
   if (!list.length) return '';
   const projected = list.flatMap((b) =>
-    faces(b).map((f) => {
+    brickFaces(b).map((f) => {
       const active = highlight ? highlight.includes(b.id) : b.step === step;
       const rgb = active ? PALETTE[b.color].hex : '#cbd3dc';
       const color =

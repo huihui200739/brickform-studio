@@ -8,8 +8,6 @@ import {
   Blocks,
   Download,
   Check,
-  ChevronLeft,
-  ChevronRight,
   Info,
   Sparkles,
   ImagePlus,
@@ -23,6 +21,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import ModelViewer from '@/components/model-viewer';
 import AssemblyViewer from '@/components/assembly-viewer';
+import BuildGuide from '@/components/build-guide';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import {
@@ -64,8 +63,7 @@ import {
   type DuckParameters,
 } from '@/lib/duck-designer';
 import { roundedDuck, fitDuckImage, SAMPLE_FIT } from '@/lib/rounded-duck';
-import { orientationLabel } from '@/lib/assembly-diagram';
-import { csv, download, layerSVG, manualHTML } from '@/lib/manual';
+import { csv, download, manualHTML } from '@/lib/manual';
 const backgroundItems = [
   { value: 'auto', label: '自动去除背景' },
   { value: 'white', label: '去除白色背景' },
@@ -110,10 +108,17 @@ export default function Home() {
       search.trim(),
     ),
   );
-  const layerParts = model.bricks.filter((b) =>
-    model.assembly ? b.step === layer - 1 : b.y === model.levels[layer - 1],
-  );
-  const currentStep = model.assembly?.steps[layer - 1];
+  const [guideFocus, setGuideFocus] = useState<{
+    model: typeof model;
+    layer: number;
+    id: number | undefined;
+  } | null>(null);
+  const focusId =
+    tab === 'steps'
+      ? guideFocus?.model === model && guideFocus.layer === layer
+        ? guideFocus.id
+        : model.bricks.find((b) => b.step === layer - 1)?.id
+      : undefined;
   const changeDuck = (patch: Partial<DuckParameters>) => {
     setDuck((p) => ({ ...p, ...patch }));
     setAutoReference(false);
@@ -286,6 +291,7 @@ export default function Home() {
     setExportOpen(false);
   }
   function selectLayer(n: number) {
+    setGuideFocus(null);
     setLayer(n);
     setSection('all');
   }
@@ -755,6 +761,7 @@ export default function Home() {
               <AssemblyViewer
                 model={model}
                 layer={layer}
+                focusId={focusId}
                 exploded={exploded}
                 section={section}
                 onExplode={() => setExploded((v) => !v)}
@@ -849,6 +856,7 @@ export default function Home() {
               onValueChange={(v) => {
                 setTab(String(v));
                 if (v === 'steps') {
+                  setGuideFocus(null);
                   setLayer(1);
                   setSection('all');
                   setExploded(false);
@@ -947,70 +955,13 @@ export default function Home() {
                 </div>
               </TabsContent>
               <TabsContent value="steps">
-                <div className="step-navigation">
-                  <div>
-                    <b>
-                      {String(layer).padStart(2, '0')} ·{' '}
-                      {currentStep?.name || `第 ${layer} 组`}
-                    </b>
-                    <span>本步新增 {layerParts.length} 块</span>
-                  </div>
-                  <div>
-                    <button
-                      aria-label="上一步"
-                      disabled={layer <= 1}
-                      onClick={() => selectLayer(layer - 1)}
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
-                    <button
-                      aria-label="下一步"
-                      disabled={layer >= model.levels.length}
-                      onClick={() => selectLayer(layer + 1)}
-                    >
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
-                </div>
-                <p className="step-description">
-                  {currentStep?.description || '按俯视图中的坐标依次放置零件。'}
-                  {model.assembly ? ' 彩色为本步零件，灰色为已搭建部分。' : ''}
-                </p>
-                <div
-                  className="step-plan"
-                  dangerouslySetInnerHTML={{
-                    __html: layerSVG(model, layer - 1),
-                  }}
+                <BuildGuide
+                  key={layer}
+                  model={model}
+                  stage={layer - 1}
+                  onStageChange={(n) => selectLayer(n + 1)}
+                  onFocus={(id) => setGuideFocus({ model, layer, id })}
                 />
-                <p className="plan-caption">
-                  {model.assembly
-                    ? '等轴测简图 · 省略底部空腔 · 鸭嘴方向为前方'
-                    : '俯视图 · 数字对应零件序号'}
-                </p>
-                <div className="step-table">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>序号</TableHead>
-                        <TableHead>零件 / 颜色</TableHead>
-                        <TableHead>安装方向</TableHead>
-                        <TableHead>底部高度</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {layerParts.map((b) => (
-                        <TableRow key={b.id}>
-                          <TableCell>#{b.id}</TableCell>
-                          <TableCell>
-                            {b.part} · {PALETTE[b.color].name}
-                          </TableCell>
-                          <TableCell>{orientationLabel(b)}</TableCell>
-                          <TableCell>{(b.y * 3.2).toFixed(1)} mm</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
               </TabsContent>
             </Tabs>
           </section>
@@ -1106,7 +1057,7 @@ export default function Home() {
             <FileText />
             <span>
               <b>打开说明书 · 打印为 PDF</b>
-              <small>包含步骤示意、零件方向与完整清单</small>
+              <small>逐块详细版：每页最多 4 块，含整组定位图</small>
             </span>
             <ArrowUpRight />
           </button>
