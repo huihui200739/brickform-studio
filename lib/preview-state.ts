@@ -1,5 +1,30 @@
 import type { Brick } from './brick-engine.ts';
 
+export function explodedLayers(
+  bricks: Brick[],
+  first: number,
+  count: number,
+  gap: number,
+) {
+  const steps = [...new Set(bricks.map((b) => b.step ?? 0))].sort(
+    (a, b) => a - b,
+  );
+  const selected = steps.slice(first, first + count);
+  let cursor = 0;
+  const offsets = new Map<number, number>();
+  const layers = selected.map((step) => {
+    const group = bricks.filter((b) => (b.step ?? 0) === step);
+    const min = Math.min(...group.map((b) => b.y * 0.4));
+    const max = Math.max(...group.map((b) => (b.y + b.h) * 0.4));
+    const offset = cursor - min;
+    offsets.set(step, offset);
+    const center = cursor + (max - min) / 2;
+    cursor += max - min + Math.max(0.2, gap);
+    return { step, center, count: group.length };
+  });
+  return { offsets, layers };
+}
+
 export type PreviewMode = 'complete' | 'steps';
 export function previewRange(
   mode: PreviewMode,

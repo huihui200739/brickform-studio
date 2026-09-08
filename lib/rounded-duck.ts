@@ -372,11 +372,13 @@ export function roundedDuck(
       y: Math.max(beakY + 3, Math.round(head.y) + 2),
       center: head.z,
     },
+    { section: 'head', y: Math.round(head.y) - 3, center: head.z, back: true },
   ]) {
     const y = region.y,
       x0 = -2,
-      span = 4;
-    let z = depth - 2;
+      span = 4,
+      direction = region.back ? -1 : 1;
+    let z = region.back ? 1 : depth - 2;
     const fits = (zz: number) =>
       Array.from({ length: span }, (_, dx) => x0 + dx).every(
         (x) =>
@@ -385,39 +387,40 @@ export function roundedDuck(
               cells.get(key(x, yy, zz)) === fit.bodyColor &&
               !reserved.has(key(x, yy, zz)),
           ) &&
-          cells.get(key(x, y - 1, zz - 1)) === fit.bodyColor &&
-          !reserved.has(key(x, y - 1, zz - 1)),
+          cells.get(key(x, y - 1, zz - direction)) === fit.bodyColor &&
+          !reserved.has(key(x, y - 1, zz - direction)),
       );
-    while (z > region.center && !fits(z)) z--;
-    if (z <= region.center) continue;
+    while ((z - region.center) * direction > 0 && !fits(z)) z -= direction;
+    if ((z - region.center) * direction <= 0) continue;
     // Clear the panel's protruding volume before packing any interior bricks.
     for (let x = x0; x < x0 + span; x++) {
       for (let yy = y; yy < y + 6; yy++)
-        for (let zz = z + 1; zz < depth; zz++) cells.delete(key(x, yy, zz));
+        for (let zz = z + direction; zz >= 0 && zz < depth; zz += direction)
+          cells.delete(key(x, yy, zz));
       for (let dy = 0; dy < 3; dy++) reserved.add(key(x, y + dy, z));
       planned.push({
         part: '87087',
         x,
         y,
         z,
-        q: 2,
+        q: region.back ? 0 : 2,
         color: fit.bodyColor,
         section: region.section,
       });
-      for (const zz of [z - 1, z]) reserved.add(key(x, y - 1, zz));
+      for (const zz of [z - direction, z]) reserved.add(key(x, y - 1, zz));
     }
     planned.push({
       part: '3020',
       x: x0,
       y: y - 1,
-      z: z - 1,
+      z: region.back ? z : z - 1,
       q: 0,
       color: fit.bodyColor,
       section: region.section,
     });
-    for (const x of [1]) {
+    for (const x of [region.back ? -2 : 1]) {
       const hostPose: Pose = {
-        matrix: rotate(2),
+        matrix: rotate(region.back ? 0 : 2),
         position: [(x + 0.5) * 20, -(y + 3) * 8, (z + 0.5) * 20],
       };
       const matrix = multiply(hostPose.matrix, [1, 0, 0, 0, 0, -1, 0, 1, 0]);
@@ -534,6 +537,7 @@ export function roundedDuck(
     tops.set(`${x},${z}`, Math.max(tops.get(`${x},${z}`) || 0, y + 1));
   }
   const curved = new Set<string>();
+  const capSupportCells = new Set<string>();
   const cap = (
     x: number,
     z: number,
@@ -597,7 +601,7 @@ export function roundedDuck(
           !cells.has(key(c.x, base - 1, c.z)) ||
           Array.from({ length: Math.max(high - base, ph) }, (_, dy) =>
             key(c.x, base + dy, c.z),
-          ).some((k) => reserved.has(k)),
+          ).some((k) => reserved.has(k) || capSupportCells.has(k)),
       )
     )
       return false;
@@ -771,6 +775,26 @@ export function roundedDuck(
           }
   };
   fitSmallCaps();
+  // A shelf below a later cap may still carry its sockets. Keep these stud
+  // cells intact rather than replacing them with another smooth, studless cap.
+  for (const placement of planned) {
+    const p = ASSEMBLY_PARTS[placement.part],
+      w = placement.q % 2 ? p.d : p.w,
+      d = placement.q % 2 ? p.w : p.d;
+    for (let dx = 0; dx < w; dx++)
+      for (let dz = 0; dz < d; dz++) {
+        const localZ =
+          transform(rotate(-placement.q), [
+            (dx - (w - 1) / 2) * 20,
+            0,
+            (dz - (d - 1) / 2) * 20,
+          ])[2] + (p.centerZ || 0);
+        const shim = (p.bottom - curveFloorY(p, localZ)) / 8;
+        capSupportCells.add(
+          key(placement.x + dx, placement.y + shim - 1, placement.z + dz),
+        );
+      }
+  }
   // The neck and shoulders also have exposed shelves below the head. A single
   // column maximum misses these surfaces entirely. Fit each open shelf locally,
   // while retaining the reserved volume of every previously placed cap.

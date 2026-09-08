@@ -4,6 +4,7 @@ import {
   previewRange,
   visibleInPreview,
   previewFrame,
+  explodedLayers,
 } from './preview-state.ts';
 import type { Brick } from './brick-engine.ts';
 const pieces = Array.from(
@@ -23,6 +24,37 @@ void test('complete preview ignores a single-piece guide focus, including the fi
     };
     assert.equal(pieces.filter((b) => visibleInPreview(b, range)).length, 6);
   }
+});
+
+void test('explosion separates construction layers inside the same body without changing the source model', () => {
+  const bricks = [
+    { id: 1, step: 0, section: 'body', y: 0, h: 1 },
+    { id: 2, step: 1, section: 'body', y: 1, h: 3 },
+    { id: 3, step: 2, section: 'body', y: 2, h: 1 },
+    { id: 4, step: 2, section: 'body', y: 7, h: 2 },
+  ] as Brick[];
+  const original = JSON.stringify(bricks),
+    layout = explodedLayers(bricks, 0, 6, 1);
+  assert.equal(layout.layers.length, 3);
+  for (let step = 1; step < 3; step++) {
+    const below = bricks.filter((b) => b.step === step - 1),
+      above = bricks.filter((b) => b.step === step);
+    const top = Math.max(
+      ...below.map((b) => (b.y + b.h) * 0.4 + layout.offsets.get(step - 1)!),
+    );
+    const bottom = Math.min(
+      ...above.map((b) => b.y * 0.4 + layout.offsets.get(step)!),
+    );
+    assert.ok(Math.abs(bottom - top - 1) < 1e-7);
+  }
+  assert.deepEqual([...explodedLayers(bricks, 1, 1, 0.5).offsets.keys()], [1]);
+  assert.equal(JSON.stringify(bricks), original);
+  assert.deepEqual(explodedLayers([], 0, 6, 1).layers, []);
+  const filtered = bricks.slice(1).map((b) => ({ ...b, step: b.step! + 10 }));
+  assert.deepEqual(
+    [...explodedLayers(filtered, 0, 6, 1).offsets.keys()],
+    [11, 12],
+  );
 });
 void test('following instructions shows only the completed prefix and restores all pieces on exit', () => {
   const follow = { ...previewRange('steps', 3, 2, 3), section: 'all' };

@@ -3181,3 +3181,39 @@ h1 {
     max-height: 200px;
   }
 }
+
+.layer-explorer {
+  padding: 18px 22px;
+  border-top: 1px solid #dce5eb;
+  background: #f8fafb;
+  color: #526974;
+  font-size: 14px;
+}
+.layer-explorer-heading, .layer-explorer-controls, .layer-window {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.layer-explorer-heading strong { color: #17664b; font-size: 16px; }
+.layer-explorer-heading fieldset { display: flex; margin-left: auto; gap: 4px; border: 0; padding: 0; }
+.layer-explorer button { padding: 8px 11px; border: 1px solid #dce5eb; border-radius: 6px; background: #fff; font-size: 14px; }
+.layer-explorer button[aria-pressed='true'] { background: #e8f2ed; color: #17664b; border-color: #a7c9b9; }
+.layer-explorer button:disabled { opacity: .4; cursor: default; }
+.layer-explorer-controls { margin-top: 14px; }
+.layer-window { flex: 1 1 380px; }
+.layer-window label, .layer-gap { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.layer-window label { flex: 1; }
+.layer-explorer input[type='range'] { width: 100%; min-width: 80px; accent-color: #17664b; }
+.layer-gap { flex: 1 1 180px; max-width: 270px; }
+.layer-explorer p { margin: 12px 0 0; font-size: 14px; line-height: 1.65; }
+@media (max-width: 650px) {
+  .layer-explorer { padding: 14px; }
+  .layer-explorer-heading fieldset { margin-left: 0; }
+  .layer-explorer-heading > span { flex-basis: 100%; }
+  .layer-window { gap: 8px; }
+  .layer-window label { flex-basis: 100%; order: -1; }
+}
+.assembly-preview:fullscreen { background: #eef1f5; display: flex; flex-direction: column; }
+.assembly-preview:fullscreen .viewer { flex: 1; height: auto; min-height: 240px; }
+.assembly-preview:fullscreen .layer-explorer { flex-shrink: 0; max-height: 38vh; overflow: auto; }
