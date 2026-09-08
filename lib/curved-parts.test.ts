@@ -46,7 +46,7 @@ void test('continuous shells export real parts and reject intersecting duplicate
   const model = roundedDuck();
   for (const part of ['88930', '93606', '93273'])
     assert.ok(model.bricks.some((b) => b.part === part));
-  assert.equal(model.bricks.filter((b) => b.part === '88930').length, 4);
+  assert.equal(model.bricks.filter((b) => b.part === '88930').length, 7);
   assert.equal(validateAssembly(model).collisions, 0);
   assert.equal(validateAssembly(model).unsupported, 0);
   const piece = model.bricks.find((b) => b.part === '93606')!;

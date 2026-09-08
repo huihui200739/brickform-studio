@@ -95,6 +95,14 @@ void test('side placement marks real connection points and local maps keep globa
   const svg = detailDiagram(m, stage, i);
   assert.equal((svg.match(/data-connection-ring=/g) || []).length, 4);
   assert.ok(!svg.includes('NaN'));
+  // Both complete wing shells must locate all four real side studs, rather
+  // than reusing the two-stud instructions for the old split wings.
+  for (const wing of m.bricks.filter((b) => b.section === 'wings')) {
+    const wi = stageBricks(m, wing.step!).findIndex((b) => b.id === wing.id),
+      diagram = detailDiagram(m, wing.step!, wi);
+    assert.equal((diagram.match(/data-connection-ring=/g) || []).length, 4);
+    assert.ok(!diagram.includes('NaN'));
+  }
   const first = m.bricks[0],
     local = topDiagram(m, first.step!, 0, false, true);
   const address = gridAddress(m, first),

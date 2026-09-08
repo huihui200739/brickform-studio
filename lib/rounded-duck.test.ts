@@ -70,15 +70,15 @@ void test('every exposed size and fullness setting has ordered real connections 
       assert.equal(v.invalidParts, 0);
       assert.equal(model.supportCount, 0);
       assert.ok(model.bricks.every((b) => !b.support));
-      assert.ok(model.bricks.length < 800);
+      assert.ok(model.bricks.length < 850);
       assert.ok(model.reconstruction!.trimmedFraction < 0.12);
       assert.equal(model.bricks.filter((b) => b.section === 'eyes').length, 2);
-      assert.equal(model.bricks.filter((b) => b.section === 'wings').length, 4);
+      assert.equal(model.bricks.filter((b) => b.section === 'wings').length, 2);
       assert.ok(model.bricks.some((b) => b.part === '15068'));
       const panels = model.bricks.filter(
         (b) => b.part === '88930' && b.pose!.matrix[7] === -1,
       );
-      assert.equal(panels.length, 2, `${size}/${fullness}: front panels`);
+      assert.equal(panels.length, 3, `${size}/${fullness}: front panels`);
     }
 });
 

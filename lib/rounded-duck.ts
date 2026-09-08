@@ -364,6 +364,11 @@ export function roundedDuck(
     { section: 'body', y: Math.max(3, Math.round(body.y) - 2), center: body.z },
     {
       section: 'head',
+      y: Math.min(beakY - 6, Math.round(neck.y) - 1),
+      center: neck.z,
+    },
+    {
+      section: 'head',
       y: Math.max(beakY + 3, Math.round(head.y) + 2),
       center: head.z,
     },
@@ -749,20 +754,43 @@ export function roundedDuck(
   // Commit matching left/right caps together; traversal order cannot create an
   // asymmetric shell on a symmetric reconstruction.
   // Fill broad transitions first, then one-stud strips at cheeks, crown and tail.
-  for (const narrow of [false, true])
+  const fitSmallCaps = () => {
+    for (const narrow of [false, true])
+      for (let z = 0; z < depth; z++)
+        for (let x = -width; x < 0; x++)
+          for (const q of [0, 1, 2, 3]) {
+            const cw = narrow && !(q % 2) ? 1 : 2;
+            const mx = -x - cw,
+              mq = q === 1 ? 3 : q === 3 ? 1 : q;
+            if (mx === x && q % 2) continue;
+            if (cap(x, z, q, narrow) && (mx === x || cap(mx, z, mq, narrow))) {
+              cap(x, z, q, narrow, true);
+              if (mx !== x) cap(mx, z, mq, narrow, true);
+              break;
+            }
+          }
+  };
+  fitSmallCaps();
+  // The neck and shoulders also have exposed shelves below the head. A single
+  // column maximum misses these surfaces entirely. Fit each open shelf locally,
+  // while retaining the reserved volume of every previously placed cap.
+  for (let surface = 4; surface < height - 3; surface++) {
+    tops.clear();
+    curved.clear();
     for (let z = 0; z < depth; z++)
-      for (let x = -width; x < 0; x++)
-        for (const q of [0, 1, 2, 3]) {
-          const cw = narrow && !(q % 2) ? 1 : 2;
-          const mx = -x - cw,
-            mq = q === 1 ? 3 : q === 3 ? 1 : q;
-          if (mx === x && q % 2) continue;
-          if (cap(x, z, q, narrow) && (mx === x || cap(mx, z, mq, narrow))) {
-            cap(x, z, q, narrow, true);
-            if (mx !== x) cap(mx, z, mq, narrow, true);
+      for (let x = -width; x < width; x++) {
+        for (let top = surface; top <= surface + 2; top++) {
+          if (
+            cells.get(key(x, top - 1, z)) === fit.bodyColor &&
+            [0, 1, 2].every((dy) => !cells.has(key(x, top + dy, z)))
+          ) {
+            tops.set(`${x},${z}`, top);
             break;
           }
         }
+      }
+    fitSmallCaps();
+  }
   const bricks: Brick[] = [],
     occupied = new Set<string>(),
     studs = new Set<string>(),
@@ -885,6 +913,23 @@ export function roundedDuck(
                 }
               }
             if (!valid || !supports) continue;
+            // Finish exposed tops with small plate-sized tiles, but always
+            // preserve a full bridging piece when an edge lacks direct support.
+            if (bridged === 0) {
+              let exposed = 0;
+              for (let dx = 0; dx < w; dx++)
+                for (let dz = 0; dz < d; dz++) {
+                  const top = key(x + dx, y + p.h, z + dz);
+                  if (!cells.has(top) && !reserved.has(top)) exposed++;
+                }
+              if (
+                exposed &&
+                (p.h > 1 ||
+                  exposed !== w * d ||
+                  !['3022', '3023', '3024'].includes(part))
+              )
+                continue;
+            }
             // Prefer plates across expanding edges; use larger bricks in the core.
             const score =
               w * d * p.h +
@@ -942,32 +987,31 @@ export function roundedDuck(
       ...envelope('98138', pose),
     });
   }
-  for (const x of [-wingX - 1, wingX])
-    for (const dz of [0, 2]) {
-      const host = bricks.find(
-        (b) =>
-          b.part === '87087' &&
-          b.section === 'body' &&
-          b.x === x &&
-          b.z === wingZ + dz + (x < 0 ? 1 : 0),
-      )!;
-      const matrix = multiply(host.pose!.matrix, [1, 0, 0, 0, 0, -1, 0, 1, 0]);
-      const socket = transform(matrix, [-10, 0, -10]),
-        face = worldPoint(host.pose!, [0, 10, -10]);
-      const pose = {
-        matrix,
-        position: face.map((v, i) => v - socket[i]) as V3,
-      };
-      bricks.push({
-        id: bricks.length + 1,
-        part: '15068',
-        color: fit.bodyColor,
-        pose,
-        section: 'wings',
-        step: height + 1,
-        ...envelope('15068', pose),
-      });
-    }
+  for (const x of [-wingX - 1, wingX]) {
+    const host = bricks.find(
+      (b) =>
+        b.part === '87087' &&
+        b.section === 'body' &&
+        b.x === x &&
+        b.z === wingZ + (x < 0 ? 3 : 0),
+    )!;
+    const matrix = multiply(host.pose!.matrix, [1, 0, 0, 0, 0, -1, 0, 1, 0]);
+    const socket = transform(matrix, [-30, 0, -10]),
+      face = worldPoint(host.pose!, [0, 10, -10]);
+    const pose = {
+      matrix,
+      position: face.map((v, i) => v - socket[i]) as V3,
+    };
+    bricks.push({
+      id: bricks.length + 1,
+      part: '88930',
+      color: fit.bodyColor,
+      pose,
+      section: 'wings',
+      step: height + 1,
+      ...envelope('88930', pose),
+    });
+  }
   for (const panel of frontPanels)
     bricks.push({ ...panel, id: bricks.length + 1 });
   // Finish the exposed upper bill with real tiles, not a row of visible studs.
@@ -1047,7 +1091,7 @@ export function roundedDuck(
       y === height + 2
         ? '将弧面件背面的孔对准正面侧凸点，弧面朝外，向模型内侧按紧。'
         : y === height + 1
-          ? '将四块弧面件侧装到身体侧凸点上，高边朝上，弧面朝外。'
+          ? '左右各安装一块宽弧面翅膀，对准四个侧凸点，高边朝上，弧面朝外。'
           : y === height
             ? '将黑色圆形光面板侧装到头部两侧凸点。'
             : '按图放置高亮零件；外缘薄板跨接下层凸点，弧面件高边朝内。',

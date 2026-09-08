@@ -312,7 +312,7 @@ export default function Home() {
             <Blocks size={21} />
           </span>
           brickform<span className="brand-cn">积木工坊</span>
-          <span className="beta">V6</span>
+          <span className="beta">V7</span>
         </Link>
         <span className="workspace-title">设计工作台</span>
         <button className="header-help" onClick={() => setHelp(true)}>
@@ -414,9 +414,9 @@ export default function Home() {
           {mode === 'round' ? (
             <>
               <div className="reconstruction-note">
-                <span className="tiny-tag">V6 · 小鸭重建实验</span>
+                <span className="tiny-tag">V7 · 小鸭重建实验</span>
                 <p>
-                  头顶使用连续双向弧面，脸颊、额头与胸前使用宽弧面；背部采用长弧面过渡。
+                  颈前、胸前和翅膀采用完整宽弧面，肩部与脸侧补齐小曲面；外露台面以光面件收口。
                 </p>
                 <small>
                   目前支持干净背景、红 / 橙嘴的小鸭侧面图；背面按对称体积推测。
@@ -1040,13 +1040,13 @@ export default function Home() {
       <footer className="site-footer">
         <span>
           <Blocks size={15} />
-          Brickform Studio · V6
+          Brickform Studio · V7
         </span>
         <span>独立创作工具，与 LEGO Group 无关联或认证。</span>
       </footer>
       <Dialog open={help} onOpenChange={setHelp}>
         <DialogContent className="help-dialog">
-          <DialogTitle>V6 · 圆润重建工作台</DialogTitle>
+          <DialogTitle>V7 · 圆润重建工作台</DialogTitle>
           <DialogDescription>
             这一轮聚焦小鸭侧面图：从二维特征测量出发，推测对称体积，再铺设实际零件。
           </DialogDescription>
