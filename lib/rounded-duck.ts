@@ -7,6 +7,7 @@ import {
 } from './brick-engine.ts';
 import {
   ASSEMBLY_PARTS,
+  curveFloorY,
   rotate,
   transform,
   worldPoint,
@@ -409,13 +410,13 @@ export function roundedDuck(
       color: fit.bodyColor,
       section: region.section,
     });
-    for (const x of [-1, 1]) {
+    for (const x of [1]) {
       const hostPose: Pose = {
         matrix: rotate(2),
         position: [(x + 0.5) * 20, -(y + 3) * 8, (z + 0.5) * 20],
       };
       const matrix = multiply(hostPose.matrix, [1, 0, 0, 0, 0, -1, 0, 1, 0]);
-      const socket = transform(matrix, [-10, 0, -10]),
+      const socket = transform(matrix, [-30, 0, -10]),
         face = worldPoint(hostPose, [0, 10, -10]);
       const pose: Pose = {
         matrix,
@@ -423,15 +424,104 @@ export function roundedDuck(
       };
       frontPanels.push({
         id: 0,
-        part: '15068',
+        part: '88930',
         color: fit.bodyColor,
         pose,
         section: region.section,
         step: height + 2,
-        ...envelope('15068', pose),
+        ...envelope('88930', pose),
       });
     }
   }
+  // Fit mirrored cheek panels behind the eyes, replacing tall block faces.
+  const cheekY = Math.round(head.y) - 2,
+    cheekZ = Math.round(head.z) - 3;
+  let cheekX = width - 1;
+  const cheekFits = (xx: number) =>
+    [xx, -xx - 1].every((x) =>
+      Array.from({ length: 4 }, (_, dz) => cheekZ + dz).every(
+        (z) =>
+          Array.from({ length: 7 }, (_, dy) => cheekY - 1 + dy).every(
+            (y) =>
+              cells.get(key(x, y, z)) === fit.bodyColor &&
+              !reserved.has(key(x, y, z)),
+          ) &&
+          cells.get(key(x < 0 ? x + 1 : x - 1, cheekY - 1, z)) ===
+            fit.bodyColor &&
+          !reserved.has(key(x < 0 ? x + 1 : x - 1, cheekY - 1, z)),
+      ),
+    );
+  while (cheekX > 1 && !cheekFits(cheekX)) cheekX--;
+  if (cheekX > 2 && cheekFits(cheekX - 1)) cheekX--;
+  if (cheekX > 1)
+    for (const x of [-cheekX - 1, cheekX]) {
+      const q = x < 0 ? 1 : 3,
+        rx = x < 0 ? x : x - 1;
+      for (let z = cheekZ; z < cheekZ + 4; z++) {
+        for (let dy = 0; dy < 6; dy++)
+          for (let xx = cheekX + 1; xx < width; xx++)
+            cells.delete(key(x < 0 ? -xx - 1 : xx, cheekY + dy, z));
+        for (let dy = 0; dy < 3; dy++) reserved.add(key(x, cheekY + dy, z));
+        planned.push({
+          part: '87087',
+          x,
+          y: cheekY,
+          z,
+          q,
+          color: fit.bodyColor,
+          section: 'head',
+        });
+        for (let dx = 0; dx < 2; dx++)
+          reserved.add(key(rx + dx, cheekY - 1, z));
+      }
+      planned.push({
+        part: '3020',
+        x: rx,
+        y: cheekY - 1,
+        z: cheekZ,
+        q: 1,
+        color: fit.bodyColor,
+        section: 'head',
+      });
+      // Bridge the shoulder above the inset cheek so the crown cannot become a
+      // disconnected overhang when the reference has a wider upper head.
+      const roofX = x < 0 ? x - 1 : x;
+      for (let dx = 0; dx < 2; dx++)
+        for (let dz = 0; dz < 4; dz++) {
+          cells.set(key(roofX + dx, cheekY + 6, cheekZ + dz), fit.bodyColor);
+          reserved.add(key(roofX + dx, cheekY + 6, cheekZ + dz));
+        }
+      planned.push({
+        part: '3020',
+        x: roofX,
+        y: cheekY + 6,
+        z: cheekZ,
+        q: 1,
+        color: fit.bodyColor,
+        section: 'head',
+      });
+      const z = cheekZ + (x < 0 ? 3 : 0),
+        hostPose: Pose = {
+          matrix: rotate(q),
+          position: [(x + 0.5) * 20, -(cheekY + 3) * 8, (z + 0.5) * 20],
+        };
+      const matrix = multiply(hostPose.matrix, [1, 0, 0, 0, 0, -1, 0, 1, 0]);
+      const socket = transform(matrix, [-30, 0, -10]),
+        face = worldPoint(hostPose, [0, 10, -10]);
+      const pose: Pose = {
+        matrix,
+        position: face.map((v, i) => v - socket[i]) as V3,
+      };
+      frontPanels.push({
+        id: 0,
+        part: '88930',
+        color: fit.bodyColor,
+        pose,
+        section: 'head',
+        step: height + 2,
+        ...envelope('88930', pose),
+      });
+    }
   // Fit real curved slopes to top stair transitions, preserving their raised rear socket.
   const tops = new Map<string, number>();
   for (const k of cells.keys()) {
@@ -500,7 +590,7 @@ export function roundedDuck(
       coords.some(
         (c) =>
           !cells.has(key(c.x, base - 1, c.z)) ||
-          Array.from({ length: high - base }, (_, dy) =>
+          Array.from({ length: Math.max(high - base, ph) }, (_, dy) =>
             key(c.x, base + dy, c.z),
           ).some((k) => reserved.has(k)),
       )
@@ -542,6 +632,120 @@ export function roundedDuck(
       }
     return true;
   };
+  const largeCap = (
+    part: string,
+    x: number,
+    z: number,
+    q: number,
+    commit = false,
+  ) => {
+    const p = ASSEMBLY_PARTS[part],
+      w = q % 2 ? p.d : p.w,
+      d = q % 2 ? p.w : p.d;
+    const coords = Array.from({ length: w }, (_, dx) => dx).flatMap((dx) =>
+      Array.from({ length: d }, (_, dz) => ({ x: x + dx, z: z + dz })),
+    );
+    if (coords.some((c) => curved.has(`${c.x},${c.z}`))) return false;
+    const ts = coords.map((c) => tops.get(`${c.x},${c.z}`) || 0),
+      low = Math.min(...ts),
+      high = Math.max(...ts),
+      base = low - 1;
+    if (
+      low < 4 ||
+      high - low > 3 ||
+      (p.curveProfile === 'double' && base < head.y + 2)
+    )
+      return false;
+    if (
+      frontPanels.some(
+        (b) =>
+          x < b.x + b.w &&
+          x + w > b.x &&
+          z < b.z + b.d &&
+          z + d > b.z &&
+          base < b.y + b.h &&
+          base + p.h > b.y,
+      )
+    )
+      return false;
+    if (
+      base < eyeY + 4 &&
+      base + p.h > eyeY &&
+      coords.some((c) => c.z === eyeZ && (c.x > eyeX || c.x < -eyeX - 1))
+    )
+      return false;
+    const rows = coords.map((c) =>
+      Math.round(
+        (transform(rotate(-q), [
+          (c.x - x - (w - 1) / 2) * 20,
+          0,
+          (c.z - z - (d - 1) / 2) * 20,
+        ])[2] +
+          p.d * 10 -
+          10) /
+          20,
+      ),
+    );
+    const expected = p.curveProfile === 'double' ? [1, 2, 2, 1] : [1, 2, 3, 3];
+    if (
+      coords.some(
+        (c, i) =>
+          Math.abs(ts[i] - base - expected[rows[i]]) > 1 ||
+          cells.get(key(c.x, base - 1, c.z)) !== fit.bodyColor ||
+          Array.from({ length: Math.max(high - base, p.h) }, (_, dy) =>
+            key(c.x, base + dy, c.z),
+          ).some((k) => reserved.has(k)) ||
+          cells.get(key(c.x, ts[i] - 1, c.z)) !== fit.bodyColor,
+      )
+    )
+      return false;
+    if (!commit) return true;
+    coords.forEach((c, i) => {
+      curved.add(`${c.x},${c.z}`);
+      for (let yy = base; yy < high; yy++) cells.delete(key(c.x, yy, c.z));
+      const shim =
+        (p.bottom - curveFloorY(p, (rows[i] + 0.5 - p.d / 2) * 20)) / 8;
+      for (let dy = 0; dy < p.h; dy++) {
+        if (dy < shim) cells.set(key(c.x, base + dy, c.z), fit.bodyColor);
+        else reserved.add(key(c.x, base + dy, c.z));
+      }
+    });
+    planned.push({
+      part,
+      x,
+      y: base,
+      z,
+      q,
+      color: fit.bodyColor,
+      section: base > body.y + body.ry ? 'head' : 'body',
+    });
+    return true;
+  };
+  // Prefer a continuous four-stud curve before filling residual two-stud steps.
+  for (const part of ['93273', '93606'])
+    for (let z = 0; z < depth; z++)
+      for (let x = -width; x < 0; x++)
+        for (const q of [0, 1, 2, 3]) {
+          if (part === '93273' && (q !== 1 || x !== -2)) continue;
+          const p = ASSEMBLY_PARTS[part],
+            w = q % 2 ? p.d : p.w,
+            mx = -x - w,
+            mq = q === 1 ? 3 : q === 3 ? 1 : q;
+          if (
+            mx < x ||
+            (mx !== x && mx < x + w) ||
+            (mx === x && q % 2 && p.curveProfile !== 'double')
+          )
+            continue;
+          if (
+            largeCap(part, x, z, q) &&
+            (mx === x || largeCap(part, mx, z, mq))
+          ) {
+            largeCap(part, x, z, q, true);
+            if (mx !== x) largeCap(part, mx, z, mq, true);
+            break;
+          }
+        }
   // Commit matching left/right caps together; traversal order cannot create an
   // asymmetric shell on a symmetric reconstruction.
   // Fill broad transitions first, then one-stud strips at cheeks, crown and tail.
@@ -591,13 +795,20 @@ export function roundedDuck(
       color,
       pose,
       section,
-      step: y,
+      step: y + (p.curveProfile === 'long' ? 2 : 0),
       ...envelope(part, pose),
     };
     bricks.push(b);
     for (let dx = 0; dx < w; dx++)
       for (let dz = 0; dz < d; dz++) {
-        for (let dy = 0; dy < p.h; dy++)
+        const nativeZ = transform(rotate(-q), [
+          (dx - (w - 1) / 2) * 20,
+          0,
+          (dz - (d - 1) / 2) * 20,
+        ])[2];
+        const floor =
+          p.kind === 'curve' ? (p.bottom - curveFloorY(p, nativeZ)) / 8 : 0;
+        for (let dy = floor; dy < p.h; dy++)
           occupied.add(key(x + dx, y + dy, z + dz));
         if (['brick', 'plate', 'side'].includes(p.kind)) {
           studs.add(key(x + dx, y + p.h, z + dz));
@@ -712,7 +923,11 @@ export function roundedDuck(
   }
   const eyeHosts = bricks.filter(
     (b) =>
-      b.part === '87087' && b.section === 'head' && b.pose!.matrix[0] === 0,
+      b.part === '87087' &&
+      b.section === 'head' &&
+      Math.abs(b.y - eyeY) < 0.001 &&
+      Math.abs(b.z - eyeZ) < 0.001 &&
+      b.pose!.matrix[0] === 0,
   );
   for (const host of eyeHosts) {
     const matrix = multiply(host.pose!.matrix, [1, 0, 0, 0, 0, -1, 0, 1, 0]);
@@ -822,7 +1037,7 @@ export function roundedDuck(
   const steps = layers.map((y, i) => ({
     name:
       y === height + 2
-        ? '安装胸前与额头弧面'
+        ? '安装连续弧面外壳'
         : y === height + 1
           ? '安装两侧弧面翅膀'
           : y === height

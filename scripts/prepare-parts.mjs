@@ -6,6 +6,7 @@ import { promisify } from 'node:util';
 import path from 'node:path';
 import { LDrawLoader } from 'three/addons/loaders/LDrawLoader.js';
 import { Vector3 } from 'three';
+import { LDrawConditionalLineMaterial } from 'three/addons/materials/LDrawConditionalLineMaterial.js';
 const run = promisify(execFile);
 const root = 'vendor/ldraw';
 const roots = [
@@ -25,6 +26,9 @@ const roots = [
   '3069b',
   '3070b',
   '15068',
+  '88930',
+  '93606',
+  '93273',
   '11477',
   '24201',
   '3039',
@@ -104,6 +108,7 @@ const embedded = all.map(([n, s]) => `0 FILE ${n}\n${s}\n`).join('');
 const result = {};
 for (const part of roots) {
   const loader = new LDrawLoader();
+  loader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
   loader.addDefaultMaterials();
   loader.setFileMap(Object.fromEntries(all.map(([n]) => [n, n])));
   const text = `0 FILE main.ldr\n0 Main\n1 16 0 0 0 1 0 0 0 1 0 0 0 1 ${part}.dat\n${embedded}`;

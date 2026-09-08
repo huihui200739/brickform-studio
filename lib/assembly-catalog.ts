@@ -19,6 +19,8 @@ export type CatalogPart = {
   // LDraw origin relative to the centre of the nominal envelope, in LDU.
   bottom: number;
   centerZ?: number;
+  socketRows?: number[];
+  curveProfile?: 'long' | 'double';
 };
 export const ASSEMBLY_PARTS: Record<string, CatalogPart> = {
   '3001': { name: '砖块 2 × 4', w: 4, d: 2, h: 3, kind: 'brick', bottom: 24 },
@@ -43,6 +45,35 @@ export const ASSEMBLY_PARTS: Record<string, CatalogPart> = {
     h: 2,
     kind: 'curve',
     bottom: 0,
+  },
+  '88930': {
+    name: '宽弧面 2 × 4',
+    w: 4,
+    d: 2,
+    h: 2,
+    kind: 'curve',
+    bottom: 0,
+    socketRows: [0, 0],
+  },
+  '93606': {
+    name: '长弧面 4 × 2',
+    w: 2,
+    d: 4,
+    h: 3,
+    kind: 'curve',
+    bottom: 24,
+    socketRows: [24, 24, 16, 8],
+    curveProfile: 'long',
+  },
+  '93273': {
+    name: '双向弧面 4 × 1',
+    w: 1,
+    d: 4,
+    h: 2,
+    kind: 'curve',
+    bottom: 0,
+    socketRows: [0, -8, -8, 0],
+    curveProfile: 'double',
   },
   '11477': {
     name: '弧面斜坡 1 × 2',
@@ -111,3 +142,21 @@ export const add = (a: V3, b: V3): V3 => a.map((v, i) => v + b[i]) as V3;
 export type Pose = { position: V3; matrix: M3 };
 export const worldPoint = (pose: Pose, p: V3) =>
   add(pose.position, transform(pose.matrix, p));
+
+// Nominal underside seating height at each stud row, from the vendored part geometry.
+export function curveFloorY(p: CatalogPart, z: number) {
+  const row = Math.max(
+    0,
+    Math.min(p.d - 1, Math.floor((z - (p.centerZ || 0) + p.d * 10) / 20)),
+  );
+  return (
+    p.socketRows?.[row] ?? (p.kind === 'curve' && row === 1 ? -8 : p.bottom)
+  );
+}
+export function curveTopY(p: CatalogPart, z: number) {
+  if (p.curveProfile === 'long')
+    return 149.253 - 149.253 * Math.sqrt(1 - ((z - 40) / 160) ** 2);
+  if (p.curveProfile === 'double')
+    return 24.9719 - 40.9719 * Math.sqrt(1 - (z / 56.56854) ** 2);
+  return 24.972 - 40.972 * Math.sqrt(1 - ((z - 20) / 56.56854) ** 2);
+}

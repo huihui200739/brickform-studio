@@ -1,5 +1,7 @@
 import {
   ASSEMBLY_PARTS,
+  curveFloorY,
+  curveTopY,
   worldPoint,
   transform,
   type V3,
@@ -49,10 +51,9 @@ export function brickFaces(b: Brick): Face[] {
       face([a, c, [c[0], bottom, c[2]], [a[0], bottom, a[2]]], 0.83);
     });
   } else if (p.kind === 'curve') {
-    const zs = Array.from({ length: 9 }, (_, i) => -20 + i * 5);
-    const y = (zz: number) =>
-      24.972 - 40.972 * Math.sqrt(1 - ((zz - 20) / 56.56854) ** 2);
-    for (let i = 0; i < 8; i++)
+    const zs = Array.from({ length: 17 }, (_, i) => -z + (i * z) / 8);
+    const y = (zz: number) => curveTopY(p, zz);
+    for (let i = 0; i < 16; i++)
       face(
         [
           [-x, y(zs[i]), zs[i]],
@@ -60,38 +61,35 @@ export function brickFaces(b: Brick): Face[] {
           [x, y(zs[i + 1]), zs[i + 1]],
           [-x, y(zs[i + 1]), zs[i + 1]],
         ],
-        0.94 + i * 0.007,
+        0.94 + i * 0.003,
         undefined,
         true,
       );
+    const underside: [number, number][] = [];
+    for (let row = 0; row < p.d; row++) {
+      const z0 = -z + row * 20,
+        z1 = z0 + 20,
+        floor = curveFloorY(p, (z0 + z1) / 2);
+      underside.push([floor, z0], [floor, z1]);
+    }
     for (const xx of [-x, x])
       face(
         [
-          [xx, 0, -20],
-          [xx, -8, 0],
-          [xx, -8, 20],
+          ...underside.map(([yy, zz]) => [xx, yy, zz] as V3),
           ...zs.toReversed().map((zz) => [xx, y(zz), zz] as V3),
         ],
         xx > 0 ? 0.78 : 0.88,
       );
-    face(
-      [
-        [-x, 0, -20],
-        [x, 0, -20],
-        [x, -4, -20],
-        [-x, -4, -20],
-      ],
-      0.8,
-    );
-    face(
-      [
-        [-x, -8, 20],
-        [x, -8, 20],
-        [x, -16, 20],
-        [-x, -16, 20],
-      ],
-      0.8,
-    );
+    for (const zz of [-z, z])
+      face(
+        [
+          [-x, curveFloorY(p, zz), zz],
+          [x, curveFloorY(p, zz), zz],
+          [x, y(zz), zz],
+          [-x, y(zz), zz],
+        ],
+        0.8,
+      );
   } else {
     const z0 = cz - z,
       z1 = cz + z;
@@ -239,6 +237,8 @@ export function orientationLabel(b: Brick) {
         : normal[2] > 0
           ? '侧装 · 朝前'
           : '侧装 · 朝后';
+  if (p.curveProfile === 'double')
+    return `中央弧顶朝上，长边${b.w > b.d ? '横放' : '竖放'}`;
   if (p.kind === 'curve' || p.kind === 'slope') {
     const high = transform(b.pose.matrix, [0, 0, 1]);
     return `高边朝${high[0] > 0 ? '右' : high[0] < 0 ? '左' : high[2] > 0 ? '前' : '后'}`;

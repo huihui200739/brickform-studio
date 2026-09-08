@@ -1,6 +1,7 @@
 import type { Model, Brick } from './brick-engine.ts';
 import {
   ASSEMBLY_PARTS,
+  curveFloorY,
   worldPoint,
   transform,
   type V3,
@@ -16,11 +17,7 @@ export function connectors(b: Brick) {
         zz = (z + 0.5 - p.d / 2) * 20 + (p.centerZ || 0);
       // Curved slopes have two mounting rows separated by one plate height.
       sockets.push({
-        point: worldPoint(b.pose, [
-          xx,
-          p.kind === 'curve' && z === 1 ? -8 : p.bottom,
-          zz,
-        ]),
+        point: worldPoint(b.pose, [xx, curveFloorY(p, zz), zz]),
         normal: transform(b.pose.matrix, [0, -1, 0]),
       });
       if (
@@ -122,7 +119,15 @@ export function validateAssembly(model: Model) {
                   transpose,
                   world.map((v, i) => v - curve.pose!.position[i]) as V3,
                 );
-                if (local[1] < -8 - 1e-5 || local[2] < -1e-5) return false;
+                if (
+                  local[1] <
+                  Math.min(
+                    curveFloorY(ASSEMBLY_PARTS[curve.part], local[2] - 1e-5),
+                    curveFloorY(ASSEMBLY_PARTS[curve.part], local[2] + 1e-5),
+                  ) -
+                    1e-5
+                )
+                  return false;
               }
           return true;
         };

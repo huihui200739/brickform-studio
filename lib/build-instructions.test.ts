@@ -88,12 +88,12 @@ void test('side placement marks real connection points and local maps keep globa
   const m = roundedDuck();
   // Find a front-facing mounted panel independently of assembly order.
   const panel = m.bricks
-    .filter((b) => b.part === '15068' && b.section === 'body')
+    .filter((b) => b.part === '88930' && b.section === 'body')
     .at(-1)!;
   const stage = panel.step!,
     i = stageBricks(m, stage).findIndex((p) => p.id === panel.id);
   const svg = detailDiagram(m, stage, i);
-  assert.equal((svg.match(/data-connection-ring=/g) || []).length, 2);
+  assert.equal((svg.match(/data-connection-ring=/g) || []).length, 4);
   assert.ok(!svg.includes('NaN'));
   const first = m.bricks[0],
     local = topDiagram(m, first.step!, 0, false, true);
