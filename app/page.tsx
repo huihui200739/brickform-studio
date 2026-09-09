@@ -65,6 +65,8 @@ import {
 } from '@/lib/duck-designer';
 import { roundedDuck, fitDuckImage, SAMPLE_FIT } from '@/lib/rounded-duck';
 import type { ImageDesignOptions } from '@/lib/image-design';
+// oxlint-disable-next-line import/default -- Vite's worker URL query supplies this default export.
+import imageDesignWorkerUrl from '@/lib/image-design.worker.ts?worker&url';
 import { csv, download, manualHTML } from '@/lib/manual';
 const backgroundItems = [
   { value: 'auto', label: '自动去除背景' },
@@ -218,7 +220,7 @@ export default function Home() {
   ): Promise<Model> {
     return new Promise((resolve, reject) => {
       const worker = new Worker(
-        new URL('../lib/image-design.worker.ts', import.meta.url),
+        new URL(imageDesignWorkerUrl, window.location.href),
         { type: 'module' },
       );
       activeWorker.current = worker;
@@ -363,7 +365,7 @@ export default function Home() {
             <Blocks size={21} />
           </span>
           brickform<span className="brand-cn">积木工坊</span>
-          <span className="beta">V10</span>
+          <span className="beta">V10.1</span>
         </Link>
         <span className="workspace-title">设计工作台</span>
         <button className="header-help" onClick={() => setHelp(true)}>
@@ -471,7 +473,7 @@ export default function Home() {
           {mode === 'round' ? (
             <>
               <div className="reconstruction-note">
-                <span className="tiny-tag">V10 · 小鸭重建实验</span>
+                <span className="tiny-tag">V10.1 · 小鸭重建实验</span>
                 <p>
                   额头与肩部用曲面替换外露直斜坡，小转角增加圆弧收口；分层查看与拼装图同步更新。
                 </p>
@@ -1118,7 +1120,7 @@ export default function Home() {
       <footer className="site-footer">
         <span>
           <Blocks size={15} />
-          Brickform Studio · V10
+          Brickform Studio · V10.1
         </span>
         <span>独立创作工具，与 LEGO Group 无关联或认证。</span>
       </footer>
