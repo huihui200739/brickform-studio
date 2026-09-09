@@ -36,6 +36,11 @@ export type Model = {
   source: 'image' | 'sample';
   resolution: number;
   shape: 'sculpture' | 'relief';
+  imageDesign?: {
+    shape: 'sculpture' | 'relief';
+    background: Options['background'];
+    note: string;
+  };
   reconstruction?: {
     method: 'duck-profile';
     size: number;

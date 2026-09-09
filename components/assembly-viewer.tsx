@@ -101,7 +101,7 @@ export default function AssemblyViewer({
         renderer.domElement.setAttribute('role', 'img');
         renderer.domElement.setAttribute(
           'aria-label',
-          '小鸭积木模型，拖动旋转，滚轮缩放。',
+          '积木模型，拖动旋转，滚轮缩放。',
         );
         el.appendChild(renderer.domElement);
         const scene = new THREE.Scene(),
@@ -441,7 +441,13 @@ export default function AssemblyViewer({
         <div className="model-label">
           <span className="live-dot" />
           <span>
-            {model.reconstruction ? '体积重建 · 对称背面推测' : '部件模板'}
+            {model.imageDesign
+              ? model.imageDesign.shape === 'sculpture'
+                ? '图片轮廓 · 厚度推测'
+                : '图片浮雕 · 保留画面'
+              : model.reconstruction
+                ? '体积重建 · 对称背面推测'
+                : '部件模板'}
           </span>
           <span className="label-line" />
           <span>{model.name}</span>

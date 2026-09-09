@@ -269,7 +269,9 @@ export default function BuildGuide({
                     }}
                   />
                   <p>
-                    鸭嘴朝上；橙框是这一块的位置。
+                    {model.imageDesign
+                      ? '定位图数字向上增大；橙框是这一块的位置。'
+                      : '鸭嘴朝上；橙框是这一块的位置。'}
                     <br />
                     {isSideMounted(active)
                       ? '按左图从侧面连接。'
@@ -298,7 +300,9 @@ export default function BuildGuide({
                 : view === 'placed'
                   ? '对照安装后的外观与右侧定位图，检查方向和位置。'
                   : view === 'top'
-                    ? '从正上方看：鸭嘴朝上。将零件左后角对齐橙色小圆点。'
+                    ? model.imageDesign
+                      ? '从正上方看，数字向上增大。将零件左后角对齐橙色小圆点。'
+                      : '从正上方看：鸭嘴朝上。将零件左后角对齐橙色小圆点。'
                     : '这是整组完成后的外观，数字对应本组第几块。'}
             </p>
           </div>

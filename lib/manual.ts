@@ -103,7 +103,7 @@ function assemblyManual(model: Model) {
       const batch = stageBricks(model, i),
         pages: string[] = [];
       pages.push(
-        `<section class="page"><header>BRICKFORM / 本组总览 <span>${esc(model.name)}</span></header><h2>${String(i + 1).padStart(2, '0')} · ${esc(cleanStageName(s.name))}</h2><p>本组共 ${batch.length} 块，先备好下列零件，再按下一页逐块安装。图中数字对应本组的安装顺序。</p><div class="diagram group-map">${topDiagram(model, i, batch.length - 1, true)}</div><p class="group-intro">↑ 前方是鸭嘴方向。字母从左向右，数字从后向前。定位格取零件的左后角；侧装件请看后面的局部图。</p><table><thead><tr><th>零件</th><th>颜色 / 编号</th><th>准备数量</th></tr></thead><tbody>${inventory(
+        `<section class="page"><header>BRICKFORM / 本组总览 <span>${esc(model.name)}</span></header><h2>${String(i + 1).padStart(2, '0')} · ${esc(cleanStageName(s.name))}</h2><p>本组共 ${batch.length} 块，先备好下列零件，再按下一页逐块安装。图中数字对应本组的安装顺序。</p><div class="diagram group-map">${topDiagram(model, i, batch.length - 1, true)}</div><p class="group-intro">${model.imageDesign ? '定位图中，字母从左向右，数字向上增大。' : '↑ 前方是鸭嘴方向。字母从左向右，数字从后向前。'}定位格取零件的左后角；侧装件请看后面的局部图。</p><table><thead><tr><th>零件</th><th>颜色 / 编号</th><th>准备数量</th></tr></thead><tbody>${inventory(
           batch,
         )
           .map(
@@ -115,7 +115,7 @@ function assemblyManual(model: Model) {
       for (let offset = 0; offset < batch.length; offset += 4) {
         const group = batch.slice(offset, offset + 4);
         pages.push(
-          `<section class="page instruction-page"><header>BRICKFORM / 跟着拼 <span>${esc(model.name)}</span></header><h2>${String(i + 1).padStart(2, '0')} · ${esc(cleanStageName(s.name))}</h2><p class="group-intro">第 ${i + 1} / ${a.steps.length} 组 · 本页安装第 ${offset + 1}–${offset + group.length} 块（本组共 ${batch.length} 块）<br/>按 ① 拿零件 → ② 对位置 → ③ 按紧的顺序，一块一块完成。彩色零件沿箭头装入橙色虚线位置；灰色是此前已装部分。</p><div class="instruction-grid">${group.map((b, j) => `<article class="instruction-card"><h3>第 ${offset + j + 1} 块 <small>□ 已装好</small></h3><div class="instruction-pick"><div>${partThumbnail(b)}</div><span><b>${esc(PARTS[b.part])} × 1</b><small>${PALETTE[b.color].name} · ${b.part}</small></span></div><div class="placement-diagram">${detailDiagram(model, i, offset + j)}</div><p>${esc(installationText(model, b))}</p><table><tbody><tr><td>#${b.id} · ${b.part}</td><td>${esc(gridAddress(model, b))}</td></tr><tr><td colspan="2">${orientationLabel(b)}</td></tr></tbody></table></article>`).join('')}</div><footer>局部放大示意，省略远处零件及底部空腔。定位格字母向右、数字向前；前方是鸭嘴方向。完整定位网格见本组总览页。</footer></section>`,
+          `<section class="page instruction-page"><header>BRICKFORM / 跟着拼 <span>${esc(model.name)}</span></header><h2>${String(i + 1).padStart(2, '0')} · ${esc(cleanStageName(s.name))}</h2><p class="group-intro">第 ${i + 1} / ${a.steps.length} 组 · 本页安装第 ${offset + 1}–${offset + group.length} 块（本组共 ${batch.length} 块）<br/>按 ① 拿零件 → ② 对位置 → ③ 按紧的顺序，一块一块完成。彩色零件沿箭头装入橙色虚线位置；灰色是此前已装部分。</p><div class="instruction-grid">${group.map((b, j) => `<article class="instruction-card"><h3>第 ${offset + j + 1} 块 <small>□ 已装好</small></h3><div class="instruction-pick"><div>${partThumbnail(b)}</div><span><b>${esc(PARTS[b.part])} × 1</b><small>${PALETTE[b.color].name} · ${b.part}</small></span></div><div class="placement-diagram">${detailDiagram(model, i, offset + j)}</div><p>${esc(installationText(model, b))}</p><table><tbody><tr><td>#${b.id} · ${b.part}</td><td>${esc(gridAddress(model, b))}</td></tr><tr><td colspan="2">${orientationLabel(b)}</td></tr></tbody></table></article>`).join('')}</div><footer>局部放大示意，省略远处零件及底部空腔。${model.imageDesign ? '定位图字母向右、数字向上增大。' : '定位格字母向右、数字向前；前方是鸭嘴方向。'}完整定位网格见本组总览页。</footer></section>`,
         );
       }
       return pages;
@@ -125,7 +125,7 @@ function assemblyManual(model: Model) {
     model,
     a.steps.length - 1,
     model.bricks.map((b) => b.id),
-  )}</div><div class="note">${esc(a.reference)}<br/>已检查零件外包框、凸点连接与步骤依赖。侧向零件按所列方向安装。未做受力仿真或实物试拼；零件与颜色组合、在售情况需购买前核对。</div><h2>先读这三个提示</h2><p>1. 每张小图只新增一块零件；其他彩色零件要等后面的图。<br/>2. 左侧零件小图用于找零件，安装姿态以局部放大图为准。<br/>3. 顶装向下按，眼睛和翅膀等侧装件从侧面按入。完成一块后勾选“已装好”。</p><h2>搭建顺序</h2><p>${a.steps.map((s, i) => `${i + 1}. ${esc(s.name)}`).join(' → ')}</p></section><section class="page"><header>BRICKFORM / PARTS LIST</header><h2>完整零件清单</h2><table><thead><tr><th>设计编号</th><th>名称</th><th>颜色 / LEGO 色号</th><th>数量</th></tr></thead><tbody>${inventory(
+  )}</div><div class="note">${esc(a.reference)}<br/>已检查零件外包框、凸点连接与步骤依赖。侧向零件按所列方向安装。未做受力仿真或实物试拼；零件与颜色组合、在售情况需购买前核对。</div><h2>先读这三个提示</h2><p>1. 每张小图只新增一块零件；其他彩色零件要等后面的图。<br/>2. 左侧零件小图用于找零件，安装姿态以局部放大图为准。<br/>3. ${model.imageDesign ? '凸点向上，对准下方连接点垂直按紧；第一层先在平面摆好。' : '顶装向下按，眼睛和翅膀等侧装件从侧面按入。'}完成一块后勾选“已装好”。</p><h2>搭建顺序</h2><p>${a.steps.map((s, i) => `${i + 1}. ${esc(s.name)}`).join(' → ')}</p></section><section class="page"><header>BRICKFORM / PARTS LIST</header><h2>完整零件清单</h2><table><thead><tr><th>设计编号</th><th>名称</th><th>颜色 / LEGO 色号</th><th>数量</th></tr></thead><tbody>${inventory(
     model.bricks,
   )
     .map(

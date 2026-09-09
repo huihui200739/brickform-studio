@@ -48,7 +48,6 @@ import {
   TableHead,
 } from '@/components/ui/table';
 import {
-  imageToModel,
   inventory,
   validateModel,
   toLDraw,
@@ -56,6 +55,7 @@ import {
   PALETTE,
   type Raster,
   type Options,
+  type Model,
 } from '@/lib/brick-engine';
 import {
   designDuck,
@@ -64,22 +64,23 @@ import {
   type DuckParameters,
 } from '@/lib/duck-designer';
 import { roundedDuck, fitDuckImage, SAMPLE_FIT } from '@/lib/rounded-duck';
+import type { ImageDesignOptions } from '@/lib/image-design';
 import { csv, download, manualHTML } from '@/lib/manual';
 const backgroundItems = [
   { value: 'auto', label: '自动去除背景' },
   { value: 'white', label: '去除白色背景' },
   { value: 'keep', label: '保留完整图片' },
 ];
-type Mode = 'round' | 'duck' | 'relief';
+type Mode = 'general' | 'sculpture' | 'round' | 'duck' | 'relief';
 export default function Home() {
   const [model, setModel] = useState(() => roundedDuck());
-  const [mode, setMode] = useState<Mode>('round');
+  const [mode, setMode] = useState<Mode>('general');
   const [roundSize, setRoundSize] = useState(18);
   const [fullness, setFullness] = useState(1);
   const [duck, setDuck] = useState<DuckParameters>(DEFAULT_DUCK);
   const [autoReference, setAutoReference] = useState(true);
   const [resolution, setResolution] = useState(28),
-    [depth, setDepth] = useState(12);
+    [depth, setDepth] = useState(8);
   const [threshold, setThreshold] = useState(70),
     [background, setBackground] = useState<Options['background']>('auto');
   const [source, setSource] = useState<{
@@ -103,6 +104,7 @@ export default function Home() {
   const input = useRef<HTMLInputElement>(null),
     uploadToken = useRef(0),
     sourceUrl = useRef('');
+  const activeWorker = useRef<Worker | null>(null);
   const parts = useMemo(() => inventory(model.bricks), [model]);
   const validation = useMemo(() => validateModel(model), [model]);
   const shownParts = parts.filter((p) =>
@@ -140,6 +142,7 @@ export default function Home() {
   useEffect(
     () => () => {
       if (sourceUrl.current) URL.revokeObjectURL(sourceUrl.current);
+      activeWorker.current?.terminate();
     },
     [],
   );
@@ -181,7 +184,7 @@ export default function Home() {
       }
       if (sourceUrl.current) URL.revokeObjectURL(sourceUrl.current);
       sourceUrl.current = url;
-      setSource({
+      const uploaded = {
         raster: {
           width: pixels.width,
           height: pixels.height,
@@ -191,22 +194,81 @@ export default function Home() {
         name: /^(exec-|codex-|image|IMG_|[a-f0-9-]{24})/i.test(file.name)
           ? '参考图片'
           : file.name.replace(/\.[^.]+$/, '').slice(0, 24),
-      });
+      };
+      setSource(uploaded);
+      setMode('general');
+      setBackground('auto');
       setAutoReference(true);
       setDirty(true);
-      setNotice(
-        mode === 'round'
-          ? '参考图已就绪。生成时会测量小鸭比例并重建体积。'
-          : mode === 'duck'
-            ? '参考图已就绪。生成时会提取配色和比例，应用到小鸭结构。'
-            : '图片已就绪，点击生成查看模型。',
-      );
+      setNotice('图片已读取，正在生成模型、清单和逐块步骤…');
+      const next = await generateGeneral(uploaded, 'general', 'auto');
+      if (token !== uploadToken.current) return;
+      applyModel(next);
     } catch (e) {
-      if (url) URL.revokeObjectURL(url);
+      if (url && url !== sourceUrl.current) URL.revokeObjectURL(url);
       setError(e instanceof Error ? e.message : '无法读取图片，请重试。');
     } finally {
       if (token === uploadToken.current) setBusy(false);
     }
+  }
+  function generateGeneral(
+    image: NonNullable<typeof source>,
+    selectedMode: Mode,
+    selectedBackground = background,
+  ): Promise<Model> {
+    return new Promise((resolve, reject) => {
+      const worker = new Worker(
+        new URL('../lib/image-design.worker.ts', import.meta.url),
+        { type: 'module' },
+      );
+      activeWorker.current = worker;
+      const finish = () => {
+        clearTimeout(timer);
+        worker.terminate();
+        if (activeWorker.current === worker) activeWorker.current = null;
+      };
+      const timer = setTimeout(() => {
+        finish();
+        reject(Error('生成用时过长，请降低尺寸或厚度后重试。'));
+      }, 60000);
+      worker.onmessage = (
+        event: MessageEvent<{ model?: Model; error?: string }>,
+      ) => {
+        finish();
+        if (event.data.model) resolve(event.data.model);
+        else reject(Error(event.data.error || '生成失败，请重试。'));
+      };
+      worker.onerror = () => {
+        finish();
+        reject(Error('生成程序未能启动，请刷新页面后重试。'));
+      };
+      const options: ImageDesignOptions = {
+        resolution,
+        depth,
+        threshold,
+        background: selectedBackground,
+        mode:
+          selectedMode === 'general'
+            ? 'auto'
+            : selectedMode === 'relief'
+              ? 'relief'
+              : 'sculpture',
+      };
+      worker.postMessage({ raster: image.raster, options, name: image.name });
+    });
+  }
+  function applyModel(next: Model) {
+    setModel(next);
+    setGuideFocus(null);
+    setSearch('');
+    setLayer(tab === 'steps' ? 1 : next.levels.length);
+    setPreviewMode('complete');
+    setSection('all');
+    setExploded(false);
+    setDirty(false);
+    setNotice(
+      `设计已生成：${next.bricks.length} 块零件，${next.levels.length} 组步骤。`,
+    );
   }
   function resetSample() {
     if (sourceUrl.current) URL.revokeObjectURL(sourceUrl.current);
@@ -219,7 +281,8 @@ export default function Home() {
     setAutoReference(true);
     setDirty(true);
     setError('');
-    setNotice('已恢复小黄鸭示例，点击生成应用。');
+    applyModel(roundedDuck());
+    setNotice('已恢复小黄鸭示例。上传任何物品图片可自动生成新的设计。');
   }
   async function generate() {
     setBusy(true);
@@ -229,8 +292,8 @@ export default function Home() {
       requestAnimationFrame(() => requestAnimationFrame(() => r())),
     );
     try {
-      if (mode === 'relief' && !source)
-        throw Error('请先上传参考图片，再使用图片轮廓模式。');
+      if (mode !== 'round' && mode !== 'duck' && !source)
+        throw Error('请先上传一张图片，上传后会自动生成设计。');
       const parameters =
         mode === 'duck' && source && autoReference
           ? referenceDuck(source.raster, { background, threshold })
@@ -247,26 +310,14 @@ export default function Home() {
             )
           : mode === 'duck'
             ? designDuck(parameters, !!source)
-            : imageToModel(
-                source!.raster,
-                { resolution, depth, threshold, background, shape: mode },
-                source!.name,
-              );
+            : await generateGeneral(source!, mode);
       if (mode === 'duck') setDuck(parameters);
       if (mode === 'duck' && next.assembly && source && !autoReference)
         next.assembly.reference = '使用手动配色与比例；参考图片仅供对照。';
       const v = validateModel(next);
       if (v.collisions || v.unsupported || v.invalidParts || !v.connected)
         throw Error('模型未通过连接检查，请调整参数后重试。');
-      setModel(next);
-      setLayer(tab === 'steps' ? 1 : next.levels.length);
-      setPreviewMode('complete');
-      setSection('all');
-      setExploded(false);
-      setDirty(false);
-      setNotice(
-        `设计已生成：${next.bricks.length} 块零件，${next.levels.length} 个步骤。`,
-      );
+      applyModel(next);
     } catch (e) {
       setError(e instanceof Error ? e.message : '生成失败，请重试。');
     } finally {
@@ -312,7 +363,7 @@ export default function Home() {
             <Blocks size={21} />
           </span>
           brickform<span className="brand-cn">积木工坊</span>
-          <span className="beta">V9</span>
+          <span className="beta">V10</span>
         </Link>
         <span className="workspace-title">设计工作台</span>
         <button className="header-help" onClick={() => setHelp(true)}>
@@ -394,9 +445,15 @@ export default function Home() {
             }}
           >
             {[
-              ['round', '圆润重建', '小鸭侧面图 · 测量比例与特征位置'],
+              [
+                'general',
+                '自动生成 · 任意图片',
+                '物品图生成轮廓体积 · 复杂照片生成浮雕',
+              ],
+              ['sculpture', '轮廓立体', '按图片轮廓估算厚度 · 背面为推测'],
+              ['round', '小鸭精细模式', '仅小鸭侧面图 · 保留原有曲面设计'],
               ['duck', '部件模板', '旧版小鸭 · 手动搭配比例'],
-              ['relief', '平面浮雕', '其他图片 · 保留平面轮廓'],
+              ['relief', '图片浮雕', '保留画面 · 均匀厚度'],
             ].map(([v, t, h]) => (
               <label
                 className={mode === v ? 'chosen' : ''}
@@ -414,7 +471,7 @@ export default function Home() {
           {mode === 'round' ? (
             <>
               <div className="reconstruction-note">
-                <span className="tiny-tag">V9 · 小鸭重建实验</span>
+                <span className="tiny-tag">V10 · 小鸭重建实验</span>
                 <p>
                   额头与肩部用曲面替换外露直斜坡，小转角增加圆弧收口；分层查看与拼装图同步更新。
                 </p>
@@ -472,7 +529,7 @@ export default function Home() {
           ) : mode === 'duck' ? (
             <>
               <p className="design-scope">
-                这是旧版部件模板，参考图只影响配色和粗略比例。新造型请选「圆润重建」。
+                这是旧版部件模板，参考图只影响配色和粗略比例。小鸭造型可选「小鸭精细模式」。
               </p>
               {source && (
                 <RadioGroup
@@ -641,7 +698,11 @@ export default function Home() {
                 }}
               />
               <p className="field-hint">
-                将图片做成有厚度的平面浮雕；不会重建物体真实背面。
+                {mode === 'general'
+                  ? '上传后自动生成。支持动物、车辆、建筑、日用品、人物和风景；复杂画面会保留为浮雕。'
+                  : mode === 'sculpture'
+                    ? '厚度由轮廓估算，背面按对称形状推测；不是物体的真实三维扫描。'
+                    : '将图片做成有厚度的浮雕；人物、风景或复杂背景建议保留完整图片。'}
               </p>
             </>
           )}
@@ -720,11 +781,15 @@ export default function Home() {
             <div className="design-topline">
               <div className="design-title-group">
                 <span className="design-type">
-                  {model.assembly
-                    ? model.reconstruction
-                      ? '体积重建 / 小鸭侧面图'
-                      : '部件模板 / 小鸭'
-                    : '平面浮雕设计'}
+                  {model.imageDesign
+                    ? model.imageDesign.shape === 'sculpture'
+                      ? '通用图片 / 轮廓立体'
+                      : '通用图片 / 图片浮雕'
+                    : model.assembly
+                      ? model.reconstruction
+                        ? '体积重建 / 小鸭侧面图'
+                        : '部件模板 / 小鸭'
+                      : '平面浮雕设计'}
                 </span>
                 <input
                   className="design-name"
@@ -766,6 +831,17 @@ export default function Home() {
                 {dirty ? '待生成更新' : '已同步'}
               </span>
             </div>
+            {model.imageDesign && (
+              <output className="image-result-note">
+                <Info size={16} />
+                <span>
+                  {model.imageDesign.note}{' '}
+                  {model.imageDesign.shape === 'sculpture'
+                    ? '当前为轮廓立体，背面与厚度为推测。'
+                    : '当前为图片浮雕。'}
+                </span>
+              </output>
+            )}
             <div className="preview-mode-bar">
               <fieldset aria-label="预览范围">
                 <button
@@ -927,9 +1003,11 @@ export default function Home() {
               <TabsContent value="parts">
                 <div className="table-intro">
                   <span>
-                    {model.assembly
-                      ? '包含全部部件，侧装连接件已计入'
-                      : '包含主体、底座及辅助支撑'}
+                    {model.imageDesign
+                      ? `包含主体、底座和 ${model.supportCount} 块辅助支撑`
+                      : model.assembly
+                        ? '包含全部部件，侧装连接件已计入'
+                        : '包含主体、底座及辅助支撑'}
                   </span>
                   <input
                     aria-label="搜索零件或颜色"
@@ -1040,22 +1118,22 @@ export default function Home() {
       <footer className="site-footer">
         <span>
           <Blocks size={15} />
-          Brickform Studio · V9
+          Brickform Studio · V10
         </span>
         <span>独立创作工具，与 LEGO Group 无关联或认证。</span>
       </footer>
       <Dialog open={help} onOpenChange={setHelp}>
         <DialogContent className="help-dialog">
-          <DialogTitle>V9 · 圆润重建工作台</DialogTitle>
+          <DialogTitle>从任意图片生成积木设计</DialogTitle>
           <DialogDescription>
-            这一轮聚焦小鸭侧面图：从二维特征测量出发，推测对称体积，再铺设实际零件。
+            上传图片后，自动生成可旋转的积木模型、零件清单和逐块拼装步骤。
           </DialogDescription>
           <ol className="help-steps">
             <li>
-              <b>参考图或手动设计</b>
+              <b>上传你的图片</b>
               <p>
-                圆润重建测量头部、身体、嘴和眼睛的位置与比例，再拟合立体形状。它目前只适用于小鸭侧面图，背面通过对称假设推测，尚未接入通用
-                AI 图片理解。部件模板保留旧版设计方式。
+                支持 PNG、JPG、WebP
+                图片。自动模式按背景情况选择轮廓立体或图片浮雕，不限制物品类别。若背景去除不准确，可选“保留完整图片”后重新生成。小鸭精细模式和部件模板仍供小鸭设计使用。
               </p>
             </li>
             <li>
@@ -1077,7 +1155,7 @@ export default function Home() {
           <div className="help-limits">
             <strong>检查范围</strong>
             <p>
-              立体模式检查零件外包框重叠、顶部与侧面凸点连接，以及步骤中的连接依赖。未做受力、抗倾倒、夹持力仿真或实物试拼。轮廓模式仍使用基础砖与薄板，检查网格承托和连通。
+              模型检查零件外包框重叠、凸点连接与步骤顺序。通用生成采用基础砖与薄板，背面和厚度为轮廓推测；复杂图片生成浮雕，尚不支持从任意照片还原真实三维物品。未做受力仿真或实物试拼。
             </p>
             <p>
               零件编号来自 LDraw，带 b 等后缀的编号表示其库中的形态版本。具体

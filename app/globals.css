@@ -3217,3 +3217,20 @@ h1 {
 .assembly-preview:fullscreen { background: #eef1f5; display: flex; flex-direction: column; }
 .assembly-preview:fullscreen .viewer { flex: 1; height: auto; min-height: 240px; }
 .assembly-preview:fullscreen .layer-explorer { flex-shrink: 0; max-height: 38vh; overflow: auto; }
+
+.image-result-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 24px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #526779;
+  background: #f4f7fa;
+  border-top: 1px solid #e1e8ee;
+}
+.image-result-note svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
