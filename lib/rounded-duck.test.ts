@@ -139,15 +139,14 @@ void test('blank, invalid and unsupported references fail explicitly instead of 
   );
 });
 
-void test('surface finishing uses narrow real curves and body tiles without changing export counts', () => {
+void test('surface finishing uses narrow curves and rounded body corners with consistent export counts', () => {
   const model = roundedDuck(fitDuckImage(raster, options));
   assert.ok(
     model.bricks.some((b) => b.part === '11477' && b.section !== 'wings'),
   );
   assert.ok(
     model.bricks.some(
-      (b) =>
-        b.section === 'body' && ['3068b', '3069b', '3070b'].includes(b.part),
+      (b) => b.section === 'body' && b.part === '49307',
     ),
   );
   assert.equal(validateAssembly(model).unsupported, 0);

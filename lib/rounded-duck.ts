@@ -16,6 +16,7 @@ import {
   type Pose,
 } from './assembly-catalog.ts';
 import { envelope } from './duck-designer.ts';
+import { connectors } from './assembly-validation.ts';
 
 export type DuckFit = {
   body: { z: number; y: number; length: number; height: number };
@@ -1089,6 +1090,96 @@ export function roundedDuck(
     );
     if (clear) b.part = tile;
   }
+  // Replace exposed straight slopes with a plate, rear shim and curved cap of
+  // the same total height. Preserve any slope stud used by another real part.
+  const socketKeys = new Set(
+    bricks.flatMap((b) =>
+      connectors(b).sockets.map((s) =>
+        [...s.point, ...s.normal].map((v) => Math.round(v * 1000)).join(','),
+      ),
+    ),
+  );
+  const finishedSlopes = bricks.filter(
+    (b) =>
+      ['3039', '3040b'].includes(b.part) &&
+      b.color === fit.bodyColor &&
+      !connectors(b).studs.some((s) =>
+        socketKeys.has(
+          [...s.point, ...s.normal].map((v) => Math.round(v * 1000)).join(','),
+        ),
+      ),
+  );
+  for (const b of finishedSlopes) {
+    const q = [0, 1, 2, 3].find((q) =>
+      rotate(q).every((v, i) => v === b.pose!.matrix[i]),
+    )!;
+    if (q === undefined) continue;
+    bricks.splice(bricks.indexOf(b), 1);
+    put(
+      b.part === '3039' ? '3022' : '3023',
+      b.x,
+      b.y,
+      b.z,
+      b.color,
+      b.part === '3039' ? 0 : b.w > b.d ? 0 : 1,
+      b.section,
+    );
+    const rear = transform(rotate(q), [0, 0, 0.5]);
+    const shimW = b.part === '3039' ? (q % 2 ? 1 : 2) : 1,
+      shimD = b.part === '3039' ? (q % 2 ? 2 : 1) : 1;
+    put(
+      b.part === '3039' ? '3023' : '3024',
+      b.x + b.w / 2 + rear[0] - shimW / 2,
+      b.y + 1,
+      b.z + b.d / 2 + rear[2] - shimD / 2,
+      b.color,
+      q % 2,
+      b.section,
+    );
+    put(
+      b.part === '3039' ? '15068' : '11477',
+      b.x,
+      b.y + 1,
+      b.z,
+      b.color,
+      q,
+      b.section,
+    );
+  }
+  // Replace only isolated convex tile corners, preserving their actual socket
+  // and support. The arch rises one plate at its centre and rounds down at its
+  // edges; reject any position where that rise touches another placed part.
+  const cornerTiles = bricks.filter((b) => {
+    if (b.part !== '3070b' || b.color !== fit.bodyColor || b.y < body.y)
+      return false;
+    const open = (x: number, z: number) =>
+      !cells.has(key(x, b.y, z)) && !reserved.has(key(x, b.y, z));
+    if (
+      ![-1, 1].some((dx) => open(b.x + dx, b.z)) ||
+      ![-1, 1].some((dz) => open(b.x, b.z + dz))
+    )
+      return false;
+    return !bricks.some(
+      (a) =>
+        a !== b &&
+        b.x < a.x + a.w - 1e-5 &&
+        b.x + 1 > a.x + 1e-5 &&
+        b.z < a.z + a.d - 1e-5 &&
+        b.z + 1 > a.z + 1e-5 &&
+        b.y < a.y + a.h - 1e-5 &&
+        b.y + 2 > a.y + 1e-5,
+    );
+  });
+  for (const b of cornerTiles) {
+    if (
+      !cornerTiles.some(
+        (other) => other.x === -b.x - 1 && other.z === b.z && other.y === b.y,
+      )
+    )
+      continue;
+    bricks.splice(bricks.indexOf(b), 1);
+    put('49307', b.x, b.y, b.z, b.color, 1, b.section);
+  }
   bricks.sort((a, b) => a.step! - b.step! || a.id - b.id);
   bricks.forEach((b, i) => (b.id = i + 1));
   const minX = Math.min(...bricks.map((b) => b.x)),
@@ -1118,7 +1209,7 @@ export function roundedDuck(
           ? '左右各安装一块宽弧面翅膀，对准四个侧凸点，高边朝上，弧面朝外。'
           : y === height
             ? '将黑色圆形光面板侧装到头部两侧凸点。'
-            : '按图放置高亮零件；外缘薄板跨接下层凸点，弧面件高边朝内。',
+            : '按图放置高亮零件；曲面下方的薄板先搭好，再按各零件的朝向安装。',
     section:
       y === height + 1
         ? 'wings'

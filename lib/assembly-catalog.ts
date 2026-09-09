@@ -20,7 +20,7 @@ export type CatalogPart = {
   bottom: number;
   centerZ?: number;
   socketRows?: number[];
-  curveProfile?: 'long' | 'double';
+  curveProfile?: 'long' | 'double' | 'arch';
 };
 export const ASSEMBLY_PARTS: Record<string, CatalogPart> = {
   '3001': { name: '砖块 2 × 4', w: 4, d: 2, h: 3, kind: 'brick', bottom: 24 },
@@ -74,6 +74,16 @@ export const ASSEMBLY_PARTS: Record<string, CatalogPart> = {
     bottom: 0,
     socketRows: [0, -8, -8, 0],
     curveProfile: 'double',
+  },
+  '49307': {
+    name: '圆弧顶 1 × 1',
+    w: 1,
+    d: 1,
+    h: 2,
+    kind: 'curve',
+    bottom: 0,
+    socketRows: [0],
+    curveProfile: 'arch',
   },
   '11477': {
     name: '弧面斜坡 1 × 2',
@@ -154,6 +164,8 @@ export function curveFloorY(p: CatalogPart, z: number) {
   );
 }
 export function curveTopY(p: CatalogPart, z: number) {
+  if (p.curveProfile === 'arch')
+    return -6 - Math.sqrt(Math.max(0, 100 - z * z));
   if (p.curveProfile === 'long')
     return 149.253 - 149.253 * Math.sqrt(1 - ((z - 40) / 160) ** 2);
   if (p.curveProfile === 'double')

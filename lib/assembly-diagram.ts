@@ -237,6 +237,10 @@ export function orientationLabel(b: Brick) {
         : normal[2] > 0
           ? '侧装 · 朝前'
           : '侧装 · 朝后';
+  if (p.curveProfile === 'arch') {
+    const direction = transform(b.pose.matrix, [0, 0, 1]);
+    return `圆弧顶朝上，弧线沿${direction[0] ? '左右' : '前后'}方向`;
+  }
   if (p.curveProfile === 'double')
     return `中央弧顶朝上，长边${b.w > b.d ? '横放' : '竖放'}`;
   if (p.kind === 'curve' || p.kind === 'slope') {

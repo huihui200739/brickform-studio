@@ -8,6 +8,7 @@ import { roundedDuck } from './rounded-duck.ts';
 import { toLDraw } from './brick-engine.ts';
 import type { Brick } from './brick-engine.ts';
 import { partThumbnail } from './build-instructions.ts';
+import { orientationLabel } from './assembly-diagram.ts';
 
 void test('new curved parts use their actual stepped seating rows and baked bounds', () => {
   const meshes = JSON.parse(
@@ -20,6 +21,7 @@ void test('new curved parts use their actual stepped seating rows and baked boun
     '88930': [0, 0],
     '93606': [24, 24, 16, 8],
     '93273': [0, -8, -8, 0],
+    '49307': [0],
   })) {
     const p = ASSEMBLY_PARTS[part],
       pose = {
@@ -41,11 +43,17 @@ void test('new curved parts use their actual stepped seating rows and baked boun
   }
   assert.ok(Math.abs(curveTopY(ASSEMBLY_PARTS['93273'], 0) + 16) < 0.001);
   assert.equal(curveTopY(ASSEMBLY_PARTS['93606'], 40), 0);
+  assert.equal(curveTopY(ASSEMBLY_PARTS['49307'], 0), -16);
+  assert.equal(curveTopY(ASSEMBLY_PARTS['49307'], 10), -6);
 });
 void test('continuous shells export real parts and reject intersecting duplicates', () => {
   const model = roundedDuck();
-  for (const part of ['88930', '93606', '93273'])
+  for (const part of ['88930', '93606', '93273', '49307'])
     assert.ok(model.bricks.some((b) => b.part === part));
+  assert.match(
+    orientationLabel(model.bricks.find((b) => b.part === '49307')!),
+    /圆弧顶朝上/,
+  );
   assert.equal(model.bricks.filter((b) => b.part === '88930').length, 8);
   assert.ok(
     model.bricks.some((b) => b.part === '88930' && b.pose!.matrix[7] === 1),
