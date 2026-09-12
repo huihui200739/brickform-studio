@@ -1,5 +1,6 @@
 import {
   finishModel,
+  PALETTE,
   nearestColor,
   validateModel,
   type Model,
@@ -17,7 +18,7 @@ export function meshToDesign(mesh: TriangleMesh, resolution = 28): Model {
     n < 1 ||
     n > 250000 ||
     mesh.colors.length !== n * 3 ||
-    ![20, 28, 36].includes(resolution)
+    ![20, 28, 36, 48].includes(resolution)
   )
     throw Error('三维网格或尺寸不受支持。');
   const min = [Infinity, Infinity, Infinity],
@@ -41,6 +42,7 @@ export function meshToDesign(mesh: TriangleMesh, resolution = 28): Model {
   );
   const cells = new Map<string, { color: number; support: boolean }>();
   const surface = new Map<string, { color: number; support: boolean }>();
+  const votes = new Map<string, Uint32Array>();
   let samples = 0;
   for (let t = 0; t < n; t++) {
     const v = [0, 1, 2].map((j) =>
@@ -109,9 +111,23 @@ export function meshToDesign(mesh: TriangleMesh, resolution = 28): Model {
         const x = Math.min(w - 1, Math.max(0, Math.floor(c[0]))),
           y = Math.min(h - 1, Math.max(0, Math.floor(c[1]))),
           z = Math.min(d - 1, Math.max(0, Math.floor(c[2])));
-        surface.set(`${x + 1},${y + 2},${z + 1}`, { color, support: false });
+        const key = `${x + 1},${y + 2},${z + 1}`;
+        let vote = votes.get(key);
+        if (!vote) {
+          vote = new Uint32Array(PALETTE.length);
+          votes.set(key, vote);
+        }
+        vote[color]++;
       }
   }
+  const colorCounts = new Uint32Array(PALETTE.length);
+  votes.forEach((vote, key) => {
+    let color = 0;
+    for (let i = 1; i < vote.length; i++) if (vote[i] > vote[color]) color = i;
+    surface.set(key, { color, support: false });
+    colorCounts[color]++;
+  });
+  const dominant = colorCounts.indexOf(Math.max(...colorCounts));
   let openRows = 0,
     intersected = 0;
   hits.forEach((row, i) => {
@@ -131,8 +147,7 @@ export function meshToDesign(mesh: TriangleMesh, resolution = 28): Model {
         x++
       )
         cells.set(`${x + 1},${y + 2},${z + 1}`, {
-          color:
-            x + 0.5 - left.x < right.x - x - 0.5 ? left.color : right.color,
+          color: dominant,
           support: false,
         });
     }
@@ -150,12 +165,61 @@ export function meshToDesign(mesh: TriangleMesh, resolution = 28): Model {
     'image',
     mesh.name,
     resolution,
+    dominant,
   );
-  if (raw.bricks.length > 6500)
-    throw Error('此尺寸超过 6500 块零件，请降低积木尺寸后再转换。');
+  // Preserve the occupied volume and full-width bridging plates. An exposed
+  // brick becomes two full plates with a tiled top at the original height.
+  // Only unused studs are removed; attachment surfaces stay intact.
+  let smoothTiles = 0;
+  const tiles: Record<string, string> = {
+    '3022': '3068b',
+    '3023': '3069b',
+    '3024': '3070b',
+  };
+  const plates: Record<string, string> = {
+    '3001': '3020',
+    '3003': '3022',
+    '3010': '3710',
+    '3004': '3023',
+    '3005': '3024',
+  };
+  const finished: typeof raw.bricks = [];
+  for (const b of raw.bricks) {
+    let covered = !!b.support || b.y < 2;
+    for (let x = b.x; x < b.x + b.w; x++)
+      for (let z = b.z; z < b.z + b.d; z++)
+        if (cells.has(`${x},${b.y + b.h},${z}`)) covered = true;
+    if (covered) {
+      finished.push(b);
+      continue;
+    }
+    if (tiles[b.part]) {
+      finished.push({ ...b, part: tiles[b.part] });
+      smoothTiles++;
+    } else if (plates[b.part]) {
+      finished.push(
+        { ...b, part: plates[b.part], h: 1 },
+        { ...b, part: plates[b.part], y: b.y + 1, h: 1 },
+      );
+      const w = Math.min(2, b.w),
+        d = Math.min(2, b.d);
+      const part = w * d === 4 ? '3068b' : w * d === 2 ? '3069b' : '3070b';
+      for (let x = b.x; x < b.x + b.w; x += w)
+        for (let z = b.z; z < b.z + b.d; z += d) {
+          finished.push({ ...b, part, x, z, y: b.y + 2, w, d, h: 1 });
+          smoothTiles++;
+        }
+    } else finished.push(b);
+  }
+  raw.bricks = finished.map((b, i) => ({ ...b, id: i + 1 }));
+  raw.levels = [...new Set(raw.bricks.map((b) => b.y))].sort((a, b) => a - b);
+  if (raw.bricks.length > 14000)
+    throw Error('此尺寸超过 14000 块零件，请降低积木尺寸后再转换。');
   const model = groupImageAssembly(raw);
   model.meshDesign = {
     method: 'mesh-volume',
+    smoothTiles,
+    referenceColors: !!mesh.coloring,
     triangles: n,
     resolution,
     openRowFraction: openRows / Math.max(1, intersected),

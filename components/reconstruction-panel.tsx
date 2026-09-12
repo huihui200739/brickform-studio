@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Box, Upload, LoaderCircle } from 'lucide-react';
-import type { Model } from '@/lib/brick-engine';
+import type { Model, Raster } from '@/lib/brick-engine';
 import { PALETTE } from '@/lib/brick-engine';
 import type { TriangleMesh } from '@/lib/mesh-types';
 import { readGLB } from '@/lib/read-glb';
@@ -33,6 +33,7 @@ export default function ReconstructionPanel({
 }) {
   const [configured, setConfigured] = useState<boolean | null>(null),
     [provider, setProvider] = useState(''),
+    [softenShadows, setSoftenShadows] = useState(true),
     [error, setError] = useState(''),
     [phase, setPhase] = useState(''),
     [busy, setBusy] = useState(false),
@@ -43,7 +44,9 @@ export default function ReconstructionPanel({
   const alive = useRef(true),
     controller = useRef<AbortController | null>(null),
     worker = useRef<Worker | null>(null),
-    fileInput = useRef<HTMLInputElement>(null);
+    fileInput = useRef<HTMLInputElement>(null),
+    original = useRef<TriangleMesh | null>(null),
+    referenceUrl = useRef('');
   useEffect(() => {
     alive.current = true;
     const c = new AbortController();
@@ -107,8 +110,21 @@ export default function ReconstructionPanel({
               new Blob([buffer], { type: 'model/gltf-binary' }),
             ),
           );
+          original.current = mesh;
           setDraft(mesh);
-          setPhase('草稿已就绪，请旋转检查形状');
+          if (provider === 'local') {
+            referenceUrl.current = '/api/reconstruction' + q + '&reference=1';
+            try {
+              const colored = await projectColors(mesh, referenceUrl.current);
+              if (alive.current) setDraft(colored);
+            } catch (e) {
+              if (alive.current)
+                setError(
+                  `形状已保留，但参考图配色未完成：${e instanceof Error ? e.message : '请重试配色'}`,
+                );
+            }
+          }
+          if (alive.current) setPhase('草稿已就绪，请旋转检查形状与配色');
         }
         return;
       }
@@ -177,6 +193,8 @@ export default function ReconstructionPanel({
             new Blob([buffer], { type: 'model/gltf-binary' }),
           ),
         );
+        original.current = mesh;
+        referenceUrl.current = '';
         setDraft(mesh);
         setPhase('已导入三维网格，请检查方向与体积');
       }
@@ -187,41 +205,92 @@ export default function ReconstructionPanel({
       if (alive.current) setBusy(false);
     }
   }
+  async function runWorker<T>(
+    payload: unknown,
+    result: 'mesh' | 'model',
+  ): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const w = new Worker(new URL(workerUrl, window.location.href), {
+        type: 'module',
+      });
+      worker.current = w;
+      const cleanup = () => {
+        clearTimeout(timer);
+        w.terminate();
+        worker.current = null;
+      };
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(Error('转换超时，请降低积木尺寸。'));
+      }, 90000);
+      w.onmessage = (event) => {
+        cleanup();
+        if (event.data[result]) resolve(event.data[result]);
+        else reject(Error(event.data.error || '转换失败。'));
+      };
+      w.onerror = () => {
+        cleanup();
+        reject(Error('积木转换程序未能启动，请刷新后重试。'));
+      };
+      w.postMessage(payload);
+    });
+  }
+  async function projectColors(mesh: TriangleMesh, url: string) {
+    setPhase('正在对齐参考图视角并恢复配色');
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const scale = Math.min(1, 320 / Math.max(img.width, img.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(img.width * scale));
+    canvas.height = Math.max(1, Math.round(img.height * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw Error('无法读取参考图颜色。');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const raster: Raster = {
+      width: canvas.width,
+      height: canvas.height,
+      data: ctx.getImageData(0, 0, canvas.width, canvas.height).data,
+    };
+    return runWorker<TriangleMesh>(
+      { action: 'color', mesh, raster, softenShadows },
+      'mesh',
+    );
+  }
+  async function applyReference() {
+    if (!draft || !image) return;
+    setBusy(true);
+    setError('');
+    try {
+      const colored = await projectColors(
+        original.current || draft,
+        referenceUrl.current || image,
+      );
+      if (alive.current) {
+        setDraft(colored);
+        setPhase('参考图配色已应用，请检查颜色与形状后再转换');
+      }
+    } catch (e) {
+      if (alive.current)
+        setError(e instanceof Error ? e.message : '参考图配色失败。');
+    } finally {
+      if (alive.current) setBusy(false);
+    }
+  }
   async function convert() {
     if (!draft) return;
     setBusy(true);
     setError('');
     setPhase('正在把三维体积转换为积木，并检查连接');
     try {
-      const model = await new Promise<Model>((resolve, reject) => {
-        const w = new Worker(new URL(workerUrl, window.location.href), {
-          type: 'module',
-        });
-        worker.current = w;
-        const cleanup = () => {
-          clearTimeout(timer);
-          w.terminate();
-          worker.current = null;
-        };
-        const timer = setTimeout(() => {
-          cleanup();
-          reject(Error('转换超时，请降低积木尺寸。'));
-        }, 90000);
-        w.onmessage = (event) => {
-          cleanup();
-          if (event.data.model) resolve(event.data.model);
-          else reject(Error(event.data.error || '转换失败。'));
-        };
-        w.onerror = () => {
-          cleanup();
-          reject(Error('积木转换程序未能启动，请刷新后重试。'));
-        };
-        w.postMessage({ mesh: draft, options: { resolution } });
-      });
+      const model = await runWorker<Model>(
+        { mesh: draft, options: { resolution } },
+        'model',
+      );
       if (alive.current) {
         onModel(model);
         setPhase(
-          `积木已生成：${model.bricks.length} 块。可在下方对照模型、清单与步骤。`,
+          `积木已生成：${model.bricks.length} 块，${model.meshDesign?.smoothTiles || 0} 块光面收口。清单与步骤已同步。`,
         );
       }
     } catch (e) {
@@ -236,7 +305,7 @@ export default function ReconstructionPanel({
     const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
     const colors = new Uint8Array(draft.colors.length);
     for (let i = 0; i < colors.length; i += 3) colors.set(rgb, i);
-    setDraft({ ...draft, colors });
+    setDraft({ ...draft, colors, coloring: undefined });
   }
   return (
     <section className="reconstruction-panel">
@@ -296,7 +365,7 @@ export default function ReconstructionPanel({
       </div>
       <p className="reconstruction-cost">
         {provider === 'local'
-          ? '本机 Hunyuan3D · 无需账号。先生成不带纹理的形状草稿，颜色可稍后调整。请保持工作台和本机程序开启。'
+          ? '本机 Hunyuan3D · 无需账号。先生成形状，再按参考图恢复可见区域配色；背面颜色为估计。请保持工作台和本机程序开启。'
           : configured
             ? '云端生成会将图片发送给 Meshy，并使用其 API 额度。'
             : '在线工作台可以导入 GLB；无账号图片重建在本机工作台运行。'}{' '}
@@ -316,6 +385,37 @@ export default function ReconstructionPanel({
       {draft ? (
         <>
           <MeshDraftViewer mesh={draft} />
+          <div className="reconstruction-actions">
+            <button
+              disabled={busy || !image}
+              onClick={() => void applyReference()}
+            >
+              按参考图恢复配色
+            </button>
+            <button
+              disabled={busy || !original.current}
+              onClick={() => {
+                if (original.current) setDraft(original.current);
+              }}
+            >
+              恢复原始颜色
+            </button>
+            <span>
+              {draft.coloring
+                ? '已按照片配色 · 背面颜色为估计'
+                : '可为无纹理模型恢复参考图配色'}
+            </span>
+          </div>
+          <label className="reconstruction-color">
+            <input
+              type="checkbox"
+              checked={softenShadows}
+              disabled={busy}
+              onChange={(e) => setSoftenShadows(e.target.checked)}
+            />
+            减少阴影杂色{' '}
+            <span>修改后点击“按参考图恢复配色”；保留不同色相的装饰颜色。</span>
+          </label>
           <label className="reconstruction-color">
             单色积木配色
             <select
@@ -334,7 +434,7 @@ export default function ReconstructionPanel({
                 </option>
               ))}
             </select>
-            <span>无纹理草稿可选单色；这不会还原照片纹理。</span>
+            <span>可手动覆盖为单色，再点击“按参考图恢复配色”重新取色。</span>
           </label>
           <div className="reconstruction-actions">
             {glbUrl && (
@@ -350,7 +450,7 @@ export default function ReconstructionPanel({
               形状已检查，转换为积木
             </button>
             <span>
-              按左侧 {resolution} 凸点尺寸转换 ·{' '}
+              最长边 {resolution} 凸点 · 向上露出的薄板自动光面收口 ·{' '}
               {Math.round(draft.positions.length / 9).toLocaleString()} 个三角面
             </span>
           </div>

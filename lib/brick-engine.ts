@@ -45,6 +45,8 @@ export type Model = {
   shape: 'sculpture' | 'relief';
   meshDesign?: {
     method: 'mesh-volume';
+    smoothTiles?: number;
+    referenceColors?: boolean;
     triangles: number;
     resolution: number;
     openRowFraction: number;
@@ -208,11 +210,12 @@ export function finishModel(
   source: Model['source'],
   name: string,
   resolution: number,
+  baseColor = 0,
 ): Model {
   for (let x = 0; x < width; x++)
     for (let z = 0; z < depth; z++)
       for (let y = 0; y < 2; y++)
-        subject.set(key(x, y, z), { color: 0, support: false });
+        subject.set(key(x, y, z), { color: baseColor, support: false });
   let bricks = pack(subject, width, height, depth);
   const counts = Array(PALETTE.length).fill(0);
   subject.forEach((c, k) => {

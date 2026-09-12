@@ -63,6 +63,21 @@ export function localReconstruction(): Plugin {
               return send(403, {
                 error: '任务不存在或凭证不匹配。请保留生成时的页面。',
               });
+            if (url.searchParams.get('reference') === '1') {
+              if (job.status !== 'SUCCEEDED')
+                return send(409, { error: '参考图尚未就绪。' });
+              const dir = path.dirname(job.output);
+              const cutout = path.join(dir, 'cutout.png');
+              const file = existsSync(cutout)
+                ? cutout
+                : path.join(dir, 'input.png');
+              res.writeHead(200, {
+                'Content-Type': 'image/png',
+                'Cache-Control': 'no-store',
+              });
+              createReadStream(file).pipe(res);
+              return;
+            }
             if (url.searchParams.get('download') === '1') {
               if (job.status !== 'SUCCEEDED')
                 return send(409, { error: '模型尚未生成。' });

@@ -82,7 +82,7 @@ export default function Home() {
   const [fullness, setFullness] = useState(1);
   const [duck, setDuck] = useState<DuckParameters>(DEFAULT_DUCK);
   const [autoReference, setAutoReference] = useState(true);
-  const [resolution, setResolution] = useState(28),
+  const [resolution, setResolution] = useState(36),
     [depth, setDepth] = useState(8);
   const [threshold, setThreshold] = useState(70),
     [background, setBackground] = useState<Options['background']>('auto');
@@ -388,7 +388,7 @@ export default function Home() {
             <Blocks size={21} />
           </span>
           brickform<span className="brand-cn">积木工坊</span>
-          <span className="beta">V11</span>
+          <span className="beta">V12</span>
         </Link>
         <span className="workspace-title">设计工作台</span>
         <button className="header-help" onClick={() => setHelp(true)}>
@@ -467,6 +467,7 @@ export default function Home() {
             disabled={busy}
             onValueChange={(v) => {
               setMode(v as Mode);
+              if (v !== 'mesh' && resolution > 36) setResolution(36);
               if (v === 'round' && background === 'keep') setBackground('auto');
               setDirty(true);
             }}
@@ -495,7 +496,7 @@ export default function Home() {
           {mode === 'round' ? (
             <>
               <div className="reconstruction-note">
-                <span className="tiny-tag">V11 · 小鸭重建实验</span>
+                <span className="tiny-tag">V12 · 小鸭重建实验</span>
                 <p>
                   额头与肩部用曲面替换外露直斜坡，小转角增加圆弧收口；分层查看与拼装图同步更新。
                 </p>
@@ -691,11 +692,18 @@ export default function Home() {
                   setDirty(true);
                 }}
               >
-                {[
-                  [20, '简约'],
-                  [28, '标准'],
-                  [36, '精细'],
-                ].map(([v, t]) => (
+                {(mode === 'mesh'
+                  ? [
+                      [28, '标准'],
+                      [36, '精细'],
+                      [48, '高精细'],
+                    ]
+                  : [
+                      [20, '简约'],
+                      [28, '标准'],
+                      [36, '精细'],
+                    ]
+                ).map(([v, t]) => (
                   <label
                     key={v}
                     className={resolution === v ? 'chosen' : ''}
@@ -1173,7 +1181,7 @@ export default function Home() {
       <footer className="site-footer">
         <span>
           <Blocks size={15} />
-          Brickform Studio · V11
+          Brickform Studio · V12
         </span>
         <span>独立创作工具，与 LEGO Group 无关联或认证。</span>
       </footer>

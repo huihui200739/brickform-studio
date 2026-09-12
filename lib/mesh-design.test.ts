@@ -94,3 +94,42 @@ void test('mesh conversion rejects broken coordinates and flat image planes', ()
     /三维体积/,
   );
 });
+
+void test('48-stud finishing keeps the occupied volume, connected tiled tops and exact inventory', () => {
+  const model = meshToDesign(boxes([[0, 0, 0, 12, 3, 12]]), 48);
+  assert.equal(model.meshDesign!.resolution, 48);
+  assert.ok(model.meshDesign!.smoothTiles! > 0);
+  assert.equal(
+    model.bricks.filter((b) => ['3068b', '3069b', '3070b'].includes(b.part))
+      .length,
+    model.meshDesign!.smoothTiles,
+  );
+  assert.ok(model.bricks.filter((b) => b.y < 2).every((b) => b.color === 7));
+  assert.equal(
+    new Set(model.bricks.map((b) => b.id)).size,
+    model.bricks.length,
+  );
+  const check = validateModel(model);
+  assert.equal(check.connected, true);
+  assert.equal(check.collisions + check.unsupported + check.invalidParts, 0);
+  for (const b of model.bricks.filter(
+    (b) => b.part.startsWith('306') || b.part === '3070b',
+  )) {
+    assert.equal(
+      model.bricks.some(
+        (above) =>
+          above.y === b.y + 1 &&
+          above.x < b.x + b.w &&
+          above.x + above.w > b.x &&
+          above.z < b.z + b.d &&
+          above.z + above.d > b.z,
+      ),
+      false,
+      'tiles never replace a required stud connection',
+    );
+  }
+  assert.equal(
+    inventory(model.bricks).reduce((s, p) => s + p.quantity, 0),
+    model.bricks.length,
+  );
+});
