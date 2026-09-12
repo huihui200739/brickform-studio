@@ -184,7 +184,9 @@ export function assemblyDiagram(
   if (!list.length) return '';
   const projected = list.flatMap((b) =>
     brickFaces(b)
-      .filter((f) => f.detail !== 'stud-side')
+      .filter(
+        (f) => f.detail !== 'stud-side' && (list.length <= 1200 || !f.detail),
+      )
       .map((f) => {
         const active = highlight ? highlight.includes(b.id) : b.step === step;
         const rgb = active ? PALETTE[b.color].hex : '#cbd3dc';
@@ -210,13 +212,22 @@ export function assemblyDiagram(
         };
       }),
   );
-  const pts = projected.flatMap((p) => p.points),
-    xs = pts.map((p) => p[0]),
-    ys = pts.map((p) => p[1]);
-  const minX = Math.min(...xs) - 16,
-    minY = Math.min(...ys) - 16,
-    w = Math.max(...xs) - minX + 16,
-    h = Math.max(...ys) - minY + 16;
+  // Large reconstructed buildings have more vertices than a JS call's argument limit.
+  let left = Infinity,
+    top = Infinity,
+    right = -Infinity,
+    bottom = -Infinity;
+  for (const face of projected)
+    for (const [x, y] of face.points) {
+      left = Math.min(left, x);
+      top = Math.min(top, y);
+      right = Math.max(right, x);
+      bottom = Math.max(bottom, y);
+    }
+  const minX = left - 16,
+    minY = top - 16,
+    w = right - minX + 16,
+    h = bottom - minY + 16;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX} ${minY} ${w} ${h}" role="img" aria-label="搭建步骤 ${step + 1} 等轴测示意图"><rect x="${minX}" y="${minY}" width="${w}" height="${h}" rx="8" fill="#f4f6f8"/>${projected
     .sort((a, b) => a.depth - b.depth)
     .map(

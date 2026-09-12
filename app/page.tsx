@@ -22,6 +22,7 @@ import Image from 'next/image';
 import ModelViewer from '@/components/model-viewer';
 import AssemblyViewer from '@/components/assembly-viewer';
 import BuildGuide from '@/components/build-guide';
+import ReconstructionPanel from '@/components/reconstruction-panel';
 import { previewRange, type PreviewMode } from '@/lib/preview-state';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
@@ -73,10 +74,10 @@ const backgroundItems = [
   { value: 'white', label: '去除白色背景' },
   { value: 'keep', label: '保留完整图片' },
 ];
-type Mode = 'general' | 'sculpture' | 'round' | 'duck' | 'relief';
+type Mode = 'mesh' | 'general' | 'sculpture' | 'round' | 'duck' | 'relief';
 export default function Home() {
   const [model, setModel] = useState(() => roundedDuck());
-  const [mode, setMode] = useState<Mode>('general');
+  const [mode, setMode] = useState<Mode>('mesh');
   const [roundSize, setRoundSize] = useState(18);
   const [fullness, setFullness] = useState(1);
   const [duck, setDuck] = useState<DuckParameters>(DEFAULT_DUCK);
@@ -87,6 +88,7 @@ export default function Home() {
     [background, setBackground] = useState<Options['background']>('auto');
   const [source, setSource] = useState<{
     raster: Raster;
+    imageData: string;
     url: string;
     name: string;
   } | null>(null);
@@ -102,6 +104,7 @@ export default function Home() {
     [dirty, setDirty] = useState(false);
   const [help, setHelp] = useState(false),
     [exportOpen, setExportOpen] = useState(false),
+    [manualChapter, setManualChapter] = useState(0),
     [drag, setDrag] = useState(false);
   const input = useRef<HTMLInputElement>(null),
     uploadToken = useRef(0),
@@ -186,7 +189,18 @@ export default function Home() {
       }
       if (sourceUrl.current) URL.revokeObjectURL(sourceUrl.current);
       sourceUrl.current = url;
+      const photo = document.createElement('canvas');
+      const photoRatio = Math.min(
+        1,
+        1024 / Math.max(img.naturalWidth, img.naturalHeight),
+      );
+      photo.width = Math.max(1, Math.round(img.naturalWidth * photoRatio));
+      photo.height = Math.max(1, Math.round(img.naturalHeight * photoRatio));
+      const photoContext = photo.getContext('2d');
+      if (!photoContext) throw Error('无法读取图片。');
+      photoContext.drawImage(img, 0, 0, photo.width, photo.height);
       const uploaded = {
+        imageData: photo.toDataURL('image/png'),
         raster: {
           width: pixels.width,
           height: pixels.height,
@@ -198,14 +212,11 @@ export default function Home() {
           : file.name.replace(/\.[^.]+$/, '').slice(0, 24),
       };
       setSource(uploaded);
-      setMode('general');
+      setMode('mesh');
       setBackground('auto');
       setAutoReference(true);
       setDirty(true);
-      setNotice('图片已读取，正在生成模型、清单和逐块步骤…');
-      const next = await generateGeneral(uploaded, 'general', 'auto');
-      if (token !== uploadToken.current) return;
-      applyModel(next);
+      setNotice('参考图已就绪，请在右侧生成三维草稿，检查后再转成积木。');
     } catch (e) {
       if (url && url !== sourceUrl.current) URL.revokeObjectURL(url);
       setError(e instanceof Error ? e.message : '无法读取图片，请重试。');
@@ -326,14 +337,24 @@ export default function Home() {
       setBusy(false);
     }
   }
+  const chapterCount =
+    model.bricks.length > 1200 ? Math.ceil(model.levels.length / 30) : 1;
+  const chapter = Math.min(manualChapter, chapterCount - 1);
+  const manualRange =
+    chapterCount > 1
+      ? {
+          start: chapter * 30,
+          end: Math.min((chapter + 1) * 30, model.levels.length),
+        }
+      : undefined;
   function save(kind: 'csv' | 'ldr' | 'html') {
     if (kind === 'csv')
       download(csv(model), 'brickform-parts.csv', 'text/csv;charset=utf-8');
     if (kind === 'ldr') download(toLDraw(model), 'brickform-model.ldr');
     if (kind === 'html')
       download(
-        manualHTML(model),
-        'brickform-guide.html',
+        manualHTML(model, manualRange),
+        `brickform-guide${manualRange ? `-${chapter + 1}` : ''}.html`,
         'text/html;charset=utf-8',
       );
     setNotice('已导出当前模型。离线说明书可用浏览器打开并打印为 PDF。');
@@ -346,7 +367,9 @@ export default function Home() {
     }
     win.opener = null;
     const url = URL.createObjectURL(
-      new Blob([manualHTML(model)], { type: 'text/html;charset=utf-8' }),
+      new Blob([manualHTML(model, manualRange)], {
+        type: 'text/html;charset=utf-8',
+      }),
     );
     win.location.href = url;
     setTimeout(() => URL.revokeObjectURL(url), 60000);
@@ -365,7 +388,7 @@ export default function Home() {
             <Blocks size={21} />
           </span>
           brickform<span className="brand-cn">积木工坊</span>
-          <span className="beta">V10.1</span>
+          <span className="beta">V11</span>
         </Link>
         <span className="workspace-title">设计工作台</span>
         <button className="header-help" onClick={() => setHelp(true)}>
@@ -377,7 +400,9 @@ export default function Home() {
         <aside className="settings-card">
           <div className="settings-heading">
             <h1>从图片开始</h1>
-            <span className="tiny-tag">本机处理</span>
+            <span className="tiny-tag">
+              {mode === 'mesh' ? '三维工作流' : '本机处理'}
+            </span>
           </div>
           <input
             className="sr-only"
@@ -447,11 +472,8 @@ export default function Home() {
             }}
           >
             {[
-              [
-                'general',
-                '自动生成 · 任意图片',
-                '物品图生成轮廓体积 · 复杂照片生成浮雕',
-              ],
+              ['mesh', '三维重建', '先检查三维草稿，再转换成积木'],
+              ['general', '旧版图片轮廓', '仅二维轮廓加厚 · 不还原物体结构'],
               ['sculpture', '轮廓立体', '按图片轮廓估算厚度 · 背面为推测'],
               ['round', '小鸭精细模式', '仅小鸭侧面图 · 保留原有曲面设计'],
               ['duck', '部件模板', '旧版小鸭 · 手动搭配比例'],
@@ -473,7 +495,7 @@ export default function Home() {
           {mode === 'round' ? (
             <>
               <div className="reconstruction-note">
-                <span className="tiny-tag">V10.1 · 小鸭重建实验</span>
+                <span className="tiny-tag">V11 · 小鸭重建实验</span>
                 <p>
                   额头与肩部用曲面替换外露直斜坡，小转角增加圆弧收口；分层查看与拼装图同步更新。
                 </p>
@@ -684,31 +706,35 @@ export default function Home() {
                   </label>
                 ))}
               </RadioGroup>
-              <div className="field-title" id="depth-label">
-                模型厚度 <span>{depth} 凸点</span>
-              </div>
-              <Slider
-                aria-labelledby="depth-label"
-                value={[depth]}
-                min={4}
-                max={20}
-                step={2}
-                disabled={busy}
-                onValueChange={(v) => {
-                  setDepth(Array.isArray(v) ? v[0] : v);
-                  setDirty(true);
-                }}
-              />
-              <p className="field-hint">
-                {mode === 'general'
-                  ? '上传后自动生成。支持动物、车辆、建筑、日用品、人物和风景；复杂画面会保留为浮雕。'
-                  : mode === 'sculpture'
-                    ? '厚度由轮廓估算，背面按对称形状推测；不是物体的真实三维扫描。'
-                    : '将图片做成有厚度的浮雕；人物、风景或复杂背景建议保留完整图片。'}
-              </p>
+              {mode !== 'mesh' && (
+                <>
+                  <div className="field-title" id="depth-label">
+                    模型厚度 <span>{depth} 凸点</span>
+                  </div>
+                  <Slider
+                    aria-labelledby="depth-label"
+                    value={[depth]}
+                    min={4}
+                    max={20}
+                    step={2}
+                    disabled={busy}
+                    onValueChange={(v) => {
+                      setDepth(Array.isArray(v) ? v[0] : v);
+                      setDirty(true);
+                    }}
+                  />
+                  <p className="field-hint">
+                    {mode === 'general'
+                      ? '上传后自动生成。支持动物、车辆、建筑、日用品、人物和风景；复杂画面会保留为浮雕。'
+                      : mode === 'sculpture'
+                        ? '厚度由轮廓估算，背面按对称形状推测；不是物体的真实三维扫描。'
+                        : '将图片做成有厚度的浮雕；人物、风景或复杂背景建议保留完整图片。'}
+                  </p>
+                </>
+              )}
             </>
           )}
-          {source && (
+          {source && mode !== 'mesh' && (
             <div className="background-settings">
               <div className="field-title" id="background-label">
                 参考图背景
@@ -757,346 +783,373 @@ export default function Home() {
               />
             </div>
           )}
-          <div className="generate-area">
-            <button
-              className="primary"
-              disabled={busy}
-              onClick={() => void generate()}
-            >
-              {busy ? (
-                <LoaderCircle className="spin" size={18} />
-              ) : (
-                <Sparkles size={18} />
-              )}{' '}
-              {busy ? '正在构建设计' : '生成积木设计'}
-              <ArrowRight size={18} />
-            </button>
-            <p>
-              {dirty
-                ? '参数已改变，生成后更新预览'
-                : '模型、清单与说明书已同步'}
-            </p>
-          </div>
+          {mode !== 'mesh' && (
+            <div className="generate-area">
+              <button
+                className="primary"
+                disabled={busy}
+                onClick={() => void generate()}
+              >
+                {busy ? (
+                  <LoaderCircle className="spin" size={18} />
+                ) : (
+                  <Sparkles size={18} />
+                )}{' '}
+                {busy ? '正在构建设计' : '生成积木设计'}
+                <ArrowRight size={18} />
+              </button>
+              <p>
+                {dirty
+                  ? '参数已改变，生成后更新预览'
+                  : '模型、清单与说明书已同步'}
+              </p>
+            </div>
+          )}
         </aside>
         <div className="studio-main">
-          <section className="preview-panel">
-            <div className="design-topline">
-              <div className="design-title-group">
-                <span className="design-type">
-                  {model.imageDesign
-                    ? model.imageDesign.shape === 'sculpture'
-                      ? '通用图片 / 轮廓立体'
-                      : '通用图片 / 图片浮雕'
-                    : model.assembly
-                      ? model.reconstruction
-                        ? '体积重建 / 小鸭侧面图'
-                        : '部件模板 / 小鸭'
-                      : '平面浮雕设计'}
-                </span>
-                <input
-                  className="design-name"
-                  aria-label="设计名称"
-                  title="点击修改设计名称"
-                  key={model.name}
-                  defaultValue={model.name}
-                  maxLength={24}
-                  onBlur={(e) => {
-                    const name = e.target.value.trim() || '我的积木作品';
-                    if (name !== model.name) setModel((m) => ({ ...m, name }));
-                  }}
-                />
-              </div>
-              <button
-                className="primary export-main"
-                onClick={() => setExportOpen(true)}
-              >
-                <Download size={16} />
-                导出设计
-              </button>
-            </div>
-            <div className="design-metrics">
-              <span>
-                <b>{model.bricks.length.toLocaleString()}</b> 块零件
-              </span>
-              <span>
-                <b>{new Set(model.bricks.map((b) => b.part)).size}</b> 种零件
-              </span>
-              <span>
-                <b>{model.levels.length}</b> 个步骤
-              </span>
-              <span className="metric-dimensions">
-                {(model.width * 0.8).toFixed(1)} ×{' '}
-                {(model.depth * 0.8).toFixed(1)} ×{' '}
-                {(model.height * 0.32).toFixed(1)} cm
-              </span>
-              <span className={`sync-pill ${dirty ? 'pending' : ''}`}>
-                {dirty ? '待生成更新' : '已同步'}
-              </span>
-            </div>
-            {model.imageDesign && (
-              <output className="image-result-note">
-                <Info size={16} />
-                <span>
-                  {model.imageDesign.note}{' '}
-                  {model.imageDesign.shape === 'sculpture'
-                    ? '当前为轮廓立体，背面与厚度为推测。'
-                    : '当前为图片浮雕。'}
-                </span>
-              </output>
-            )}
-            <div className="preview-mode-bar">
-              <fieldset aria-label="预览范围">
-                <button
-                  aria-pressed={previewMode === 'complete'}
-                  onClick={() => {
-                    setPreviewMode('complete');
-                    setSection('all');
-                    setExploded(false);
-                  }}
-                >
-                  完整作品
-                </button>
-                <button
-                  aria-pressed={previewMode === 'steps'}
-                  onClick={() => {
-                    setPreviewMode('steps');
-                    setSection('all');
-                    setExploded(false);
-                  }}
-                >
-                  跟随拼装
-                </button>
-              </fieldset>
-              <span>
-                {previewMode === 'complete'
-                  ? '阅读步骤时，完整作品保持可见'
-                  : `当前显示第 ${layer} 组的搭建进度`}
-              </span>
-            </div>
-            {model.assembly ? (
-              <AssemblyViewer
-                model={model}
-                layer={preview.layer}
-                focusId={preview.focusId}
-                exploded={exploded}
-                section={section}
-                onExplode={() => setExploded((v) => !v)}
-              />
-            ) : (
-              <ModelViewer
-                model={model}
-                layer={preview.layer}
-                exploded={exploded}
-                onExplode={() => setExploded((v) => !v)}
-              />
-            )}
-            {model.assembly && (
-              <div className="section-filter">
-                <span>单独查看</span>
-                <fieldset aria-label="查看模型部件">
-                  {[
-                    { id: 'all', name: '完整模型' },
-                    ...model.assembly.sections,
-                  ].map((s) => (
+          {mode === 'mesh' && (
+            <ReconstructionPanel
+              key={source?.url || 'empty'}
+              image={source?.imageData}
+              name={source?.name || '我的三维积木'}
+              resolution={resolution}
+              onModel={applyModel}
+            />
+          )}
+          {(mode !== 'mesh' || (model.meshDesign && !dirty)) && (
+            <>
+              <section className="preview-panel">
+                <div className="design-topline">
+                  <div className="design-title-group">
+                    <span className="design-type">
+                      {model.meshDesign
+                        ? '三维网格 / 积木转换'
+                        : model.imageDesign
+                          ? model.imageDesign.shape === 'sculpture'
+                            ? '通用图片 / 轮廓立体'
+                            : '通用图片 / 图片浮雕'
+                          : model.assembly
+                            ? model.reconstruction
+                              ? '体积重建 / 小鸭侧面图'
+                              : '部件模板 / 小鸭'
+                            : '平面浮雕设计'}
+                    </span>
+                    <input
+                      className="design-name"
+                      aria-label="设计名称"
+                      title="点击修改设计名称"
+                      key={model.name}
+                      defaultValue={model.name}
+                      maxLength={24}
+                      onBlur={(e) => {
+                        const name = e.target.value.trim() || '我的积木作品';
+                        if (name !== model.name)
+                          setModel((m) => ({ ...m, name }));
+                      }}
+                    />
+                  </div>
+                  <button
+                    className="primary export-main"
+                    onClick={() => setExportOpen(true)}
+                  >
+                    <Download size={16} />
+                    导出设计
+                  </button>
+                </div>
+                <div className="design-metrics">
+                  <span>
+                    <b>{model.bricks.length.toLocaleString()}</b> 块零件
+                  </span>
+                  <span>
+                    <b>{new Set(model.bricks.map((b) => b.part)).size}</b>{' '}
+                    种零件
+                  </span>
+                  <span>
+                    <b>{model.levels.length}</b> 个步骤
+                  </span>
+                  <span className="metric-dimensions">
+                    {(model.width * 0.8).toFixed(1)} ×{' '}
+                    {(model.depth * 0.8).toFixed(1)} ×{' '}
+                    {(model.height * 0.32).toFixed(1)} cm
+                  </span>
+                  <span className={`sync-pill ${dirty ? 'pending' : ''}`}>
+                    {dirty ? '待生成更新' : '已同步'}
+                  </span>
+                </div>
+                {model.imageDesign && (
+                  <output className="image-result-note">
+                    <Info size={16} />
+                    <span>
+                      {model.imageDesign.note}{' '}
+                      {model.imageDesign.shape === 'sculpture'
+                        ? '当前为轮廓立体，背面与厚度为推测。'
+                        : '当前为图片浮雕。'}
+                    </span>
+                  </output>
+                )}
+                <div className="preview-mode-bar">
+                  <fieldset aria-label="预览范围">
                     <button
-                      key={s.id}
-                      aria-pressed={
-                        previewMode === 'complete' && section === s.id
-                      }
+                      aria-pressed={previewMode === 'complete'}
                       onClick={() => {
-                        setSection(s.id);
                         setPreviewMode('complete');
+                        setSection('all');
+                        setExploded(false);
                       }}
                     >
-                      {s.name}
-                      {s.id !== 'all' && (
-                        <small>
-                          {
-                            model.bricks.filter((b) => b.section === s.id)
-                              .length
-                          }
-                        </small>
-                      )}
+                      完整作品
                     </button>
-                  ))}
-                </fieldset>
-              </div>
-            )}
-            <div className="layer-control">
-              <span>
-                <Layers3 size={16} />
-                搭建进度
-              </span>
-              <Slider
-                aria-label="搭建进度"
-                value={[layer]}
-                min={1}
-                max={model.levels.length}
-                step={1}
-                onValueChange={(v) => {
-                  selectLayer(Array.isArray(v) ? v[0] : v);
-                  setPreviewMode('steps');
-                }}
-              />
-              <b>
-                {layer}
-                <small> / {model.levels.length}</small>
-              </b>
-              <button
-                onClick={() => {
-                  setPreviewMode('complete');
-                  setSection('all');
-                  setExploded(false);
-                }}
-              >
-                完整模型
-              </button>
-            </div>
-            <div className="validation-strip">
-              <span>
-                <ShieldCheck size={15} />
-                {validation.collisions === 0 &&
-                validation.unsupported === 0 &&
-                validation.connected
-                  ? '连接与重叠检查通过'
-                  : '结构需要检查'}
-              </span>
-              <span>
-                {model.assembly
-                  ? '实物稳定性尚未验证'
-                  : '厚度由轮廓估算 · 实物稳定性尚未验证'}
-              </span>
-              <button onClick={() => setHelp(true)}>
-                了解检查范围
-                <ArrowUpRight size={12} />
-              </button>
-            </div>
-          </section>
-          <section className="output-panel">
-            <Tabs
-              value={tab}
-              onValueChange={(v) => {
-                setTab(String(v));
-                setPreviewMode('complete');
-                if (v === 'steps') {
-                  setGuideFocus(null);
-                  setLayer(1);
-                  setSection('all');
-                  setExploded(false);
-                }
-              }}
-            >
-              <div className="output-header">
-                <TabsList variant="line">
-                  <TabsTrigger value="parts">
-                    <Blocks />
-                    零件清单<span>{parts.length}</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="steps">
-                    <FileText />
-                    拼装步骤
-                  </TabsTrigger>
-                </TabsList>
-                <button className="text-button" onClick={() => save('csv')}>
-                  <Download size={14} />
-                  导出 CSV
-                </button>
-              </div>
-              <TabsContent value="parts">
-                <div className="table-intro">
+                    <button
+                      aria-pressed={previewMode === 'steps'}
+                      onClick={() => {
+                        setPreviewMode('steps');
+                        setSection('all');
+                        setExploded(false);
+                      }}
+                    >
+                      跟随拼装
+                    </button>
+                  </fieldset>
                   <span>
-                    {model.imageDesign
-                      ? `包含主体、底座和 ${model.supportCount} 块辅助支撑`
-                      : model.assembly
-                        ? '包含全部部件，侧装连接件已计入'
-                        : '包含主体、底座及辅助支撑'}
+                    {previewMode === 'complete'
+                      ? '阅读步骤时，完整作品保持可见'
+                      : `当前显示第 ${layer} 组的搭建进度`}
                   </span>
-                  <input
-                    aria-label="搜索零件或颜色"
-                    placeholder="搜索编号 / 颜色"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                </div>
+                {model.assembly ? (
+                  <AssemblyViewer
+                    model={model}
+                    layer={preview.layer}
+                    focusId={preview.focusId}
+                    exploded={exploded}
+                    section={section}
+                    onExplode={() => setExploded((v) => !v)}
                   />
-                </div>
-                <div className="parts-scroll">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>零件</TableHead>
-                        <TableHead>设计编号</TableHead>
-                        <TableHead>颜色</TableHead>
-                        <TableHead className="quantity">数量</TableHead>
-                        <TableHead />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {shownParts.map((p) => (
-                        <TableRow key={`${p.part}-${p.color}`}>
-                          <TableCell>
-                            <span className="part-name">
-                              <Box
-                                size={20}
-                                style={{ color: PALETTE[p.color].hex }}
-                              />
-                              {PARTS[p.part]}
-                            </span>
-                          </TableCell>
-                          <TableCell className="part-code">{p.part}</TableCell>
-                          <TableCell>
-                            <span className="color-cell">
-                              <i style={{ background: PALETTE[p.color].hex }} />
-                              {PALETTE[p.color].name}
-                            </span>
-                          </TableCell>
-                          <TableCell className="quantity">
-                            {p.quantity}
-                          </TableCell>
-                          <TableCell>
-                            <a
-                              className="part-link"
-                              href={`https://www.lego.com/en-us/pick-and-build/pick-a-brick?query=${p.part.replace(/b$/, '')}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              aria-label={`到乐高官网核对 ${p.part}`}
-                            >
-                              <ArrowUpRight size={15} />
-                            </a>
-                          </TableCell>
-                        </TableRow>
+                ) : (
+                  <ModelViewer
+                    model={model}
+                    layer={preview.layer}
+                    exploded={exploded}
+                    onExplode={() => setExploded((v) => !v)}
+                  />
+                )}
+                {model.assembly && (
+                  <div className="section-filter">
+                    <span>单独查看</span>
+                    <fieldset aria-label="查看模型部件">
+                      {[
+                        { id: 'all', name: '完整模型' },
+                        ...model.assembly.sections,
+                      ].map((s) => (
+                        <button
+                          key={s.id}
+                          aria-pressed={
+                            previewMode === 'complete' && section === s.id
+                          }
+                          onClick={() => {
+                            setSection(s.id);
+                            setPreviewMode('complete');
+                          }}
+                        >
+                          {s.name}
+                          {s.id !== 'all' && (
+                            <small>
+                              {
+                                model.bricks.filter((b) => b.section === s.id)
+                                  .length
+                              }
+                            </small>
+                          )}
+                        </button>
                       ))}
-                    </TableBody>
-                  </Table>
-                  {!shownParts.length && (
-                    <p className="empty-search">
-                      没有匹配的零件，请更换编号或颜色。
-                    </p>
-                  )}
-                </div>
-                <div className="table-foot">
-                  零件与颜色组合、在售情况需购买前核对
+                    </fieldset>
+                  </div>
+                )}
+                <div className="layer-control">
                   <span>
-                    总计 <b>{model.bricks.length}</b> 块
+                    <Layers3 size={16} />
+                    搭建进度
                   </span>
+                  <Slider
+                    aria-label="搭建进度"
+                    value={[layer]}
+                    min={1}
+                    max={model.levels.length}
+                    step={1}
+                    onValueChange={(v) => {
+                      selectLayer(Array.isArray(v) ? v[0] : v);
+                      setPreviewMode('steps');
+                    }}
+                  />
+                  <b>
+                    {layer}
+                    <small> / {model.levels.length}</small>
+                  </b>
+                  <button
+                    onClick={() => {
+                      setPreviewMode('complete');
+                      setSection('all');
+                      setExploded(false);
+                    }}
+                  >
+                    完整模型
+                  </button>
                 </div>
-              </TabsContent>
-              <TabsContent value="steps">
-                <BuildGuide
-                  key={layer}
-                  model={model}
-                  stage={layer - 1}
-                  onStageChange={(n) => selectLayer(n + 1)}
-                  onFocus={(id) => setGuideFocus({ model, layer, id })}
-                />
-              </TabsContent>
-            </Tabs>
-          </section>
-          <p className="model-provenance">
-            {model.assembly?.reference ||
-              '图片轮廓估算厚度；尚未从单张图片还原真实三维结构。'}{' '}
-            <a href="/parts/ATTRIBUTION.txt" target="_blank" rel="noreferrer">
-              零件几何来源 <ArrowUpRight size={12} />
-            </a>
-          </p>
+                <div className="validation-strip">
+                  <span>
+                    <ShieldCheck size={15} />
+                    {validation.collisions === 0 &&
+                    validation.unsupported === 0 &&
+                    validation.connected
+                      ? '连接与重叠检查通过'
+                      : '结构需要检查'}
+                  </span>
+                  <span>
+                    {model.assembly
+                      ? '实物稳定性尚未验证'
+                      : '厚度由轮廓估算 · 实物稳定性尚未验证'}
+                  </span>
+                  <button onClick={() => setHelp(true)}>
+                    了解检查范围
+                    <ArrowUpRight size={12} />
+                  </button>
+                </div>
+              </section>
+              <section className="output-panel">
+                <Tabs
+                  value={tab}
+                  onValueChange={(v) => {
+                    setTab(String(v));
+                    setPreviewMode('complete');
+                    if (v === 'steps') {
+                      setGuideFocus(null);
+                      setLayer(1);
+                      setSection('all');
+                      setExploded(false);
+                    }
+                  }}
+                >
+                  <div className="output-header">
+                    <TabsList variant="line">
+                      <TabsTrigger value="parts">
+                        <Blocks />
+                        零件清单<span>{parts.length}</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="steps">
+                        <FileText />
+                        拼装步骤
+                      </TabsTrigger>
+                    </TabsList>
+                    <button className="text-button" onClick={() => save('csv')}>
+                      <Download size={14} />
+                      导出 CSV
+                    </button>
+                  </div>
+                  <TabsContent value="parts">
+                    <div className="table-intro">
+                      <span>
+                        {model.imageDesign
+                          ? `包含主体、底座和 ${model.supportCount} 块辅助支撑`
+                          : model.assembly
+                            ? '包含全部部件，侧装连接件已计入'
+                            : '包含主体、底座及辅助支撑'}
+                      </span>
+                      <input
+                        aria-label="搜索零件或颜色"
+                        placeholder="搜索编号 / 颜色"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                      />
+                    </div>
+                    <div className="parts-scroll">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>零件</TableHead>
+                            <TableHead>设计编号</TableHead>
+                            <TableHead>颜色</TableHead>
+                            <TableHead className="quantity">数量</TableHead>
+                            <TableHead />
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {shownParts.map((p) => (
+                            <TableRow key={`${p.part}-${p.color}`}>
+                              <TableCell>
+                                <span className="part-name">
+                                  <Box
+                                    size={20}
+                                    style={{ color: PALETTE[p.color].hex }}
+                                  />
+                                  {PARTS[p.part]}
+                                </span>
+                              </TableCell>
+                              <TableCell className="part-code">
+                                {p.part}
+                              </TableCell>
+                              <TableCell>
+                                <span className="color-cell">
+                                  <i
+                                    style={{ background: PALETTE[p.color].hex }}
+                                  />
+                                  {PALETTE[p.color].name}
+                                </span>
+                              </TableCell>
+                              <TableCell className="quantity">
+                                {p.quantity}
+                              </TableCell>
+                              <TableCell>
+                                <a
+                                  className="part-link"
+                                  href={`https://www.lego.com/en-us/pick-and-build/pick-a-brick?query=${p.part.replace(/b$/, '')}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  aria-label={`到乐高官网核对 ${p.part}`}
+                                >
+                                  <ArrowUpRight size={15} />
+                                </a>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      {!shownParts.length && (
+                        <p className="empty-search">
+                          没有匹配的零件，请更换编号或颜色。
+                        </p>
+                      )}
+                    </div>
+                    <div className="table-foot">
+                      零件与颜色组合、在售情况需购买前核对
+                      <span>
+                        总计 <b>{model.bricks.length}</b> 块
+                      </span>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="steps">
+                    <BuildGuide
+                      key={layer}
+                      model={model}
+                      stage={layer - 1}
+                      onStageChange={(n) => selectLayer(n + 1)}
+                      onFocus={(id) => setGuideFocus({ model, layer, id })}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </section>
+              <p className="model-provenance">
+                {model.assembly?.reference ||
+                  '图片轮廓估算厚度；尚未从单张图片还原真实三维结构。'}{' '}
+                <a
+                  href="/parts/ATTRIBUTION.txt"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  零件几何来源 <ArrowUpRight size={12} />
+                </a>
+              </p>
+            </>
+          )}
         </div>
       </div>
       {(notice || error) && (
@@ -1120,7 +1173,7 @@ export default function Home() {
       <footer className="site-footer">
         <span>
           <Blocks size={15} />
-          Brickform Studio · V10.1
+          Brickform Studio · V11
         </span>
         <span>独立创作工具，与 LEGO Group 无关联或认证。</span>
       </footer>
@@ -1128,7 +1181,8 @@ export default function Home() {
         <DialogContent className="help-dialog">
           <DialogTitle>从任意图片生成积木设计</DialogTitle>
           <DialogDescription>
-            上传图片后，自动生成可旋转的积木模型、零件清单和逐块拼装步骤。
+            上传图片后，先生成并检查三维草稿，再转换为积木模型、零件清单和逐块步骤。也支持直接导入
+            GLB。
           </DialogDescription>
           <ol className="help-steps">
             <li>
@@ -1157,12 +1211,14 @@ export default function Home() {
           <div className="help-limits">
             <strong>检查范围</strong>
             <p>
-              模型检查零件外包框重叠、凸点连接与步骤顺序。通用生成采用基础砖与薄板，背面和厚度为轮廓推测；复杂图片生成浮雕，尚不支持从任意照片还原真实三维物品。未做受力仿真或实物试拼。
+              模型检查零件外包框重叠、凸点连接与步骤顺序。三维模式按网格体积转换，旧版轮廓模式只估算厚度。单张照片的不可见部分仍由模型推测，未做受力仿真或实物试拼。
             </p>
             <p>
               零件编号来自 LDraw，带 b 等后缀的编号表示其库中的形态版本。具体
               LEGO
-              设计编号、颜色组合与库存需购买前核对。图片仅在本机处理，刷新后本次设计会清空。
+              设计编号、颜色组合与库存需购买前核对。本机重建无需账号，图片留在电脑上；仅在配置并选择云端生成时发送到
+              Meshy。 GLB
+              导入、积木转换与旧版轮廓处理在本机进行。刷新会清空本次设计，请先下载需要保留的结果。
             </p>
           </div>
         </DialogContent>
@@ -1178,6 +1234,26 @@ export default function Home() {
             <p className="export-disclaimer">
               参数有未应用的修改。若要导出新参数的结果，请先关闭此窗口并生成设计。
             </p>
+          )}
+          {chapterCount > 1 && (
+            <label className="reconstruction-color">
+              说明书分册
+              <select
+                value={chapter}
+                onChange={(e) => setManualChapter(Number(e.target.value))}
+              >
+                {Array.from({ length: chapterCount }, (_, i) => (
+                  <option key={i} value={i}>
+                    第 {i + 1} 册 · 第 {i * 30 + 1}–
+                    {Math.min((i + 1) * 30, model.levels.length)} 组
+                  </option>
+                ))}
+              </select>
+              <span>
+                大模型每册最多 30
+                组，按顺序下载与拼装。模型文件和零件清单始终完整。
+              </span>
+            </label>
           )}
           <button className="export-option" onClick={printManual}>
             <FileText />

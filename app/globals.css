@@ -3234,3 +3234,25 @@ h1 {
   flex-shrink: 0;
   margin-top: 3px;
 }
+
+.reconstruction-panel { background: #fff; border: 1px solid #dce5ec; border-radius: 16px; padding: 28px; margin-bottom: 24px; }
+.reconstruction-heading { display: flex; gap: 14px; color: #244350; align-items: flex-start; }
+.reconstruction-heading h2 { margin: 0; font-size: 23px; }
+.reconstruction-heading p, .reconstruction-cost { color: #617788; font-size: 14px; line-height: 1.7; }
+.reconstruction-message { padding: 18px; background: #fff6df; color: #785921; border-radius: 10px; font-size: 14px; line-height: 1.7; margin: 20px 0; }
+.reconstruction-message a { text-decoration: underline; }
+.reconstruction-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 20px 0 12px; }
+.reconstruction-actions button { display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; padding: 12px 18px; border: 1px solid #dce5ec; }
+.reconstruction-actions button:disabled { opacity: .5; cursor: not-allowed; }
+.reconstruction-actions span { color: #607889; font-size: 14px; }
+.reconstruction-status { display: block; padding: 12px 0; color: #17664b; font-size: 15px; }
+.reconstruction-error { background: #fceee8; color: #963e28; padding: 14px; border-radius: 8px; }
+.reconstruction-empty { display: grid; justify-items: center; align-content: center; text-align: center; min-height: 360px; padding: 24px; background: #edf2f6; border-radius: 12px; color: #587183; }
+.reconstruction-empty p { max-width: 400px; line-height: 1.8; }
+.mesh-draft-canvas { height: 470px; overflow: hidden; border-radius: 12px; background: #edf2f6; }
+.mesh-draft-canvas canvas { display: block; touch-action: none; }
+@media(max-width:640px) { .reconstruction-panel { padding: 18px; } .mesh-draft-canvas { height: 340px; } }
+
+.reconstruction-color { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px 0; font-size: 14px; color: #435969; }
+.reconstruction-color select { padding: 9px 32px 9px 12px; border: 1px solid #dce4eb; border-radius: 8px; background: white; color: #223c48; }
+.reconstruction-color span { color: #718392; }

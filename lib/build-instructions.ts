@@ -207,10 +207,10 @@ function sceneSVG(
   const pts = [...polys.flatMap((p) => p.points), ...targetFaces.flat()];
   const xs = pts.map((p) => p[0]),
     ys = pts.map((p) => p[1]);
-  const minX = Math.min(...xs),
-    minY = Math.min(...ys),
-    maxX = Math.max(...xs),
-    maxY = Math.max(...ys);
+  const minX = xs.reduce((a, b) => Math.min(a, b), Infinity),
+    minY = ys.reduce((a, b) => Math.min(a, b), Infinity),
+    maxX = xs.reduce((a, b) => Math.max(a, b), -Infinity),
+    maxY = ys.reduce((a, b) => Math.max(a, b), -Infinity);
   const pad = Math.max(14, (maxX - minX) * 0.12),
     width = maxX - minX + pad * 2,
     height = maxY - minY + pad * 2;
@@ -397,9 +397,19 @@ export function topDiagram(
     !overview && !isSideMounted(active)
       ? `<circle cx="${num(px(active.x) + 4)}" cy="${num(py(active.z) - 4)}" r="3" fill="#bd4b12"/>`
       : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${overview ? '整组零件编号总览' : '俯视定位图，橙色外框为安装位置'}" font-family="Arial,sans-serif"><rect width="${width}" height="${height}" rx="8" fill="#f7f9fb"/><text x="${width / 2}" y="17" text-anchor="middle" font-size="14" fill="#345769">${model.imageDesign ? '↑ 数字增大方向' : '↑ 前方（鸭嘴）'}</text>${visible
-    .slice()
-    .sort((a, b) => a.y - b.y || a.id - b.id)
+  let topVisible = visible.slice().sort((a, b) => a.y - b.y || a.id - b.id);
+  if (model.meshDesign || model.imageDesign) {
+    // Completely covered footprints need not be redrawn on every page.
+    const cover = new Map<string, number>();
+    for (const b of topVisible)
+      for (let x = b.x; x < b.x + b.w; x++)
+        for (let z = b.z; z < b.z + b.d; z++) cover.set(`${x},${z}`, b.id);
+    const exposed = new Set(cover.values());
+    topVisible = topVisible.filter(
+      (b) => exposed.has(b.id) || current.some((c) => c.id === b.id),
+    );
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${overview ? '整组零件编号总览' : '俯视定位图，橙色外框为安装位置'}" font-family="Arial,sans-serif"><rect width="${width}" height="${height}" rx="8" fill="#f7f9fb"/><text x="${width / 2}" y="17" text-anchor="middle" font-size="14" fill="#345769">${model.imageDesign || model.meshDesign ? '↑ 数字增大方向' : '↑ 前方（鸭嘴）'}</text>${topVisible
     .map((b) =>
       rect(
         b,

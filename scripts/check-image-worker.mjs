@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import ts from 'typescript';
+import { BoxGeometry } from 'three';
 
 const root = path.resolve('dist/client');
 const chunkDir = path.join(root, '_next/static/chunks');
@@ -45,8 +46,15 @@ for (const filename of fs.readdirSync(chunkDir)) {
     assert.ok(result.model.assembly.steps.length > 0);
     self.onmessage({ data: { raster: { width: 1, height: 1, data: [0, 0, 0, 0] }, name: 'empty', options } });
     assert.match(result.error, /透明/);
+    const cube = new BoxGeometry(4, 5, 6).toNonIndexed();
+    const colors = new Uint8Array(cube.attributes.position.count);
+    for (let i = 0; i < colors.length; i += 3) colors.set([215, 186, 140], i);
+    self.onmessage({ data: { mesh: { positions: new Float32Array(cube.attributes.position.array), colors, name: 'Mesh worker check' }, options: { resolution: 20 } } });
+    assert.ok(result.model?.meshDesign, result.error);
+    assert.ok(result.model.bricks.some(b => b.color === 7));
+    cube.dispose();
     checked++;
   }
 }
-assert.equal(checked, 1, 'Find and verify the image-generation worker launcher in the emitted page');
+assert.equal(checked, 2, 'Verify both image and mesh conversion worker launchers in the emitted page');
 console.log('Image worker: HTTPS launcher, packaged asset, generated model and error response verified.');

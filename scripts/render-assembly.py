@@ -3,7 +3,7 @@ import json, sys, numpy as np
 from PIL import Image, ImageDraw
 model=json.load(open(sys.argv[1]))
 parts=json.load(open('public/parts/geometry.json'))
-palette=['#F4F4F4','#242424','#C91A09','#F2CD37','#0055BF','#237841','#FE8A18']
+palette=['#F4F4F4','#242424','#C91A09','#F2CD37','#0055BF','#237841','#FE8A18','#D7BA8C','#897D62','#5F3109','#352100','#969696','#646464','#708E7C']
 view=sys.argv[3] if len(sys.argv)>3 else 'hero'
 camera=np.array({'hero':[-1.3,.8,1.5],'front':[.0001,.05,1],'side':[-1,.04,0],'back':[.0001,.08,-1]}.get(view,[-1.3,.8,1.5])); camera=camera/np.linalg.norm(camera)
 right=np.cross([0,1,0],camera);right/=np.linalg.norm(right)

@@ -102,6 +102,20 @@ export function generateImageDesign(
     treatment.shape = 'relief';
     treatment.reason = '未分离出有效主体，已保留完整画面生成浮雕。';
   }
+  const model = groupImageAssembly(raw);
+  model.assembly!.reference = `${treatment.reason} ${treatment.shape === 'sculpture' ? '厚度随轮廓变化，背面按对称轮廓推测；未还原物品真实三维结构。' : '这是带厚度的图片浮雕，保留画面轮廓；未还原物品真实三维结构。'} 同色辅助支撑 ${model.supportCount} 块，已计入清单。`;
+  model.imageDesign = {
+    shape: treatment.shape,
+    background: treatment.background,
+    note: treatment.reason,
+  };
+  const v = validateModel(model);
+  if (v.collisions || v.unsupported || v.invalidParts || !v.connected)
+    throw Error('这张图片的模型未通过连接检查，请降低尺寸或厚度后重试。');
+  return model;
+}
+
+export function groupImageAssembly(raw: Model): Model {
   const model = instructionModel(raw);
   const steps: NonNullable<Model['assembly']>['steps'] = [];
   // Keep height dependencies, and split long layers into small pick-and-place
@@ -132,14 +146,5 @@ export function generateImageDesign(
     { id: 'base', name: '底座' },
     ...(model.supportCount ? [{ id: 'supports', name: '辅助支撑' }] : []),
   ];
-  model.assembly!.reference = `${treatment.reason} ${treatment.shape === 'sculpture' ? '厚度随轮廓变化，背面按对称轮廓推测；未还原物品真实三维结构。' : '这是带厚度的图片浮雕，保留画面轮廓；未还原物品真实三维结构。'} 同色辅助支撑 ${model.supportCount} 块，已计入清单。`;
-  model.imageDesign = {
-    shape: treatment.shape,
-    background: treatment.background,
-    note: treatment.reason,
-  };
-  const v = validateModel(model);
-  if (v.collisions || v.unsupported || v.invalidParts || !v.connected)
-    throw Error('这张图片的模型未通过连接检查，请降低尺寸或厚度后重试。');
   return model;
 }

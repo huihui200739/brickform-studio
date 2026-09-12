@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "vinext dev",
+    "local": "BRICKFORM_LOCAL_3D=1 vinext dev --host 127.0.0.1 --port 3000 --strictPort",
     "build": "vinext build && node scripts/check-image-worker.mjs",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",

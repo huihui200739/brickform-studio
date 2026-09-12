@@ -8,6 +8,13 @@ export const PALETTE = [
   { name: '亮蓝色', hex: '#0055BF', ldraw: 1, lego: 23 },
   { name: '深绿色', hex: '#237841', ldraw: 2, lego: 28 },
   { name: '亮橙色', hex: '#FE8A18', ldraw: 25, lego: 106 },
+  { name: '沙色', hex: '#D7BA8C', ldraw: 19, lego: 5 },
+  { name: '深沙色', hex: '#897D62', ldraw: 28, lego: 138 },
+  { name: '红棕色', hex: '#5F3109', ldraw: 70, lego: 192 },
+  { name: '深棕色', hex: '#352100', ldraw: 308, lego: 308 },
+  { name: '浅灰色', hex: '#969696', ldraw: 71, lego: 194 },
+  { name: '深灰色', hex: '#646464', ldraw: 72, lego: 199 },
+  { name: '沙绿色', hex: '#708E7C', ldraw: 378, lego: 151 },
 ];
 // Coordinates use studs in X/Z and plate units (3.2 mm) in Y.
 export type Brick = {
@@ -36,6 +43,12 @@ export type Model = {
   source: 'image' | 'sample';
   resolution: number;
   shape: 'sculpture' | 'relief';
+  meshDesign?: {
+    method: 'mesh-volume';
+    triangles: number;
+    resolution: number;
+    openRowFraction: number;
+  };
   imageDesign?: {
     shape: 'sculpture' | 'relief';
     background: Options['background'];
@@ -86,10 +99,16 @@ export const PARTS: Record<string, string> = Object.fromEntries([
 type Cell = { color: number; support: boolean };
 type Cells = Map<string, Cell>;
 const key = (x: number, y: number, z: number) => `${x},${y},${z}`;
-export function nearestColor(r: number, g: number, b: number) {
+export function nearestColor(
+  r: number,
+  g: number,
+  b: number,
+  expanded = false,
+) {
   let best = 0,
     distance = Infinity;
   PALETTE.forEach((c, i) => {
+    if (!expanded && i >= 7) return;
     const hex = parseInt(c.hex.slice(1), 16);
     const delta =
       (r - (hex >> 16)) ** 2 +
@@ -181,7 +200,7 @@ function pack(
       }
   return bricks;
 }
-function finishModel(
+export function finishModel(
   subject: Cells,
   width: number,
   height: number,

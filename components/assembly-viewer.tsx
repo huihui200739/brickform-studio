@@ -441,13 +441,15 @@ export default function AssemblyViewer({
         <div className="model-label">
           <span className="live-dot" />
           <span>
-            {model.imageDesign
-              ? model.imageDesign.shape === 'sculpture'
-                ? '图片轮廓 · 厚度推测'
-                : '图片浮雕 · 保留画面'
-              : model.reconstruction
-                ? '体积重建 · 对称背面推测'
-                : '部件模板'}
+            {model.meshDesign
+              ? '三维网格 · 积木转换'
+              : model.imageDesign
+                ? model.imageDesign.shape === 'sculpture'
+                  ? '图片轮廓 · 厚度推测'
+                  : '图片浮雕 · 保留画面'
+                : model.reconstruction
+                  ? '体积重建 · 对称背面推测'
+                  : '部件模板'}
           </span>
           <span className="label-line" />
           <span>{model.name}</span>
