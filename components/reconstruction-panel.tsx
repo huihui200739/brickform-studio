@@ -21,11 +21,13 @@ type ApiResponse = {
 };
 type Job = { id: string; ticket: string };
 export default function ReconstructionPanel({
+  active = true,
   image,
   name,
   resolution,
   onModel,
 }: {
+  active?: boolean;
   image?: string;
   name: string;
   resolution: number;
@@ -307,18 +309,19 @@ export default function ReconstructionPanel({
     for (let i = 0; i < colors.length; i += 3) colors.set(rgb, i);
     setDraft({ ...draft, colors, coloring: undefined });
   }
+  if (!active) return null;
   return (
     <section className="reconstruction-panel">
       <div className="reconstruction-heading">
         <Box size={23} />
         <div>
-          <h2>先还原三维结构，再生成积木</h2>
-          <p>① 上传参考图 → ② 检查三维草稿 → ③ 生成积木与步骤</p>
+          <h2>形状与配色</h2>
+          <p>先检查草稿，再转换成可拼搭的零件。</p>
         </div>
       </div>
       {configured === false && (
         <div className="reconstruction-message">
-          <strong>无需 Meshy 账号，也可以在 Mac 上生成</strong>
+          <strong>在本机免费重建三维草稿</strong>
           <p>
             使用已安装的本机重建工作台，图片留在电脑上处理，无按次调用费。
             启动本机工作台后，从下方入口上传图片。也可以直接导入其他工具生成的
@@ -342,7 +345,7 @@ export default function ReconstructionPanel({
           )}
           {provider === 'local' ? '在本机生成三维草稿' : '生成三维草稿'}
         </button>
-        {job && (
+        {job && !draft && (
           <button disabled={busy} onClick={() => void reconstruct(true)}>
             继续查看任务
           </button>
@@ -365,7 +368,7 @@ export default function ReconstructionPanel({
       </div>
       <p className="reconstruction-cost">
         {provider === 'local'
-          ? '本机 Hunyuan3D · 无需账号。先生成形状，再按参考图恢复可见区域配色；背面颜色为估计。请保持工作台和本机程序开启。'
+          ? '本机处理 · 图片留在电脑上。背面形状与配色为推测。'
           : configured
             ? '云端生成会将图片发送给 Meshy，并使用其 API 额度。'
             : '在线工作台可以导入 GLB；无账号图片重建在本机工作台运行。'}{' '}
@@ -385,58 +388,68 @@ export default function ReconstructionPanel({
       {draft ? (
         <>
           <MeshDraftViewer mesh={draft} />
-          <div className="reconstruction-actions">
-            <button
-              disabled={busy || !image}
-              onClick={() => void applyReference()}
-            >
-              按参考图恢复配色
-            </button>
-            <button
-              disabled={busy || !original.current}
-              onClick={() => {
-                if (original.current) setDraft(original.current);
-              }}
-            >
-              恢复原始颜色
-            </button>
-            <span>
-              {draft.coloring
-                ? '已按照片配色 · 背面颜色为估计'
-                : '可为无纹理模型恢复参考图配色'}
-            </span>
-          </div>
-          <label className="reconstruction-color">
-            <input
-              type="checkbox"
-              checked={softenShadows}
-              disabled={busy}
-              onChange={(e) => setSoftenShadows(e.target.checked)}
-            />
-            减少阴影杂色{' '}
-            <span>修改后点击“按参考图恢复配色”；保留不同色相的装饰颜色。</span>
-          </label>
-          <label className="reconstruction-color">
-            单色积木配色
-            <select
-              disabled={busy}
-              defaultValue=""
-              onChange={(e) => {
-                if (e.target.value) recolor(e.target.value);
-              }}
-            >
-              <option value="" disabled>
-                保留当前颜色
-              </option>
-              {PALETTE.map((color) => (
-                <option key={color.hex} value={color.hex}>
-                  {color.name}
+          <details className="color-settings">
+            <summary>
+              调整配色{' '}
+              <span>
+                {draft.coloring ? '已应用参考图颜色' : '原始模型颜色'}
+              </span>
+            </summary>
+            <div className="reconstruction-actions">
+              <button
+                disabled={busy || !image}
+                onClick={() => void applyReference()}
+              >
+                按参考图恢复配色
+              </button>
+              <button
+                disabled={busy || !original.current}
+                onClick={() => {
+                  if (original.current) setDraft(original.current);
+                }}
+              >
+                恢复原始颜色
+              </button>
+              <span>
+                {draft.coloring
+                  ? '已按照片配色 · 背面颜色为估计'
+                  : '可为无纹理模型恢复参考图配色'}
+              </span>
+            </div>
+            <label className="reconstruction-color">
+              <input
+                type="checkbox"
+                checked={softenShadows}
+                disabled={busy}
+                onChange={(e) => setSoftenShadows(e.target.checked)}
+              />
+              减少阴影杂色{' '}
+              <span>
+                修改后点击“按参考图恢复配色”；保留不同色相的装饰颜色。
+              </span>
+            </label>
+            <label className="reconstruction-color">
+              单色积木配色
+              <select
+                disabled={busy}
+                defaultValue=""
+                onChange={(e) => {
+                  if (e.target.value) recolor(e.target.value);
+                }}
+              >
+                <option value="" disabled>
+                  保留当前颜色
                 </option>
-              ))}
-            </select>
-            <span>可手动覆盖为单色，再点击“按参考图恢复配色”重新取色。</span>
-          </label>
-          <div className="reconstruction-actions">
+                {PALETTE.map((color) => (
+                  <option key={color.hex} value={color.hex}>
+                    {color.name}
+                  </option>
+                ))}
+              </select>
+              <span>可手动覆盖为单色，再点击“按参考图恢复配色”重新取色。</span>
+            </label>
+          </details>
+          <div className="reconstruction-actions convert-actions">
             {glbUrl && (
               <a href={glbUrl} download={`${name}-三维草稿.glb`}>
                 下载原始三维草稿
@@ -447,15 +460,12 @@ export default function ReconstructionPanel({
               disabled={busy}
               onClick={() => void convert()}
             >
-              形状已检查，转换为积木
+              生成积木成品 →
             </button>
-            <span>
-              最长边 {resolution} 凸点 · 向上露出的薄板自动光面收口 ·{' '}
-              {Math.round(draft.positions.length / 9).toLocaleString()} 个三角面
-            </span>
+            <span>{resolution} 凸点精度 · 同步生成零件清单与拼装步骤</span>
           </div>
           <p className="field-hint">
-            检查台阶、门洞和前后体积是否存在。若草稿不像原图，请先换图或调整三维模型，不要用增加积木数量弥补。
+            细小雕像和枝叶仍可能简化。草稿形状有误时，可更换参考图或导入修正后的模型。
           </p>
         </>
       ) : (

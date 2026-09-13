@@ -77,6 +77,7 @@ const backgroundItems = [
 type Mode = 'mesh' | 'general' | 'sculpture' | 'round' | 'duck' | 'relief';
 export default function Home() {
   const [model, setModel] = useState(() => roundedDuck());
+  const [surface, setSurface] = useState<'draft' | 'bricks'>('draft');
   const [mode, setMode] = useState<Mode>('mesh');
   const [roundSize, setRoundSize] = useState(18);
   const [fullness, setFullness] = useState(1);
@@ -381,14 +382,14 @@ export default function Home() {
     setSection('all');
   }
   return (
-    <main className="studio studio-v3">
+    <main className="studio studio-v3 studio-v13">
       <header className="topbar">
         <Link className="brand" href="/">
           <span className="brand-icon">
             <Blocks size={21} />
           </span>
           brickform<span className="brand-cn">积木工坊</span>
-          <span className="beta">V12</span>
+          <span className="beta">V13</span>
         </Link>
         <span className="workspace-title">设计工作台</span>
         <button className="header-help" onClick={() => setHelp(true)}>
@@ -457,46 +458,52 @@ export default function Home() {
               </button>
             )}
           </div>
-          <div className="field-title" id="mode-label">
-            生成方式
-          </div>
-          <RadioGroup
-            className="design-modes"
-            value={mode}
-            aria-labelledby="mode-label"
-            disabled={busy}
-            onValueChange={(v) => {
-              setMode(v as Mode);
-              if (v !== 'mesh' && resolution > 36) setResolution(36);
-              if (v === 'round' && background === 'keep') setBackground('auto');
-              setDirty(true);
-            }}
-          >
-            {[
-              ['mesh', '三维重建', '先检查三维草稿，再转换成积木'],
-              ['general', '旧版图片轮廓', '仅二维轮廓加厚 · 不还原物体结构'],
-              ['sculpture', '轮廓立体', '按图片轮廓估算厚度 · 背面为推测'],
-              ['round', '小鸭精细模式', '仅小鸭侧面图 · 保留原有曲面设计'],
-              ['duck', '部件模板', '旧版小鸭 · 手动搭配比例'],
-              ['relief', '图片浮雕', '保留画面 · 均匀厚度'],
-            ].map(([v, t, h]) => (
-              <label
-                className={mode === v ? 'chosen' : ''}
-                key={v}
-                htmlFor={`choice-${t}`}
-              >
-                <RadioGroupItem id={`choice-${t}`} value={v} />
-                <span>
-                  <b>{t}</b>
-                  <small>{h}</small>
-                </span>
-              </label>
-            ))}
-          </RadioGroup>
+          <details className="advanced-settings">
+            <summary>
+              生成方式 <span>{mode === 'mesh' ? '三维重建' : '其他模式'}</span>
+            </summary>
+            <div className="field-title" id="mode-label">
+              生成方式
+            </div>
+            <RadioGroup
+              className="design-modes"
+              value={mode}
+              aria-labelledby="mode-label"
+              disabled={busy}
+              onValueChange={(v) => {
+                setMode(v as Mode);
+                if (v !== 'mesh' && resolution > 36) setResolution(36);
+                if (v === 'round' && background === 'keep')
+                  setBackground('auto');
+                setDirty(true);
+              }}
+            >
+              {[
+                ['mesh', '三维重建', '先检查三维草稿，再转换成积木'],
+                ['general', '旧版图片轮廓', '仅二维轮廓加厚 · 不还原物体结构'],
+                ['sculpture', '轮廓立体', '按图片轮廓估算厚度 · 背面为推测'],
+                ['round', '小鸭精细模式', '仅小鸭侧面图 · 保留原有曲面设计'],
+                ['duck', '部件模板', '旧版小鸭 · 手动搭配比例'],
+                ['relief', '图片浮雕', '保留画面 · 均匀厚度'],
+              ].map(([v, t, h]) => (
+                <label
+                  className={mode === v ? 'chosen' : ''}
+                  key={v}
+                  htmlFor={`choice-${t}`}
+                >
+                  <RadioGroupItem id={`choice-${t}`} value={v} />
+                  <span>
+                    <b>{t}</b>
+                    <small>{h}</small>
+                  </span>
+                </label>
+              ))}
+            </RadioGroup>
+          </details>
           {mode === 'round' ? (
             <>
               <div className="reconstruction-note">
-                <span className="tiny-tag">V12 · 小鸭重建实验</span>
+                <span className="tiny-tag">V13 · 小鸭重建实验</span>
                 <p>
                   额头与肩部用曲面替换外露直斜坡，小转角增加圆弧收口；分层查看与拼装图同步更新。
                 </p>
@@ -816,15 +823,48 @@ export default function Home() {
         </aside>
         <div className="studio-main">
           {mode === 'mesh' && (
+            <nav className="workbench-nav" aria-label="设计阶段">
+              <div>
+                <span className="workspace-eyebrow">YOUR BRICK STUDIO</span>
+                <h1>把想象，慢慢拼出来。</h1>
+              </div>
+              <div className="surface-switch">
+                <button
+                  aria-pressed={
+                    surface === 'draft' || !model.meshDesign || dirty
+                  }
+                  onClick={() => setSurface('draft')}
+                >
+                  三维草稿
+                </button>
+                <button
+                  disabled={!model.meshDesign || dirty}
+                  aria-pressed={
+                    surface === 'bricks' && !!model.meshDesign && !dirty
+                  }
+                  onClick={() => setSurface('bricks')}
+                >
+                  积木成品
+                </button>
+              </div>
+            </nav>
+          )}
+
+          {mode === 'mesh' && (
             <ReconstructionPanel
               key={source?.url || 'empty'}
+              active={surface === 'draft' || !model.meshDesign || dirty}
               image={source?.imageData}
               name={source?.name || '我的三维积木'}
               resolution={resolution}
-              onModel={applyModel}
+              onModel={(next) => {
+                applyModel(next);
+                setSurface('bricks');
+              }}
             />
           )}
-          {(mode !== 'mesh' || (model.meshDesign && !dirty)) && (
+          {(mode !== 'mesh' ||
+            (model.meshDesign && !dirty && surface === 'bricks')) && (
             <>
               <section className="preview-panel">
                 <div className="design-topline">
@@ -1181,7 +1221,7 @@ export default function Home() {
       <footer className="site-footer">
         <span>
           <Blocks size={15} />
-          Brickform Studio · V12
+          Brickform Studio · V13
         </span>
         <span>独立创作工具，与 LEGO Group 无关联或认证。</span>
       </footer>

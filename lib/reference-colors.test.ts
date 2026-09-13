@@ -49,3 +49,34 @@ void test('empty references fail instead of applying background colors', () => {
   );
   assert.throws(() => referenceMask({ width: 2, height: 2, data: [] }), /无效/);
 });
+
+void test('a dark window in the reference does not become a fake window on the unseen rear wall', () => {
+  const g = new BoxGeometry(2, 2, 2, 10, 10, 10).toNonIndexed();
+  const positions = new Float32Array(g.attributes.position.array),
+    data = new Uint8ClampedArray(40 * 40 * 4);
+  for (let y = 2; y < 38; y++)
+    for (let x = 2; x < 38; x++)
+      data.set(
+        x > 15 && x < 24 && y > 10 && y < 30
+          ? [36, 36, 36, 255]
+          : [215, 186, 140, 255],
+        (y * 40 + x) * 4,
+      );
+  const result = colorFromReference(
+    { name: 'window', positions, colors: new Uint8Array(positions.length / 3) },
+    { width: 40, height: 40, data },
+    { yaw: 0, pitch: 0, perspective: 0 },
+  );
+  let frontDark = 0,
+    backDark = 0;
+  for (let i = 0; i < positions.length; i += 9) {
+    const z = (positions[i + 2] + positions[i + 5] + positions[i + 8]) / 3;
+    if (result.colors[i / 3] === 36) {
+      if (z > 0.99) frontDark++;
+      if (z < -0.99) backDark++;
+    }
+  }
+  assert.ok(frontDark > 0);
+  assert.equal(backDark, 0);
+  g.dispose();
+});

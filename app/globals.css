@@ -3256,3 +3256,80 @@ h1 {
 .reconstruction-color { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px 0; font-size: 14px; color: #435969; }
 .reconstruction-color select { padding: 9px 32px 9px 12px; border: 1px solid #dce4eb; border-radius: 8px; background: white; color: #223c48; }
 .reconstruction-color span { color: #718392; }
+
+/* V13: one working canvas, with secondary choices progressively disclosed. */
+.studio-v13 { background: #f6f6f3; color: #263e39; }
+.studio-v13 .topbar { height: 64px; background: #fff; border-bottom: 1px solid #e5e8e3; padding: 0 28px; }
+.studio-v13 .studio-layout { max-width: 1600px; grid-template-columns: 244px minmax(0,1fr); gap: 28px; padding-top: 28px; }
+.studio-v13 .settings-card { position: sticky; top: 20px; padding: 18px; border-color: #e2e7e0; border-radius: 16px; }
+.studio-v13 .settings-heading h1 { font-size: 15px; }
+.studio-v13 .settings-heading .tiny-tag { display:none; }
+.studio-v13 .reference-upload { border: 0; background: #f5f5ef; border-radius: 10px; }
+.studio-v13 .reference-upload img { height: 186px; object-fit: contain; }
+.studio-v13 .reference-caption { font-size: 11px; }
+.studio-v13 .field-title { font-size: 13px; margin-top: 22px; }
+.studio-v13 .field-title span { font-size: 11px; }
+.advanced-settings, .color-settings { border-top: 1px solid #e6e9e3; margin-top: 18px; padding-top: 15px; }
+.advanced-settings summary, .color-settings summary { cursor: pointer; font-size: 13px; font-weight: 600; padding: 5px 0; color: #354c45; }
+.advanced-settings summary span, .color-settings summary span { font-size: 11px; color: #809087; font-weight: 400; margin-left: 12px; }
+.studio-v13 .design-modes { gap: 6px; }
+.studio-v13 .design-modes label { padding: 10px; }
+.studio-v13 .detail-options { gap: 4px; }
+.studio-v13 .detail-options label { padding: 8px 4px; font-size: 12px; }
+.workbench-nav { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+.workspace-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: 2px; color: #89958d; }
+.workbench-nav h1 { font-size: 22px; font-weight: 600; margin: 5px 0 0; letter-spacing: -.6px; }
+.surface-switch { display: flex; padding: 4px; background: #e8ece5; border-radius: 10px; flex-shrink: 0; }
+.surface-switch button { padding: 9px 18px; font-size: 13px; border-radius: 7px; color: #78877d; white-space: nowrap; }
+.surface-switch button[aria-pressed='true'] { background: #fff; color: #1d5e48; box-shadow: 0 1px 4px #15351d12; }
+.surface-switch button:disabled { opacity: .45; cursor: not-allowed; }
+.studio-v13 .reconstruction-panel, .studio-v13 .preview-panel { border: 1px solid #e0e5de; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px #25482903; margin: 0; }
+.studio-v13 .reconstruction-panel { padding: 22px; }
+.studio-v13 .reconstruction-heading h2 { font-size: 18px; }
+.studio-v13 .reconstruction-heading p { margin: 5px 0 0; font-size: 12px; }
+.studio-v13 .reconstruction-actions { gap: 8px; margin: 14px 0; }
+.studio-v13 .reconstruction-actions button { padding: 10px 14px; font-size: 12px; }
+.studio-v13 .reconstruction-cost { font-size: 11px; line-height: 1.6; margin-bottom: 14px; }
+.studio-v13 .reconstruction-status { font-size: 12px; padding: 5px 0 12px; }
+.studio-v13 .mesh-draft-canvas { height: clamp(350px, 52vh, 590px); background: radial-gradient(ellipse at 50% 42%, #fcfcf8, #ebeee7); }
+.studio-v13 .reconstruction-color { padding: 10px 0; font-size: 12px; }
+.studio-v13 .reconstruction-color span { font-size: 11px; }
+.studio-v13 .convert-actions { justify-content: space-between; gap: 12px; margin-bottom: 0; }
+.studio-v13 .convert-actions a { font-size: 12px; color: #7a8a80; }
+.studio-v13 .convert-actions > span { flex-basis: 100%; font-size: 11px; text-align: right; }
+.studio-v13 .field-hint { font-size: 11px; line-height: 1.6; }
+.studio-v13 .design-topline { padding: 20px 24px 8px; }
+.studio-v13 .design-name { font-size: 20px; line-height: 1.5; }
+.studio-v13 .design-type { font-size: 10px; color: #88968e; }
+.studio-v13 .design-metrics { padding: 5px 24px 18px; font-size: 12px; gap: 18px; }
+.studio-v13 .design-metrics b { font-size: 17px; }
+.studio-v13 .preview-mode-bar { padding: 9px 20px; border-top: 1px solid #edf0eb; background: #fff; }
+.studio-v13 .preview-mode-bar > span { font-size: 11px; }
+.studio-v13 .viewer { height: clamp(380px, 58vh, 680px); background: radial-gradient(ellipse at 50% 42%, #fcfcf8, #ebeee7); border-top: 1px solid #e6ebe3; }
+.studio-v13 .model-label { font-size: 10px; opacity: .7; }
+.studio-v13 .view-presets button { font-size: 11px; padding: 8px 10px; }
+.studio-v13 .assembly-tools button { width: 32px; height: 32px; }
+.studio-v13 .section-filter { padding: 10px 20px; font-size: 11px; }
+.studio-v13 .section-filter button { padding: 7px 10px; font-size: 11px; }
+.studio-v13 .layer-control { min-height: 54px; padding: 12px 20px; font-size: 12px; }
+.studio-v13 .validation-bar { font-size: 11px; }
+.studio-v13 .output-panel { margin-top: 20px; border-color: #e0e5de; border-radius: 16px; }
+.studio-v13 .site-footer { color: #9aa59d; font-size: 10px; }
+.studio-v13 button:focus-visible, .studio-v13 summary:focus-visible { outline: 2px solid #2a8060; outline-offset: 3px; }
+@media(max-width: 1050px) {
+  .studio-v13 .studio-layout { grid-template-columns: 208px minmax(0,1fr); padding: 20px 18px; gap: 18px; }
+  .workbench-nav h1 { font-size: 18px; }
+  .workspace-eyebrow { letter-spacing: 1px; }
+  .surface-switch button { padding: 8px 10px; }
+  .studio-v13 .preview-mode-bar > span { display: none; }
+}
+@media(max-width: 700px) {
+  .studio-v13 .studio-layout { display: flex; flex-direction: column; padding: 14px; gap: 18px; }
+  .studio-v13 .settings-card { position: static; width: 100%; }
+  .studio-v13 .reference-upload img { height: 140px; }
+  .studio-v13 .studio-main { width: 100%; }
+  .workbench-nav { flex-wrap: wrap; }
+  .studio-v13 .reconstruction-panel { padding: 16px; }
+  .studio-v13 .design-metrics { flex-wrap: wrap; gap: 10px; }
+  .studio-v13 .viewer, .studio-v13 .mesh-draft-canvas { height: 400px; }
+}

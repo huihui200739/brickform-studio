@@ -196,6 +196,31 @@ export function meshToDesign(mesh: TriangleMesh, resolution = 28): Model {
     if (tiles[b.part]) {
       finished.push({ ...b, part: tiles[b.part] });
       smoothTiles++;
+    } else if (b.part === '3020' || b.part === '3710') {
+      const w = Math.min(2, b.w),
+        d = Math.min(2, b.d);
+      const candidates: typeof raw.bricks = [];
+      let supported = true;
+      for (let x = b.x; x < b.x + b.w; x += w)
+        for (let z = b.z; z < b.z + b.d; z += d) {
+          let contact = false;
+          for (let xx = x; xx < x + w; xx++)
+            for (let zz = z; zz < z + d; zz++)
+              if (cells.has(`${xx},${b.y - 1},${zz}`)) contact = true;
+          if (!contact) supported = false;
+          candidates.push({
+            ...b,
+            x,
+            z,
+            w,
+            d,
+            part: w * d === 4 ? '3068b' : '3069b',
+          });
+        }
+      if (supported) {
+        finished.push(...candidates);
+        smoothTiles += candidates.length;
+      } else finished.push(b);
     } else if (plates[b.part]) {
       finished.push(
         { ...b, part: plates[b.part], h: 1 },

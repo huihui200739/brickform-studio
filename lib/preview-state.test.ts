@@ -82,3 +82,11 @@ void test('a single plate is framed locally and narrow viewports retain the comp
   assert.ok(portrait.distance > plate.distance);
   assert.ok(Number.isFinite(previewFrame([0, 0, 0], [0, 0, 0], 0).distance));
 });
+
+void test('direction-aware framing fits a wide platform without the diagonal-sphere empty margin', () => {
+  const tight = previewFrame([-5, 0, -5], [5, 5, 5], 1.5, 34, [1.3, 0.8, 2]);
+  const sphere = previewFrame([-5, 0, -5], [5, 5, 5], 1.5, 34);
+  assert.ok(Number.isFinite(tight.distance));
+  assert.ok(tight.distance < sphere.distance);
+  assert.deepEqual(tight.target, sphere.target);
+});

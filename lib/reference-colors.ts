@@ -261,24 +261,6 @@ export function colorFromReference(
   }
   const faceColors = new Int16Array(p.length / 9).fill(-1),
     counts = new Uint32Array(PALETTE.length);
-  const G = 24,
-    votes = new Map<number, Uint32Array>();
-  const cell = (x: number, y: number, z: number) =>
-    Math.min(
-      G - 1,
-      Math.max(0, Math.floor(((x - lo[0]) / (hi[0] - lo[0])) * G)),
-    ) +
-    G *
-      Math.min(
-        G - 1,
-        Math.max(0, Math.floor(((y - lo[1]) / (hi[1] - lo[1])) * G)),
-      ) +
-    G *
-      G *
-      Math.min(
-        G - 1,
-        Math.max(0, Math.floor(((z - lo[2]) / (hi[2] - lo[2])) * G)),
-      );
   let observed = 0;
   for (let i = 0; i < p.length; i += 9) {
     const x = (coords[i] + coords[i + 3] + coords[i + 6]) / 3,
@@ -320,48 +302,9 @@ export function colorFromReference(
     faceColors[i / 9] = c;
     counts[c]++;
     observed++;
-    const k = cell(
-      (p[i] + p[i + 3] + p[i + 6]) / 3,
-      (p[i + 1] + p[i + 4] + p[i + 7]) / 3,
-      (p[i + 2] + p[i + 5] + p[i + 8]) / 3,
-    );
-    let v = votes.get(k);
-    if (!v) {
-      v = new Uint32Array(PALETTE.length);
-      votes.set(k, v);
-    }
-    v[c]++;
   }
   if (observed < Math.min(10, Math.max(1, faceColors.length * 0.1)))
     throw Error('参考图与网格未能对齐，请调整配色视角或更换图片。');
-  // Unseen surfaces inherit the nearest observed 3D region. This is explicitly
-  // estimated color, not a recovered back-side texture.
-  const labels = new Int16Array(G ** 3).fill(-1),
-    queue: number[] = [];
-  votes.forEach((v, k) => {
-    let c = 0;
-    for (let i = 1; i < v.length; i++) if (v[i] > v[c]) c = i;
-    labels[k] = c;
-    queue.push(k);
-  });
-  for (let at = 0; at < queue.length; at++) {
-    const k = queue[at],
-      x = k % G,
-      y = Math.floor(k / G) % G,
-      z = Math.floor(k / G / G);
-    for (const next of [
-      x ? k - 1 : -1,
-      x + 1 < G ? k + 1 : -1,
-      y ? k - G : -1,
-      y + 1 < G ? k + G : -1,
-      z ? k - G * G : -1,
-      z + 1 < G ? k + G * G : -1,
-    ])
-      if (next >= 0 && labels[next] < 0) {
-        labels[next] = labels[k];
-        queue.push(next);
-      }
-  }
   // Reduce illumination-induced color changes within the dominant material's
   // hue family. Red/green accents and neutral dark openings remain separate.
   // This is optional because a photograph cannot distinguish paint from shadow.
@@ -392,15 +335,32 @@ export function colorFromReference(
     });
     return best;
   });
+  // Unseen surfaces have no trustworthy texture. Use broad material bands
+  // rather than copying a nearby dark doorway through to the back wall.
+  const bands = Array.from(
+    { length: 16 },
+    () => new Uint32Array(PALETTE.length),
+  );
+  const bandAt = (i: number) =>
+    Math.min(
+      15,
+      Math.max(
+        0,
+        Math.floor(
+          (((p[i + 1] + p[i + 4] + p[i + 7]) / 3 - lo[1]) / (hi[1] - lo[1])) *
+            16,
+        ),
+      ),
+    );
+  for (let t = 0; t < faceColors.length; t++)
+    if (faceColors[t] >= 0) bands[bandAt(t * 9)][faceColors[t]]++;
+  const bandColors = bands.map((v) =>
+    v.some(Boolean) ? v.indexOf(Math.max(...v)) : dominant,
+  );
   const out = new Uint8Array(mesh.colors.length);
   for (let t = 0; t < faceColors.length; t++) {
     const i = t * 9,
-      k = cell(
-        (p[i] + p[i + 3] + p[i + 6]) / 3,
-        (p[i + 1] + p[i + 4] + p[i + 7]) / 3,
-        (p[i + 2] + p[i + 5] + p[i + 8]) / 3,
-      ),
-      c = faceColors[t] >= 0 ? faceColors[t] : labels[k];
+      c = faceColors[t] >= 0 ? faceColors[t] : bandColors[bandAt(i)];
     out.set(rgb[remap[Math.max(0, c)]], t * 3);
   }
   return {

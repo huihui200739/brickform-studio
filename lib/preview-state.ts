@@ -55,6 +55,7 @@ export function previewFrame(
   max: readonly number[],
   aspect: number,
   verticalFov = 34,
+  direction?: readonly number[],
 ) {
   const target = min.map((v, i) => (v + max[i]) / 2);
   const radius = Math.max(
@@ -66,9 +67,38 @@ export function previewFrame(
     vertical,
     2 * Math.atan(Math.tan(vertical / 2) * Math.max(0.01, aspect)),
   );
+  let distance = (radius / Math.sin(fov / 2)) * 1.06;
+  if (direction) {
+    const length = Math.hypot(...direction),
+      n = direction.map((v) => v / length);
+    const rLength = Math.hypot(n[0], n[2]);
+    const right =
+      rLength > 0.0001 ? [n[2] / rLength, 0, -n[0] / rLength] : [1, 0, 0];
+    const up = [
+      n[1] * right[2] - n[2] * right[1],
+      n[2] * right[0] - n[0] * right[2],
+      n[0] * right[1] - n[1] * right[0],
+    ];
+    const tanV = Math.tan(vertical / 2),
+      tanH = tanV * Math.max(0.01, aspect);
+    let fit = 0;
+    for (const x of [min[0], max[0]])
+      for (const y of [min[1], max[1]])
+        for (const z of [min[2], max[2]]) {
+          const v = [x - target[0], y - target[1], z - target[2]];
+          const dot = (axis: number[]) =>
+            v.reduce((sum, value, i) => sum + value * axis[i], 0);
+          fit = Math.max(
+            fit,
+            dot(n) + Math.abs(dot(right)) / tanH,
+            dot(n) + Math.abs(dot(up)) / tanV,
+          );
+        }
+    distance = Math.max(radius * 1.1, fit * 1.08);
+  }
   return {
     target,
-    distance: (radius / Math.sin(fov / 2)) * 1.06,
+    distance,
     minDistance: Math.max(1, radius * 0.8),
   };
 }

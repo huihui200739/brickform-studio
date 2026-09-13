@@ -91,11 +91,11 @@ export default function AssemblyViewer({
       .then((data) => {
         if (cancelled || !mount.current) return;
         const el = mount.current,
-          renderer = new THREE.WebGLRenderer({ antialias: true });
+          renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor('#eef1f5');
+        renderer.setClearColor('#eef1f5', 0);
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFShadowMap;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.05;
         renderer.domElement.setAttribute('role', 'img');
@@ -108,6 +108,7 @@ export default function AssemblyViewer({
           camera = new THREE.PerspectiveCamera(34, 1, 0.1, 1000);
         const orbit = new OrbitControls(camera, renderer.domElement);
         orbit.enableDamping = true;
+        orbit.addEventListener('start', () => setView('custom'));
         orbit.enablePan = false;
         orbit.maxPolarAngle = Math.PI * 0.88;
         const size = Math.max(model.width, model.depth, model.height * 0.4);
@@ -133,7 +134,7 @@ export default function AssemblyViewer({
         scene.add(fill);
         const floor = new THREE.Mesh(
           new THREE.PlaneGeometry(size * 15, size * 15),
-          new THREE.ShadowMaterial({ opacity: 0.18, color: '#34465b' }),
+          new THREE.ShadowMaterial({ opacity: 0.12, color: '#344536' }),
         );
         floor.rotation.x = -Math.PI / 2;
         floor.position.y = -0.025;
@@ -292,8 +293,11 @@ export default function AssemblyViewer({
         let angle = 'perspective';
         const fit = (name = angle) => {
           angle = name;
+          const damping = orbit.enableDamping;
+          orbit.enableDamping = false;
+          orbit.update();
           const dirs: Record<string, number[]> = {
-            perspective: [-1.3, 0.85, 1.6],
+            perspective: model.meshDesign ? [1.3, 0.8, 2] : [-1.3, 0.85, 1.6],
             front: [0, live.current.exploded ? 0.025 : 0.13, 1],
             side: [-1, 0.13, 0],
             back: [0, 0.13, -1],
@@ -321,6 +325,7 @@ export default function AssemblyViewer({
             bounds.max.toArray(),
             camera.aspect,
             camera.fov,
+            dirs[name] || dirs.perspective,
           );
           orbit.minDistance = framing.minDistance;
           orbit.maxDistance = Math.max(size * 8, framing.distance * 3);
@@ -331,6 +336,7 @@ export default function AssemblyViewer({
             .multiplyScalar(framing.distance)
             .add(orbit.target);
           orbit.update();
+          orbit.enableDamping = damping;
         };
         control.current = {
           update: () => {
@@ -421,7 +427,7 @@ export default function AssemblyViewer({
     control.current?.update();
   }, [layer, exploded, section, focusId, first, count, layerGap]);
   useEffect(() => {
-    control.current?.view(view);
+    if (view !== 'custom') control.current?.view(view);
   }, [exploded, view, readyModel]);
   return (
     <div className="assembly-preview">
