@@ -1,3 +1,4 @@
+import { SPECIAL_PORTS } from './special-connectors.ts';
 import type { Model, Brick } from './brick-engine.ts';
 import {
   ASSEMBLY_PARTS,
@@ -8,9 +9,23 @@ import {
 } from './assembly-catalog.ts';
 export function connectors(b: Brick) {
   const p = ASSEMBLY_PARTS[b.part];
-  const studs: { point: V3; normal: V3 }[] = [],
-    sockets: { point: V3; normal: V3 }[] = [];
+  const studs: { point: V3; normal: V3; type?: string }[] = [],
+    sockets: { point: V3; normal: V3; type?: string }[] = [];
   if (!p || !b.pose) return { studs, sockets };
+  if (SPECIAL_PORTS[b.part]) {
+    for (const port of SPECIAL_PORTS[b.part]) {
+      const list = port.role === 'plug' ? studs : sockets;
+      list.push({
+        point: worldPoint(b.pose, port.point),
+        normal:
+          port.type === 'stud'
+            ? transform(b.pose.matrix, [0, -1, 0])
+            : [0, 0, 0],
+        type: port.type,
+      });
+    }
+    return { studs, sockets };
+  }
   for (let x = 0; x < p.w; x++)
     for (let z = 0; z < p.d; z++) {
       const xx = (x + 0.5 - p.w / 2) * 20,
@@ -36,8 +51,8 @@ export function connectors(b: Brick) {
     });
   return { studs, sockets };
 }
-const key = (p: V3, n: V3) =>
-  [...p, ...n].map((v) => Math.round(v * 1000)).join(',');
+const key = (p: V3, n: V3, type = 'stud') =>
+  type + ':' + [...p, ...n].map((v) => Math.round(v * 1000)).join(',');
 export function validateAssembly(model: Model) {
   let invalidParts = 0,
     collisions = 0,
@@ -49,25 +64,28 @@ export function validateAssembly(model: Model) {
     links.set(b.id, new Set());
     if (!ASSEMBLY_PARTS[b.part] || !b.pose) invalidParts++;
     for (const c of connectors(b).studs) {
-      const k = key(c.point, c.normal);
+      const k = key(c.point, c.normal, c.type);
       studs.set(k, [...(studs.get(k) || []), b.id]);
     }
   }
   const badIds: number[] = [];
-  for (const b of model.bricks) {
-    let support = b.y === 0;
+  for (const b of model.bricks)
     for (const c of connectors(b).sockets)
-      for (const id of studs.get(key(c.point, c.normal)) || []) {
+      for (const id of studs.get(key(c.point, c.normal, c.type)) || []) {
         if (id === b.id) continue;
         links.get(b.id)!.add(id);
         links.get(id)!.add(b.id);
-        const below = byId.get(id)!;
-        if (
-          (below.step || 0) < (b.step || 0) ||
-          ((below.step || 0) === (b.step || 0) && below.id < b.id)
-        )
-          support = true;
       }
+  for (const b of model.bricks) {
+    const support =
+      b.y === 0 ||
+      [...links.get(b.id)!].some((id) => {
+        const other = byId.get(id)!;
+        return (
+          (other.step || 0) < (b.step || 0) ||
+          ((other.step || 0) === (b.step || 0) && id < b.id)
+        );
+      });
     if (!support) {
       unsupported++;
       badIds.push(b.id);
@@ -80,6 +98,20 @@ export function validateAssembly(model: Model) {
     for (let j = i + 1; j < model.bricks.length; j++) {
       const a = model.bricks[i],
         b = model.bricks[j];
+      // Interlocking accessory/figure envelopes overlap by design. Their joint
+      // graph is checked above; exact surface collision is explicitly unverified.
+      if (
+        model.semanticDesign &&
+        a.section?.startsWith('component-') &&
+        a.section === b.section
+      )
+        continue;
+      if (
+        model.semanticDesign &&
+        links.get(a.id)?.has(b.id) &&
+        (SPECIAL_PORTS[a.part] || SPECIAL_PORTS[b.part])
+      )
+        continue;
       if (
         Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > 1e-5 &&
         Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > 1e-5 &&

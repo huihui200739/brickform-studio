@@ -134,14 +134,114 @@ The LEGO Group does not sponsor or endorse LDraw or Brickform.
 0 !LDRAW_ORG Part UPDATE 2011-02
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
+3062b.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Part UPDATE 2022-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+87580.dat
+0 Author: Joerg Sommerer [Brickaneer]
+0 !LDRAW_ORG Part UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 2.0 and CC BY 4.0 : see CAreadme.txt
+
+2423.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Part UPDATE 2020-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3941.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Part UPDATE 2020-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4740.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Part UPDATE 2014-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+85861.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Part UPDATE 2025-09
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+6126b.dat
+0 Author: Stephan Meisinger [smr]
+0 !LDRAW_ORG Part UPDATE 2025-09
+0 !LICENSE Licensed under CC BY 2.0 and CC BY 4.0 : see CAreadme.txt
+
+973.dat
+0 Author: Steve Bliss [sbliss]
+0 !LDRAW_ORG Part UPDATE 2009-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3818.dat
+0 Author: Chris Dee [cwdee]
+0 !LDRAW_ORG Part UPDATE 2018-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3819.dat
+0 Author: Chris Dee [cwdee]
+0 !LDRAW_ORG Part UPDATE 2009-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3820.dat
+0 Author: Orion Pobursky [OrionP]
+0 !LDRAW_ORG Part UPDATE 2019-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3815b.dat
+0 Author: Nils Schmidt [BlackBrick89]
+0 !LDRAW_ORG Part UPDATE 2019-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3816c.dat
+0 Author: Max Martin Richter [MMR1988]
+0 !LDRAW_ORG Part UPDATE 2023-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3817c.dat
+0 Author: Max Martin Richter [MMR1988]
+0 !LDRAW_ORG Part UPDATE 2023-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3626c.dat
+0 Author: J.C. Tchang [tchang]
+0 !LDRAW_ORG Part UPDATE 2022-05
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3844.dat
+0 Author: Chris Dee [cwdee]
+0 !LDRAW_ORG Part UPDATE 2020-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3846.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Part UPDATE 2003-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4497.dat
+0 Author: John Van Zwieten [jvan]
+0 !LDRAW_ORG Part UPDATE 2020-03
+0 !LICENSE Licensed under CC BY 2.0 and CC BY 4.0 : see CAreadme.txt
+
 s/3001s01.dat
 0 Author: James Jessiman
 0 !LDRAW_ORG Subpart UPDATE 2004-03
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
+s/3003s01.dat
+0 Author: Steffen [Steffen]
+0 !LDRAW_ORG Subpart UPDATE 2013-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
 s/3010s01.dat
 0 Author: Willy Tschager [Holly-Wood]
 0 !LDRAW_ORG Subpart UPDATE 2024-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3004s01.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Subpart UPDATE 2003-03
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
 stud4.dat
@@ -159,24 +259,14 @@ stud.dat
 0 !LDRAW_ORG Primitive UPDATE 2012-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
-s/3003s01.dat
-0 Author: Steffen [Steffen]
-0 !LDRAW_ORG Subpart UPDATE 2013-02
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-s/3004s01.dat
-0 Author: James Jessiman
-0 !LDRAW_ORG Subpart UPDATE 2003-03
+s/3710s01.dat
+0 Author: Massimo Maso [Sirio]
+0 !LDRAW_ORG Subpart UPDATE 2023-06
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
 s/3005s01.dat
 0 Author: Willy Tschager [Holly-Wood]
 0 !LDRAW_ORG Subpart UPDATE 2024-04
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-s/3710s01.dat
-0 Author: Massimo Maso [Sirio]
-0 !LDRAW_ORG Subpart UPDATE 2023-06
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
 3023b.dat
@@ -189,14 +279,29 @@ s/3024s01.dat
 0 !LDRAW_ORG Subpart UPDATE 2012-03
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
+s/3069bs01.dat
+0 Author: Santeri Piippo [arezey]
+0 !LDRAW_ORG Subpart UPDATE 2010-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
 s/3068bs01.dat
 0 Author: Willy Tschager [Holly-Wood]
 0 !LDRAW_ORG Subpart UPDATE 2024-03
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
-s/3069bs01.dat
-0 Author: Santeri Piippo [arezey]
-0 !LDRAW_ORG Subpart UPDATE 2010-02
+s/15068s01.dat
+0 Author: Owen Burgoyne [C3POwen]
+0 !LDRAW_ORG Subpart UPDATE 2022-04
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+48/1-8cyli.dat
+0 Author: Steve Bliss [sbliss]
+0 !LDRAW_ORG 48_Primitive UPDATE 2004-04
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3070bs01.dat
+0 Author: Chris Dee [cwdee]
+0 !LDRAW_ORG Subpart UPDATE 2009-02
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
 box4o4a.dat
@@ -219,9 +324,14 @@ box4.dat
 0 !LDRAW_ORG Primitive UPDATE 2014-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
-s/3070bs01.dat
-0 Author: Chris Dee [cwdee]
-0 !LDRAW_ORG Subpart UPDATE 2009-02
+s/93606s01.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Subpart UPDATE 2014-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+48/1-12cyli.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
 s/93273s01.dat
@@ -234,14 +344,9 @@ s/93273s01.dat
 0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
-s/93606s01.dat
-0 Author: Magnus Forsberg [MagFors]
-0 !LDRAW_ORG Subpart UPDATE 2014-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-48/1-12cyli.dat
-0 Author: Willy Tschager [Holly-Wood]
-0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
+s/11477s01.dat
+0 Author: Owen Burgoyne [C3POwen]
+0 !LDRAW_ORG Subpart UPDATE 2023-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
 s/61068s01.dat
@@ -252,86 +357,6 @@ s/61068s01.dat
 s/88930s01.dat
 0 Author: J.C. Tchang [tchang]
 0 !LDRAW_ORG Subpart UPDATE 2013-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-48/1-8cyli.dat
-0 Author: Steve Bliss [sbliss]
-0 !LDRAW_ORG 48_Primitive UPDATE 2004-04
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-s/15068s01.dat
-0 Author: Owen Burgoyne [C3POwen]
-0 !LDRAW_ORG Subpart UPDATE 2022-04
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-s/11477s01.dat
-0 Author: Owen Burgoyne [C3POwen]
-0 !LDRAW_ORG Subpart UPDATE 2023-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-box4t.dat
-0 Author: Tore Eriksson [Tore_Eriksson]
-0 !LDRAW_ORG Primitive UPDATE 2003-02
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-4-4ndis.dat
-0 Author: James Jessiman
-0 !LDRAW_ORG Primitive UPDATE 2012-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-4-4edge.dat
-0 Author: James Jessiman
-0 !LDRAW_ORG Primitive UPDATE 2017-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-4-4cyli.dat
-0 Author: James Jessiman
-0 !LDRAW_ORG Primitive UPDATE 2005-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-stud2a.dat
-0 Author: James Jessiman
-0 !LDRAW_ORG Primitive UPDATE 2009-02
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-s/3039s01.dat
-0 Author: Willy Tschager [Holly-Wood]
-0 !LDRAW_ORG Subpart UPDATE 2024-02
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-48/1-8chrd.dat
-0 Author: Willy Tschager [Holly-Wood]
-0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-48/1-8cylo.dat
-0 Author: Max Martin Richter [MMR1988]
-0 !LDRAW_ORG 48_Primitive UPDATE 2014-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-rect.dat
-0 Author: James Jessiman
-0 !LDRAW_ORG Primitive UPDATE 2010-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-rect2p.dat
-0 Author: Donald Sutter [technog]
-0 !LDRAW_ORG Primitive UPDATE 2010-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-rect3.dat
-0 Author: Mark Kennedy [mkennedy]
-0 !LDRAW_ORG Primitive UPDATE 2010-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-stud2s2.dat
-0 Author: Owen Burgoyne [C3POwen]
-0 !LDRAW_ORG Primitive UPDATE 2016-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-stud2s2e.dat
-0 Author: Owen Burgoyne [C3POwen]
-0 !LDRAW_ORG Primitive UPDATE 2016-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
 s/98138s01.dat
@@ -349,9 +374,309 @@ s/3040s01.dat
 0 !LDRAW_ORG Subpart UPDATE 2004-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
+s/3039s01.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG Subpart UPDATE 2024-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3062bs01.dat
+0 Author: Takeshi Takahashi [RainbowDolphin]
+0 !LDRAW_ORG Subpart UPDATE 2022-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4-4cyli.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2005-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+stud2a.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2009-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4-4cylo.dat
+0 Author: Mark Kennedy [mkennedy]
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3-4cyli.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2005-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+2-4ring3.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-8cylo.dat
+0 Author: Tim Gould [timgould]
+0 !LDRAW_ORG Primitive UPDATE 2012-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-8ring3.dat
+0 Author: Paul Easter [pneaster]
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-8tang.dat
+0 Author: Steffen [Steffen]
+0 !LDRAW_ORG Primitive UPDATE 2011-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-4tang.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-8chrd.dat
+0 Author: Orion Pobursky [OrionP]
+0 !LDRAW_ORG Primitive UPDATE 2023-05
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4-4ring2.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2009-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+2-4ring4.dat
+0 Author: Paul Easter [pneaster]
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+2-4ndis.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3-4ring2.dat
+0 Author: Mark Kennedy [mkennedy]
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-4ndis.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4-4edge.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-8edge.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3-4edge.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+box4o8a.dat
+0 Author: Steffen [Steffen]
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+rect.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+rect2p.dat
+0 Author: Donald Sutter [technog]
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+rect1.dat
+0 Author: Chris Dee [cwdee]
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3941s01.dat
+0 Author: Gerald Lasser [GeraldLasser]
+0 !LDRAW_ORG Subpart UPDATE 2020-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+stud2.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2009-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4-4ring4.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2009-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
 4-4ring3.dat
 0 Author: James Jessiman
 0 !LDRAW_ORG Primitive UPDATE 2009-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4-4cylc.dat
+0 Author: Alex Taylor [anathema]
+0 !LDRAW_ORG Primitive UPDATE 2009-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/6126s01.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Subpart UPDATE 2014-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/973s01.dat
+0 Author: Steve Bliss [sbliss]
+0 !LDRAW_ORG Subpart UPDATE 2018-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-4cyli.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/4740s01.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Subpart UPDATE 2014-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4-4con1.dat
+0 Author: Steve Bliss [sbliss]
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4-4con3.dat
+0 Author: Niels Karsdorp [nielsk]
+0 !LDRAW_ORG Primitive UPDATE 2003-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4-4con4.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3818s01.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Subpart UPDATE 2020-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3818s02.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Subpart UPDATE 2020-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+48/1-8chrd.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+48/1-8cylo.dat
+0 Author: Max Martin Richter [MMR1988]
+0 !LDRAW_ORG 48_Primitive UPDATE 2014-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+rect3.dat
+0 Author: Mark Kennedy [mkennedy]
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+stud2s2.dat
+0 Author: Owen Burgoyne [C3POwen]
+0 !LDRAW_ORG Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+stud2s2e.dat
+0 Author: Owen Burgoyne [C3POwen]
+0 !LDRAW_ORG Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+box4t.dat
+0 Author: Tore Eriksson [Tore_Eriksson]
+0 !LDRAW_ORG Primitive UPDATE 2003-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4-4ndis.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+2-4ring2.dat
+0 Author: Chris Dee [cwdee]
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-4edge.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-4chrd.dat
+0 Author: Max Martin Richter [MMR1988]
+0 !LDRAW_ORG Primitive UPDATE 2023-05
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3626cs01.dat
+0 Author: J.C. Tchang [tchang]
+0 !LDRAW_ORG Subpart UPDATE 2012-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+2-4cyli.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2005-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+t04o6250.dat
+0 Author: Paul Easter [pneaster]
+0 !LDRAW_ORG Primitive UPDATE 2011-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+stud4a.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2009-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3815bs01.dat
+0 Author: Nils Schmidt [BlackBrick89]
+0 !LDRAW_ORG Subpart UPDATE 2026-04
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+5-16cyli.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Primitive UPDATE 2009-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3846s01.dat
+0 Author: Tore Eriksson [Tore_Eriksson]
+0 !LDRAW_ORG Subpart UPDATE 2011-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+2-4edge.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+2-4con0.dat
+0 Author: Michael Heidemann [mikeheide]
+0 !LDRAW_ORG Primitive UPDATE 2010-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-4disc.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2002-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4-8sphe.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2003-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3817cs01.dat
+0 Author: Max Martin Richter [MMR1988]
+0 !LDRAW_ORG Subpart UPDATE 2023-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3817cs03.dat
+0 Author: Max Martin Richter [MMR1988]
+0 !LDRAW_ORG Subpart UPDATE 2023-03
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
 box3u2p.dat
@@ -369,39 +694,19 @@ stug3-1x3.dat
 0 !LDRAW_ORG Primitive UPDATE 2012-02
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
-s/3003s02.dat
-0 Author: Owen Burgoyne [C3POwen]
-0 !LDRAW_ORG Subpart UPDATE 2013-02
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
 stud3.dat
 0 Author: James Jessiman
 0 !LDRAW_ORG Primitive UPDATE 2012-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
+s/3003s02.dat
+0 Author: Owen Burgoyne [C3POwen]
+0 !LDRAW_ORG Subpart UPDATE 2013-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
 s/3023bs01.dat
 0 Author: Massimo Maso [Sirio]
 0 !LDRAW_ORG Subpart UPDATE 2023-03
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-recte4.dat
-0 Author: Steffen [Steffen]
-0 !LDRAW_ORG Primitive UPDATE 2010-03
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-recte3.dat
-0 Author: Steffen [Steffen]
-0 !LDRAW_ORG Primitive UPDATE 2011-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-box5-4a.dat
-0 Author: Willy Tschager [Holly-Wood]
-0 !LDRAW_ORG Primitive UPDATE 2024-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-box4-1.dat
-0 Author: Tore Eriksson [Tore_Eriksson]
-0 !LDRAW_ORG Primitive UPDATE 2012-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
 stud3a.dat
@@ -414,69 +719,9 @@ stud3a.dat
 0 !LDRAW_ORG Primitive UPDATE 2024-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
-box4-4a.dat
-0 Author: Willy Tschager [Holly-Wood]
-0 !LDRAW_ORG Primitive UPDATE 2024-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
 box2-7.dat
 0 Author: Willy Tschager [Holly-Wood]
 0 !LDRAW_ORG Primitive UPDATE 2024-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-stud4a.dat
-0 Author: James Jessiman
-0 !LDRAW_ORG Primitive UPDATE 2009-02
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-4-4cyls.dat
-0 Author: Donald Sutter [technog]
-0 !LDRAW_ORG Primitive UPDATE 2012-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-2-4edge.dat
-0 Author: James Jessiman
-0 !LDRAW_ORG Primitive UPDATE 2017-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-box2-5.dat
-0 Author: Steffen [Steffen]
-0 !LDRAW_ORG Primitive UPDATE 2003-03
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-48/1-12edge.dat
-0 Author: Willy Tschager [Holly-Wood]
-0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-48/1-12chrd.dat
-0 Author: Willy Tschager [Holly-Wood]
-0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-1-4cyls2.dat
-0 Author: Chris Dee [cwdee]
-0 !LDRAW_ORG Primitive UPDATE 2012-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-2-4ndis.dat
-0 Author: James Jessiman
-0 !LDRAW_ORG Primitive UPDATE 2012-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-rect1.dat
-0 Author: Chris Dee [cwdee]
-0 !LDRAW_ORG Primitive UPDATE 2010-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-rect2a.dat
-0 Author: Chris Dee [cwdee]
-0 !LDRAW_ORG Primitive UPDATE 2010-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-48/1-4edge.dat
-0 Author: Magnus Forsberg [MagFors]
-0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
 3-16ndis.dat
@@ -499,6 +744,11 @@ rect2a.dat
 0 !LDRAW_ORG Primitive UPDATE 2009-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
+box2-5.dat
+0 Author: Steffen [Steffen]
+0 !LDRAW_ORG Primitive UPDATE 2003-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
 box2-11.dat
 0 Author: Steffen [Steffen]
 0 !LDRAW_ORG Primitive UPDATE 2005-01
@@ -509,44 +759,64 @@ box4-2p.dat
 0 !LDRAW_ORG Primitive UPDATE 2024-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
+recte4.dat
+0 Author: Steffen [Steffen]
+0 !LDRAW_ORG Primitive UPDATE 2010-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
 48/1-8edge.dat
 0 Author: [PTadmin]
 0 !LDRAW_ORG 48_Primitive UPDATE 2017-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
-box2-9.dat
-0 Author: Mark Kennedy [mkennedy]
-0 !LDRAW_ORG Primitive UPDATE 2010-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-s/61068s02.dat
-0 Author: Massimo Maso [Sirio]
-0 !LDRAW_ORG Subpart UPDATE 2022-06
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-4-4ring2.dat
-0 Author: James Jessiman
-0 !LDRAW_ORG Primitive UPDATE 2009-01
-0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
-
-stug-1x2.dat
+recte3.dat
 0 Author: Steffen [Steffen]
 0 !LDRAW_ORG Primitive UPDATE 2011-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
-2-4cyli.dat
-0 Author: James Jessiman
-0 !LDRAW_ORG Primitive UPDATE 2005-01
+box5-4a.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG Primitive UPDATE 2024-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
-1-4cyls.dat
-0 Author: James Jessiman
+box4-1.dat
+0 Author: Tore Eriksson [Tore_Eriksson]
 0 !LDRAW_ORG Primitive UPDATE 2012-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
-box3u4a.dat
-0 Author: Niels Karsdorp [nielsk]
-0 !LDRAW_ORG Primitive UPDATE 2009-01
+box4-4a.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4-4cyls.dat
+0 Author: Donald Sutter [technog]
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+48/1-12edge.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+48/1-12chrd.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-4cyls2.dat
+0 Author: Chris Dee [cwdee]
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+rect2a.dat
+0 Author: Chris Dee [cwdee]
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+48/1-4edge.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
 s/98138s02.dat
@@ -559,9 +829,139 @@ s/98138s02.dat
 0 !LDRAW_ORG Primitive UPDATE 2024-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
+box2-9.dat
+0 Author: Mark Kennedy [mkennedy]
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/61068s02.dat
+0 Author: Massimo Maso [Sirio]
+0 !LDRAW_ORG Subpart UPDATE 2022-06
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-4cyls.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+stud4od.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Primitive UPDATE 2013-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+stug-1x2.dat
+0 Author: Steffen [Steffen]
+0 !LDRAW_ORG Primitive UPDATE 2011-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+box3u4a.dat
+0 Author: Niels Karsdorp [nielsk]
+0 !LDRAW_ORG Primitive UPDATE 2009-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-8cyli.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2005-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+axlehol3.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2022-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+axlehole.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2022-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+axlehol2.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2022-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+4-4ring1.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2009-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+stug10-2x2.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Primitive UPDATE 2020-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-8ndis.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3-8edge.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+2-4disc.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2002-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-8disc.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2002-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3-8cyli.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2005-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+tri3a4.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+knob1.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Primitive UPDATE 2020-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
 4-4ring7.dat
 0 Author: James Jessiman
 0 !LDRAW_ORG Primitive UPDATE 2009-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3818s03.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Subpart UPDATE 2020-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3818s04.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Subpart UPDATE 2020-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3626cs02.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Subpart UPDATE 2012-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+hipstud.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Primitive UPDATE 2018-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3815bs02.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Subpart UPDATE 2026-04
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+s/3817cs02.dat
+0 Author: Max Martin Richter [MMR1988]
+0 !LDRAW_ORG Subpart UPDATE 2023-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-8sphe.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-03
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
 stug-2x2.dat
@@ -579,12 +979,107 @@ stud4o.dat
 0 !LDRAW_ORG Primitive UPDATE 2012-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
-4-4cylo.dat
-0 Author: Mark Kennedy [mkennedy]
-0 !LDRAW_ORG Primitive UPDATE 2010-01
+axl5hol9.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Primitive UPDATE 2022-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
 
-4-4cylc.dat
-0 Author: Alex Taylor [anathema]
-0 !LDRAW_ORG Primitive UPDATE 2009-02
+axl5ho10.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Primitive UPDATE 2022-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+axl5hol8.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Primitive UPDATE 2022-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-16chrd.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Primitive UPDATE 2015-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+stud10.dat
+0 Author: Orion Pobursky [OrionP]
+0 !LDRAW_ORG Primitive UPDATE 2020-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3-4ring1.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+2-4con10.dat
+0 Author: Michael Heidemann [mikeheide]
+0 !LDRAW_ORG Primitive UPDATE 2010-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+2-4con4.dat
+0 Author: Mark Kennedy [mkennedy]
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-4con10.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG Primitive UPDATE 2024-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-4con4.dat
+0 Author: Steve Bliss [sbliss]
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-4cylo.dat
+0 Author: Max Martin Richter [MMR1988]
+0 !LDRAW_ORG Primitive UPDATE 2010-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+7-16cyli.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-8tndis.dat
+0 Author: Massimo Maso [Sirio]
+0 !LDRAW_ORG Primitive UPDATE 2022-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-16tndis.dat
+0 Author: Massimo Maso [Sirio]
+0 !LDRAW_ORG Primitive UPDATE 2022-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-16cylo.dat
+0 Author: Max Martin Richter [MMR1988]
+0 !LDRAW_ORG Primitive UPDATE 2014-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3-4cylo.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Primitive UPDATE 2011-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3-4ndis.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+empty.dat
+0 Author: Steffen [Steffen]
+0 !LDRAW_ORG Primitive UPDATE 2025-08
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+3-4disc.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2002-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-16cyli.dat
+0 Author: Marc Klein [marckl]
+0 !LDRAW_ORG Primitive UPDATE 2005-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+1-16edge.dat
+0 Author: Marc Klein [marckl]
+0 !LDRAW_ORG Primitive UPDATE 2017-01
 0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt

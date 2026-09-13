@@ -1,3 +1,4 @@
+import type { ComponentRegion } from './semantic-components.ts';
 import {
   generateImageDesign,
   type ImageDesignOptions,
@@ -9,6 +10,7 @@ import type { Raster } from './brick-engine.ts';
 self.onmessage = (
   event: MessageEvent<{
     mesh?: TriangleMesh;
+    regions?: ComponentRegion[];
     raster: Raster;
     options: ImageDesignOptions;
     name: string;
@@ -32,7 +34,7 @@ self.onmessage = (
     }
     self.postMessage({
       model: mesh
-        ? meshToDesign(mesh, options.resolution)
+        ? meshToDesign(mesh, options.resolution, event.data.regions)
         : generateImageDesign(raster, options, name),
     });
   } catch (error) {

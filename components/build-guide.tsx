@@ -12,6 +12,7 @@ import {
   topDiagram,
   installationText,
   isSideMounted,
+  isSpecialPart,
   gridAddress,
 } from '@/lib/build-instructions';
 
@@ -196,19 +197,27 @@ export default function BuildGuide({
             </p>
             <h3>
               <i>2</i>
-              {isSideMounted(active) ? '对准侧面凸点' : '放到标记位置'}
+              {isSpecialPart(active)
+                ? '对照组件连接'
+                : isSideMounted(active)
+                  ? '对准侧面凸点'
+                  : '放到标记位置'}
             </h3>
             <p className="guide-action-text">
               {installationText(guide, active)}
             </p>
             <div className="guide-address">
-              {isSideMounted(active)
-                ? '侧向按入 →'
-                : `定位格 ${gridAddress(guide, active)}`}
+              {isSpecialPart(active)
+                ? '按左侧文字连接'
+                : isSideMounted(active)
+                  ? '侧向按入 →'
+                  : `定位格 ${gridAddress(guide, active)}`}
               <small>
-                {isSideMounted(active)
-                  ? '观察侧面，不要向下压'
-                  : '俯视图：字母横向，数字从后向前'}
+                {isSpecialPart(active)
+                  ? '关节、握柄和插杆的连接方式各不相同'
+                  : isSideMounted(active)
+                    ? '观察侧面，不要向下压'
+                    : '俯视图：字母横向，数字从后向前'}
               </small>
             </div>
           </aside>
@@ -242,13 +251,15 @@ export default function BuildGuide({
               <div className="guide-main-diagram">
                 {(view === 'detail' || view === 'placed') && (
                   <h4>
-                    {view === 'placed'
-                      ? '装好后，应当是这样'
-                      : isSideMounted(active)
-                        ? '沿箭头向内按入'
-                        : active.y === 0
-                          ? '先平放到虚线位置'
-                          : '对准虚线位置，向下按紧'}
+                    {isSpecialPart(active)
+                      ? '彩色为当前零件：对照连接后的方向'
+                      : view === 'placed'
+                        ? '装好后，应当是这样'
+                        : isSideMounted(active)
+                          ? '沿箭头向内按入'
+                          : active.y === 0
+                            ? '先平放到虚线位置'
+                            : '对准虚线位置，向下按紧'}
                   </h4>
                 )}
                 <div
@@ -256,38 +267,41 @@ export default function BuildGuide({
                   dangerouslySetInnerHTML={{ __html: diagram }}
                 />
               </div>
-              {(view === 'detail' || view === 'placed') && (
-                <aside className="guide-inline-map">
-                  <h4>
-                    {isSideMounted(active)
-                      ? '连接位置 · 从上方看'
-                      : `定位 ${gridAddress(guide, active)} · 从上方看`}
-                  </h4>
-                  <div
-                    dangerouslySetInnerHTML={{
-                      __html: topDiagram(guide, stage, index, false, true),
-                    }}
-                  />
-                  <p>
-                    {model.imageDesign || model.meshDesign
-                      ? '定位图数字向上增大；橙框是这一块的位置。'
-                      : '鸭嘴朝上；橙框是这一块的位置。'}
-                    <br />
-                    {isSideMounted(active)
-                      ? '按左图从侧面连接。'
-                      : '左后角对准橙色小圆点。'}
-                  </p>
-                </aside>
-              )}
+              {!isSpecialPart(active) &&
+                (view === 'detail' || view === 'placed') && (
+                  <aside className="guide-inline-map">
+                    <h4>
+                      {isSideMounted(active)
+                        ? '连接位置 · 从上方看'
+                        : `定位 ${gridAddress(guide, active)} · 从上方看`}
+                    </h4>
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: topDiagram(guide, stage, index, false, true),
+                      }}
+                    />
+                    <p>
+                      {model.imageDesign || model.meshDesign
+                        ? '定位图数字向上增大；橙框是这一块的位置。'
+                        : '鸭嘴朝上；橙框是这一块的位置。'}
+                      <br />
+                      {isSideMounted(active)
+                        ? '按左图从侧面连接。'
+                        : '左后角对准橙色小圆点。'}
+                    </p>
+                  </aside>
+                )}
             </div>
             <p className="guide-legend">
               <span>
                 <i className="legend-current" />
-                {view === 'overview'
-                  ? '橙框数字：本组安装顺序'
-                  : view === 'placed'
-                    ? '彩色：刚装好的这一块'
-                    : '彩色：这一块 · 橙色虚线：放置位置'}
+                {isSpecialPart(active) && view === 'detail'
+                  ? '彩色：这一块安装后的方向'
+                  : view === 'overview'
+                    ? '橙框数字：本组安装顺序'
+                    : view === 'placed'
+                      ? '彩色：刚装好的这一块'
+                      : '彩色：这一块 · 橙色虚线：放置位置'}
               </span>
               <span>
                 <i />
@@ -295,15 +309,17 @@ export default function BuildGuide({
               </span>
             </p>
             <p className="guide-view-note">
-              {view === 'detail'
-                ? '彩色零件悬空展示；沿箭头装入橙色虚线位置，灰色部分保持不动。'
-                : view === 'placed'
-                  ? '对照安装后的外观与右侧定位图，检查方向和位置。'
-                  : view === 'top'
-                    ? model.imageDesign || model.meshDesign
-                      ? '从正上方看，数字向上增大。将零件左后角对齐橙色小圆点。'
-                      : '从正上方看：鸭嘴朝上。将零件左后角对齐橙色小圆点。'
-                    : '这是整组完成后的外观，数字对应本组第几块。'}
+              {isSpecialPart(active) && view === 'detail'
+                ? '图中显示连接后的组件外观。按左侧文字找到插孔或握柄，确认朝向后连接；灰色零件保持不动。'
+                : view === 'detail'
+                  ? '彩色零件悬空展示；沿箭头装入橙色虚线位置，灰色部分保持不动。'
+                  : view === 'placed'
+                    ? '对照安装后的外观与右侧定位图，检查方向和位置。'
+                    : view === 'top'
+                      ? model.imageDesign || model.meshDesign
+                        ? '从正上方看，数字向上增大。将零件左后角对齐橙色小圆点。'
+                        : '从正上方看：鸭嘴朝上。将零件左后角对齐橙色小圆点。'
+                      : '这是整组完成后的外观，数字对应本组第几块。'}
             </p>
           </div>
         </div>

@@ -5,6 +5,8 @@ import type { Model, Raster } from '@/lib/brick-engine';
 import { PALETTE } from '@/lib/brick-engine';
 import type { TriangleMesh } from '@/lib/mesh-types';
 import { readGLB } from '@/lib/read-glb';
+import ComponentEditor from './component-editor';
+import type { ComponentRegion } from '@/lib/semantic-components';
 import MeshDraftViewer from './mesh-draft-viewer';
 // oxlint-disable-next-line import/default -- Vite exports the public worker asset URL.
 import workerUrl from '@/lib/image-design.worker.ts?worker&url';
@@ -33,6 +35,9 @@ export default function ReconstructionPanel({
   resolution: number;
   onModel: (model: Model) => void;
 }) {
+  const [regions, setRegions] = useState<ComponentRegion[]>([]),
+    [selected, setSelected] = useState(''),
+    [picking, setPicking] = useState(false);
   const [configured, setConfigured] = useState<boolean | null>(null),
     [provider, setProvider] = useState(''),
     [softenShadows, setSoftenShadows] = useState(true),
@@ -113,6 +118,9 @@ export default function ReconstructionPanel({
             ),
           );
           original.current = mesh;
+          setRegions([]);
+          setSelected('');
+          setPicking(false);
           setDraft(mesh);
           if (provider === 'local') {
             referenceUrl.current = '/api/reconstruction' + q + '&reference=1';
@@ -196,6 +204,9 @@ export default function ReconstructionPanel({
           ),
         );
         original.current = mesh;
+        setRegions([]);
+        setSelected('');
+        setPicking(false);
         referenceUrl.current = '';
         setDraft(mesh);
         setPhase('已导入三维网格，请检查方向与体积');
@@ -286,7 +297,7 @@ export default function ReconstructionPanel({
     setPhase('正在把三维体积转换为积木，并检查连接');
     try {
       const model = await runWorker<Model>(
-        { mesh: draft, options: { resolution } },
+        { mesh: draft, options: { resolution }, regions },
         'model',
       );
       if (alive.current) {
@@ -387,7 +398,33 @@ export default function ReconstructionPanel({
       )}
       {draft ? (
         <>
-          <MeshDraftViewer mesh={draft} />
+          <MeshDraftViewer
+            mesh={draft}
+            regions={regions}
+            resolution={resolution}
+            selected={selected}
+            picking={picking}
+            onPick={(anchor) => {
+              if (busy) return;
+              setRegions((current) =>
+                current.map((r) =>
+                  r.id === selected ? { ...r, anchor, placed: true } : r,
+                ),
+              );
+              setPicking(false);
+            }}
+          />
+          <ComponentEditor
+            disabled={busy}
+            mesh={draft}
+            resolution={resolution}
+            regions={regions}
+            onChange={setRegions}
+            selected={selected}
+            onSelect={setSelected}
+            picking={picking}
+            onPicking={setPicking}
+          />
           <details className="color-settings">
             <summary>
               调整配色{' '}
@@ -457,7 +494,7 @@ export default function ReconstructionPanel({
             )}
             <button
               className="primary"
-              disabled={busy}
+              disabled={busy || regions.some((r) => r.placed === false)}
               onClick={() => void convert()}
             >
               生成积木成品 →
@@ -465,7 +502,7 @@ export default function ReconstructionPanel({
             <span>{resolution} 凸点精度 · 同步生成零件清单与拼装步骤</span>
           </div>
           <p className="field-hint">
-            细小雕像和枝叶仍可能简化。草稿形状有误时，可更换参考图或导入修正后的模型。
+            组件按真实零件尺寸装配；未标记区域继续按网格转换。人物关节、附件插接及具体颜色组合仍需复核。
           </p>
         </>
       ) : (

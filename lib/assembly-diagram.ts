@@ -1,3 +1,4 @@
+import { SPECIAL_DATA } from './special-part-data.ts';
 import {
   ASSEMBLY_PARTS,
   curveFloorY,
@@ -16,6 +17,28 @@ type Face = {
 // Lightweight solid diagrams for offline instructions. The interactive viewer
 // uses the original LDraw mesh; these diagrams omit underside cavities.
 export function brickFaces(b: Brick): Face[] {
+  const mesh = SPECIAL_DATA[b.part];
+  if (mesh)
+    return mesh.triangles.map((t) => {
+      const points = [0, 3, 6].map((i) =>
+        worldPoint(b.pose!, t.slice(i, i + 3) as V3),
+      );
+      const a = points[1].map((v, i) => v - points[0][i]),
+        c = points[2].map((v, i) => v - points[0][i]);
+      const n = [
+        a[1] * c[2] - a[2] * c[1],
+        a[2] * c[0] - a[0] * c[2],
+        a[0] * c[1] - a[1] * c[0],
+      ];
+      const len = Math.hypot(...n) || 1;
+      return {
+        points,
+        shade:
+          0.78 +
+          Math.max(0, (-n[1] * 0.8 + n[0] * 0.2 + n[2] * 0.3) / len) * 0.2,
+        smooth: true,
+      };
+    });
   const p = ASSEMBLY_PARTS[b.part],
     x = p.w * 10,
     z = p.d * 10,

@@ -1,3 +1,4 @@
+import { SPECIAL_DATA } from './special-part-data.ts';
 export type V3 = [number, number, number];
 export type M3 = [
   number,
@@ -15,7 +16,15 @@ export type CatalogPart = {
   w: number;
   d: number;
   h: number;
-  kind: 'brick' | 'plate' | 'tile' | 'curve' | 'slope' | 'side' | 'round';
+  kind:
+    | 'brick'
+    | 'plate'
+    | 'tile'
+    | 'curve'
+    | 'slope'
+    | 'side'
+    | 'round'
+    | 'special';
   // LDraw origin relative to the centre of the nominal envelope, in LDU.
   bottom: number;
   centerZ?: number;
@@ -128,6 +137,37 @@ export const ASSEMBLY_PARTS: Record<string, CatalogPart> = {
     bottom: 8,
   },
 };
+const specialNames: Record<string, string> = {
+  '87580': '中心单凸点薄板 2 × 2',
+  '3062b': '圆砖 1 × 1 · 树干',
+  '2423': '枝叶片 4 × 3',
+  '3941': '圆砖 2 × 2',
+  '4740': '碟形件 2 × 2',
+  '85861': '空心凸点圆板 1 × 1',
+  '6126b': '火焰 · 带圆边插杆',
+  '973': '人物躯干',
+  '3818': '人物右臂',
+  '3819': '人物左臂',
+  '3820': '人物手',
+  '3815b': '人物髋部',
+  '3816c': '人物右腿',
+  '3817c': '人物左腿',
+  '3626c': '人物头 · 无印刷',
+  '3844': '人物头盔',
+  '3846': '三角盾牌',
+  '4497': '长矛',
+};
+for (const [id, name] of Object.entries(specialNames)) {
+  const { min, max } = SPECIAL_DATA[id];
+  ASSEMBLY_PARTS[id] = {
+    name,
+    w: (max[0] - min[0]) / 20,
+    d: (max[2] - min[2]) / 20,
+    h: (max[1] - min[1]) / 8,
+    bottom: max[1],
+    kind: 'special',
+  };
+}
 export const IDENTITY: M3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 export function rotate(q: number): M3 {
   return [

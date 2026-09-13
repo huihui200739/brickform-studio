@@ -389,7 +389,7 @@ export default function Home() {
             <Blocks size={21} />
           </span>
           brickform<span className="brand-cn">积木工坊</span>
-          <span className="beta">V13</span>
+          <span className="beta">V14</span>
         </Link>
         <span className="workspace-title">设计工作台</span>
         <button className="header-help" onClick={() => setHelp(true)}>
@@ -503,7 +503,7 @@ export default function Home() {
           {mode === 'round' ? (
             <>
               <div className="reconstruction-note">
-                <span className="tiny-tag">V13 · 小鸭重建实验</span>
+                <span className="tiny-tag">V14 · 小鸭重建实验</span>
                 <p>
                   额头与肩部用曲面替换外露直斜坡，小转角增加圆弧收口；分层查看与拼装图同步更新。
                 </p>
@@ -1046,11 +1046,13 @@ export default function Home() {
                 <div className="validation-strip">
                   <span>
                     <ShieldCheck size={15} />
-                    {validation.collisions === 0 &&
-                    validation.unsupported === 0 &&
-                    validation.connected
-                      ? '连接与重叠检查通过'
-                      : '结构需要检查'}
+                    {model.semanticDesign
+                      ? '组件连接点已检查 · 插接与间隙需复核'
+                      : validation.collisions === 0 &&
+                          validation.unsupported === 0 &&
+                          validation.connected
+                        ? '连接与重叠检查通过'
+                        : '结构需要检查'}
                   </span>
                   <span>
                     {model.assembly
@@ -1221,7 +1223,7 @@ export default function Home() {
       <footer className="site-footer">
         <span>
           <Blocks size={15} />
-          Brickform Studio · V13
+          Brickform Studio · V14
         </span>
         <span>独立创作工具，与 LEGO Group 无关联或认证。</span>
       </footer>

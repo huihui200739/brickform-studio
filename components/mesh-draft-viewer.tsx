@@ -1,7 +1,34 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import {
+  meshFrame,
+  regionPlacement,
+  positionedComponent,
+  type ComponentRegion,
+} from '@/lib/semantic-components';
+import { viewerGeometry, viewerPose } from '@/lib/assembly-render';
+import { PALETTE } from '@/lib/brick-engine';
+import type { V3 } from '@/lib/assembly-catalog';
 import type { TriangleMesh } from '@/lib/mesh-types';
-export default function MeshDraftViewer({ mesh }: { mesh: TriangleMesh }) {
+export default function MeshDraftViewer({
+  mesh,
+  regions = [],
+  resolution = 28,
+  selected = '',
+  picking = false,
+  onPick,
+}: {
+  mesh: TriangleMesh;
+  regions?: ComponentRegion[];
+  resolution?: number;
+  selected?: string;
+  picking?: boolean;
+  onPick?: (point: V3) => void;
+}) {
+  const selection = useRef({ regions, resolution, selected, picking, onPick });
+  selection.current = { regions, resolution, selected, picking, onPick };
+  const refresh = useRef<() => void>(() => {});
+  useEffect(() => refresh.current(), [regions, resolution, selected, picking]);
   const host = useRef<HTMLDivElement>(null);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -27,7 +54,7 @@ export default function MeshDraftViewer({ mesh }: { mesh: TriangleMesh }) {
           geometry = new T.BufferGeometry();
         geometry.setAttribute(
           'position',
-          new T.BufferAttribute(mesh.positions, 3),
+          new T.BufferAttribute(mesh.positions.slice(), 3),
         );
         const colors = new Float32Array(mesh.positions.length);
         for (let i = 0; i < mesh.colors.length / 3; i++) {
@@ -43,7 +70,7 @@ export default function MeshDraftViewer({ mesh }: { mesh: TriangleMesh }) {
         geometry.setAttribute('color', new T.BufferAttribute(colors, 3));
         geometry.computeVertexNormals();
         geometry.computeBoundingBox();
-        const box = geometry.boundingBox!,
+        const box = geometry.boundingBox!.clone(),
           center = box.getCenter(new T.Vector3()),
           size = box.getSize(new T.Vector3()),
           extent = Math.max(size.x, size.y, size.z);
@@ -53,7 +80,133 @@ export default function MeshDraftViewer({ mesh }: { mesh: TriangleMesh }) {
           roughness: 0.85,
           side: T.DoubleSide,
         });
-        scene.add(new T.Mesh(geometry, material));
+        const subject = new T.Mesh(geometry, material);
+        scene.add(subject);
+        const overlay = new T.Group();
+        scene.add(overlay);
+        let partData: Record<
+          string,
+          { positions: number[]; normals: number[] }
+        > | null = null;
+        const updateRegions = () => {
+          overlay.traverse((o) => {
+            if (o instanceof T.Mesh || o instanceof T.LineSegments) {
+              o.geometry.dispose();
+              const m = o.material;
+              (Array.isArray(m) ? m : [m]).forEach((v) => v.dispose());
+            }
+          });
+          overlay.clear();
+          const { regions, resolution, selected, picking } = selection.current;
+          renderer.domElement.style.cursor = picking ? 'crosshair' : 'grab';
+          const f = meshFrame(mesh, resolution),
+            [w, , d] = f.grid;
+          for (const r of regions) {
+            const p = regionPlacement(r, f.grid);
+            if (r.id === selected) {
+              const lo = new T.Vector3(
+                (p.min[0] - 1) / f.scale + f.min[0] - center.x,
+                ((p.min[1] - 2) * 0.4) / f.scale + f.min[1] - center.y,
+                (p.min[2] - 1) / f.scale + f.min[2] - center.z,
+              );
+              const hi = new T.Vector3(
+                (p.max[0] - 1) / f.scale + f.min[0] - center.x,
+                ((p.max[1] - 2) * 0.4) / f.scale + f.min[1] - center.y,
+                (p.max[2] - 1) / f.scale + f.min[2] - center.z,
+              );
+              overlay.add(new T.Box3Helper(new T.Box3(lo, hi), 0xe17a38));
+            }
+            if (!partData) continue;
+            const assembly = positionedComponent(
+              r.kind,
+              [(p.x - (w + 2) / 2) * 20, -p.y * 8, (p.z - (d + 2) / 2) * 20],
+              r.rotation,
+              { width: w + 2, depth: d + 2 },
+            );
+            const group = new T.Group();
+            group.scale.setScalar(1 / f.scale);
+            group.position.set(
+              w / 2 / f.scale + f.min[0] - center.x,
+              -0.8 / f.scale + f.min[1] - center.y,
+              d / 2 / f.scale + f.min[2] - center.z,
+            );
+            for (const b of assembly) {
+              const raw = partData[b.part];
+              if (!raw) continue;
+              const data = viewerGeometry(raw),
+                geo = new T.BufferGeometry();
+              geo.setAttribute(
+                'position',
+                new T.Float32BufferAttribute(data.positions, 3),
+              );
+              geo.setAttribute(
+                'normal',
+                new T.Float32BufferAttribute(data.normals, 3),
+              );
+              const obj = new T.Mesh(
+                geo,
+                new T.MeshStandardMaterial({
+                  color: PALETTE[b.color].hex,
+                  roughness: 0.4,
+                }),
+              );
+              obj.applyMatrix4(new T.Matrix4().set(...viewerPose(b.pose!)));
+              group.add(obj);
+            }
+            overlay.add(group);
+          }
+          material.transparent = regions.length > 0;
+          material.opacity = regions.length ? 0.24 : 1;
+          material.depthWrite = !regions.length;
+          material.needsUpdate = true;
+        };
+        refresh.current = updateRegions;
+        void fetch('/parts/geometry.json')
+          .then((r) => r.json())
+          .then((data) => {
+            if (!cancelled) {
+              partData = data as typeof partData;
+              updateRegions();
+            }
+          })
+          .catch(() => {});
+        const ray = new T.Raycaster(),
+          pointer = new T.Vector2();
+        let down = [0, 0];
+        const pointerDown = (event: PointerEvent) => {
+          down = [event.clientX, event.clientY];
+        };
+        const pointerUp = (event: PointerEvent) => {
+          if (
+            !selection.current.picking ||
+            Math.hypot(event.clientX - down[0], event.clientY - down[1]) > 5
+          )
+            return;
+          const rect = renderer.domElement.getBoundingClientRect();
+          pointer.set(
+            ((event.clientX - rect.left) / rect.width) * 2 - 1,
+            (-(event.clientY - rect.top) / rect.height) * 2 + 1,
+          );
+          ray.setFromCamera(pointer, camera);
+          const hit = ray.intersectObject(subject)[0];
+          if (!hit) return;
+          const p = hit.point.add(center);
+          selection.current.onPick?.(
+            [0, 1, 2].map((a) =>
+              Math.max(
+                0,
+                Math.min(
+                  1,
+                  (p.getComponent(a) - box.min.getComponent(a)) /
+                    size.getComponent(a),
+                ),
+              ),
+            ) as V3,
+          );
+        };
+        renderer.domElement.addEventListener('pointerdown', pointerDown);
+        renderer.domElement.addEventListener('pointerup', pointerUp);
+        updateRegions();
         scene.add(new T.HemisphereLight(0xffffff, 0x78889a, 2.2));
         const light = new T.DirectionalLight(0xffffff, 2.3);
         light.position.set(extent, extent * 2, extent * 3);
@@ -84,6 +237,16 @@ export default function MeshDraftViewer({ mesh }: { mesh: TriangleMesh }) {
           controls.dispose();
           geometry.dispose();
           material.dispose();
+          renderer.domElement.removeEventListener('pointerdown', pointerDown);
+          renderer.domElement.removeEventListener('pointerup', pointerUp);
+          overlay.traverse((o) => {
+            if (o instanceof T.Mesh || o instanceof T.LineSegments) {
+              o.geometry.dispose();
+              const m = o.material;
+              (Array.isArray(m) ? m : [m]).forEach((v) => v.dispose());
+            }
+          });
+          refresh.current = () => {};
           renderer.dispose();
           renderer.domElement.remove();
         };

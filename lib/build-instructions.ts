@@ -60,6 +60,9 @@ export function stageBricks(model: Model, stage: number) {
 export function cleanStageName(name: string) {
   return name.replace(/^第\s*\d+\s*[步层]\s*[·：:]?\s*/, '') || '继续搭建';
 }
+export function isSpecialPart(b: Brick) {
+  return ASSEMBLY_PARTS[b.part]?.kind === 'special';
+}
 export function isSideMounted(b: Brick) {
   return (
     !!b.pose && Math.abs(transform(b.pose.matrix, [0, -1, 0])[1] + 1) > 0.001
@@ -83,6 +86,7 @@ export function gridAddress(model: Model, b: Brick) {
   return `${column(Math.max(0, Math.round(b.x - origin.x)))}${Math.round(b.z - origin.z) + 1}`;
 }
 export function installationText(model: Model, b: Brick) {
+  if (b.installation) return b.installation;
   const kind = ASSEMBLY_PARTS[b.part].kind;
   if (isSideMounted(b))
     return `${orientationLabel(b)}。找到侧面朝外的小圆凸点，把零件背面的孔对准凸点，向身体方向按紧；不用向下压。`;
@@ -156,7 +160,7 @@ function sceneSVG(
   const normal = active
     ? transform(active.pose!.matrix, [0, -1, 0])
     : [0, -1, 0];
-  const lift = opts.placement ? 38 : 0;
+  const lift = opts.placement && active && !isSpecialPart(active) ? 38 : 0;
   const polys = bricks.flatMap((b) => {
     const current = b.id === activeId || !!opts.thumbnail;
     const moved =
@@ -322,7 +326,10 @@ export function detailDiagram(
       .slice(0, Math.max(0, 12 - priority.length)),
   ];
   const normal = transform(active.pose!.matrix, [0, -1, 0]);
-  return sceneSVG(near, active.id, {
+  const context = isSpecialPart(active)
+    ? visible.filter((b) => b.section === active.section)
+    : near;
+  return sceneSVG(context, active.id, {
     side: normal[0] < 0 ? -1 : 1,
     placement: !placed,
   });

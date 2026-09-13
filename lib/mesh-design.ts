@@ -1,4 +1,11 @@
 import {
+  addComponents,
+  insideRegion,
+  regionPlacement,
+  validateRegions,
+  type ComponentRegion,
+} from './semantic-components.ts';
+import {
   finishModel,
   PALETTE,
   nearestColor,
@@ -10,7 +17,11 @@ import type { TriangleMesh } from './mesh-types.ts';
 
 // Cast through a genuine triangle volume, retaining separate depth intervals
 // and openings. Image brightness is never used to invent depth.
-export function meshToDesign(mesh: TriangleMesh, resolution = 28): Model {
+export function meshToDesign(
+  mesh: TriangleMesh,
+  resolution = 28,
+  regions: ComponentRegion[] = [],
+): Model {
   const p = mesh.positions,
     n = p.length / 9;
   if (
@@ -36,6 +47,8 @@ export function meshToDesign(mesh: TriangleMesh, resolution = 28): Model {
   const w = Math.max(1, Math.ceil(span[0] * scale)),
     h = Math.max(1, Math.ceil((span[1] * scale) / 0.4)),
     d = Math.max(1, Math.ceil(span[2] * scale));
+  validateRegions(regions, [w, h, d]);
+  const placements = regions.map((r) => regionPlacement(r, [w, h, d]));
   const hits: { x: number; color: number }[][] = Array.from(
     { length: h * d },
     () => [],
@@ -157,6 +170,97 @@ export function meshToDesign(mesh: TriangleMesh, resolution = 28): Model {
       '三维草稿有较多开放边界，无法可靠填充体积。请换一个闭合 GLB 模型或重新生成草稿。',
     );
   surface.forEach((v, k) => cells.set(k, v));
+  let removedCells = 0;
+  for (const key of cells.keys()) {
+    const p = key.split(',').map(Number) as [number, number, number];
+    if (placements.some((r) => insideRegion(p, r))) {
+      cells.delete(key);
+      removedCells++;
+    }
+  }
+  // The cut can detach a canopy or a flame tip outside the box. Remove only
+  // detached islands touching this cut; unrelated islands retain normal support.
+  if (placements.length) {
+    const seen = new Set<string>();
+    for (const start of cells.keys()) {
+      if (seen.has(start)) continue;
+      const queue = [start],
+        island: string[] = [];
+      let touchesGround = false,
+        touchesCut = false;
+      while (queue.length) {
+        const key = queue.pop()!;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        island.push(key);
+        const [x, y, z] = key.split(',').map(Number);
+        if (y === 2) touchesGround = true;
+        for (const [dx, dy, dz] of [
+          [1, 0, 0],
+          [-1, 0, 0],
+          [0, 1, 0],
+          [0, -1, 0],
+          [0, 0, 1],
+          [0, 0, -1],
+        ]) {
+          const next = `${x + dx},${y + dy},${z + dz}`;
+          if (cells.has(next) && !seen.has(next)) queue.push(next);
+          if (placements.some((r) => insideRegion([x + dx, y + dy, z + dz], r)))
+            touchesCut = true;
+        }
+      }
+      if (!touchesGround && touchesCut)
+        for (const key of island) {
+          cells.delete(key);
+          removedCells++;
+        }
+    }
+  }
+  // Seat each component on a connected four-stud mounting surface. Fill only
+  // below the selected base, never refill the removed object above that base.
+  for (const r of placements)
+    for (let x = r.x - 1; x < r.x + 1; x++)
+      for (let z = r.z - 1; z < r.z + 1; z++) {
+        for (let y = r.y - 1; y >= 2; y--) {
+          const key = `${x},${y},${z}`;
+          if (cells.has(key)) break;
+          cells.set(key, { color: dominant, support: true });
+        }
+      }
+  // A removed statue must not be replaced by a column through the doorway.
+  // If both jambs are present, bridge the opening with full 2 x 8 plates at
+  // its upper boundary. Plates retain their catalog dimensions and are counted.
+  const bridges: Model['bricks'] = [];
+  for (const r of placements) {
+    const x = r.min[0] - 1,
+      y = r.max[1];
+    if (r.max[0] - r.min[0] !== 6 || x < 0 || x + 8 > w + 2 || y >= h + 2)
+      continue;
+    for (let z = r.min[2]; z + 2 <= r.max[2]; z += 2) {
+      const left = [z, z + 1].some((zz) => cells.has(`${x},${y - 1},${zz}`));
+      const right = [z, z + 1].some((zz) =>
+        cells.has(`${x + 7},${y - 1},${zz}`),
+      );
+      const roof = [z, z + 1].some((zz) => cells.has(`${x + 3},${y},${zz}`));
+      if (!left || !right || !roof) continue;
+      for (let xx = x; xx < x + 8; xx++)
+        for (let zz = z; zz < z + 2; zz++)
+          cells.set(`${xx},${y},${zz}`, { color: dominant, support: false });
+      bridges.push({
+        id: 0,
+        part: '3034',
+        x,
+        y,
+        z,
+        w: 8,
+        d: 2,
+        h: 1,
+        color: dominant,
+        installation:
+          '将整块 2 × 8 薄板横跨开口，两端分别扣在左右承托凸点上，保持下方通道畅通。',
+      });
+    }
+  }
   const raw = finishModel(
     cells,
     w + 2,
@@ -166,6 +270,10 @@ export function meshToDesign(mesh: TriangleMesh, resolution = 28): Model {
     mesh.name,
     resolution,
     dominant,
+    placements.length
+      ? (x, y, z) => placements.some((r) => insideRegion([x, y, z], r))
+      : undefined,
+    bridges,
   );
   // Preserve the occupied volume and full-width bridging plates. An exposed
   // brick becomes two full plates with a tiled top at the original height.
@@ -185,7 +293,17 @@ export function meshToDesign(mesh: TriangleMesh, resolution = 28): Model {
   };
   const finished: typeof raw.bricks = [];
   for (const b of raw.bricks) {
-    let covered = !!b.support || b.y < 2;
+    let covered =
+      !!b.support ||
+      b.y < 2 ||
+      placements.some(
+        (r) =>
+          b.y + b.h === r.y &&
+          b.x < r.x + 1 &&
+          b.x + b.w > r.x - 1 &&
+          b.z < r.z + 1 &&
+          b.z + b.d > r.z - 1,
+      );
     for (let x = b.x; x < b.x + b.w; x++)
       for (let z = b.z; z < b.z + b.d; z++)
         if (cells.has(`${x},${b.y + b.h},${z}`)) covered = true;
@@ -250,6 +368,24 @@ export function meshToDesign(mesh: TriangleMesh, resolution = 28): Model {
     openRowFraction: openRows / Math.max(1, intersected),
   };
   model.assembly!.reference = `按三维网格体积生成；保留网格中的前后布局和孔洞。新增辅助支撑 ${model.supportCount} 块，已计入清单。网格可能含 AI 推测，连接检查不代表外观还原或实物稳定性已验证。`;
+  // Support added by the generic packer must not reoccupy a replacement zone.
+  if (
+    model.bricks.some((b) =>
+      placements.some(
+        (r) =>
+          b.x < r.max[0] &&
+          b.x + b.w > r.min[0] &&
+          b.y < r.max[1] &&
+          b.y + b.h > r.min[1] &&
+          b.z < r.max[2] &&
+          b.z + b.d > r.min[2],
+      ),
+    )
+  )
+    throw Error(
+      '所选区域上方仍有结构需要支撑，请缩小清除范围，避开墙体或屋顶。',
+    );
+  addComponents(model, regions, [w, h, d], removedCells);
   const check = validateModel(model);
   if (
     check.collisions ||
@@ -257,6 +393,10 @@ export function meshToDesign(mesh: TriangleMesh, resolution = 28): Model {
     check.invalidParts ||
     !check.connected
   )
-    throw Error('积木结构未通过连接检查，请降低尺寸后重试。');
+    throw Error(
+      regions.length
+        ? '组件与周围建筑发生干涉或缺少连接，请调整底部位置与清除范围后重试。'
+        : '积木结构未通过连接检查，请降低尺寸后重试。',
+    );
   return model;
 }

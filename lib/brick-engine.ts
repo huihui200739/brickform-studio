@@ -28,6 +28,7 @@ export type Brick = {
   h: number;
   color: number;
   support?: boolean;
+  installation?: string;
   pose?: Pose;
   section?: string;
   step?: number;
@@ -43,6 +44,11 @@ export type Model = {
   source: 'image' | 'sample';
   resolution: number;
   shape: 'sculpture' | 'relief';
+  semanticDesign?: {
+    components: { id: string; name: string; kind: string; parts: number }[];
+    removedCells: number;
+    reviewRequired: true;
+  };
   meshDesign?: {
     method: 'mesh-volume';
     smoothTiles?: number;
@@ -128,9 +134,14 @@ function pack(
   width: number,
   height: number,
   depth: number,
+  fixed: Brick[] = [],
 ): Brick[] {
-  const bricks: Brick[] = [];
+  const bricks: Brick[] = fixed.map((b) => ({ ...b }));
   const used = new Set<string>();
+  for (const b of fixed)
+    for (let x = b.x; x < b.x + b.w; x++)
+      for (let z = b.z; z < b.z + b.d; z++)
+        for (let y = b.y; y < b.y + b.h; y++) used.add(key(x, y, z));
   for (let y = 0; y < height; y++)
     for (let z = 0; z < depth; z++)
       for (let x = 0; x < width; x++) {
@@ -211,12 +222,14 @@ export function finishModel(
   name: string,
   resolution: number,
   baseColor = 0,
+  blocked?: (x: number, y: number, z: number) => boolean,
+  fixed: Brick[] = [],
 ): Model {
   for (let x = 0; x < width; x++)
     for (let z = 0; z < depth; z++)
       for (let y = 0; y < 2; y++)
         subject.set(key(x, y, z), { color: baseColor, support: false });
-  let bricks = pack(subject, width, height, depth);
+  let bricks = pack(subject, width, height, depth, fixed);
   const counts = Array(PALETTE.length).fill(0);
   subject.forEach((c, k) => {
     if (Number(k.split(',')[1]) >= 2) counts[c.color]++;
@@ -240,9 +253,17 @@ export function finishModel(
             z = b.z + dz;
           let bottom = b.y - 1;
           while (bottom > 0 && !subject.has(key(x, bottom, z))) bottom--;
+          let prohibited = false;
+          for (let y = bottom + 1; y < b.y; y++)
+            if (blocked?.(x, y, z)) {
+              prohibited = true;
+              break;
+            }
+          if (prohibited) continue;
           const score = b.y - bottom + Math.abs(z + 0.5 - depth / 2) * 2;
           if (score < best.score) best = { x, z, bottom, score };
         }
+      if (!Number.isFinite(best.score)) continue;
       for (let y = best.bottom + 1; y < b.y; y++)
         subject.set(key(best.x, y, best.z), {
           color: coreColor,
@@ -251,8 +272,11 @@ export function finishModel(
       added = true;
     }
     if (!added) break;
-    bricks = pack(subject, width, height, depth);
+    bricks = pack(subject, width, height, depth, fixed);
   }
+  bricks = bricks
+    .sort((a, b) => a.y - b.y || a.z - b.z || a.x - b.x)
+    .map((b, i) => ({ ...b, id: i + 1 }));
   return {
     name,
     bricks,

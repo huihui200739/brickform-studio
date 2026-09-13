@@ -36,12 +36,30 @@ const roots = [
   '3040b',
   '87087',
   '98138',
+  '3062b',
+  '87580',
+  '2423',
+  '3941',
+  '4740',
+  '85861',
+  '6126b',
+  '973',
+  '3818',
+  '3819',
+  '3820',
+  '3815b',
+  '3816c',
+  '3817c',
+  '3626c',
+  '3844',
+  '3846',
+  '4497',
 ];
 const cache = new Map();
 let active = 0;
 const waiting = [];
 async function slot(fn) {
-  if (active >= 6) await new Promise((r) => waiting.push(r));
+  if (active >= 2) await new Promise((r) => waiting.push(r));
   active++;
   try {
     return await fn();
@@ -74,7 +92,9 @@ async function fetchPart(name, isRoot = false) {
                     '--max-time',
                     '30',
                     '--retry',
-                    '2',
+                    '4',
+                    '--retry-delay',
+                    '3',
                     `https://library.ldraw.org/library/official/${folder}/${name}`,
                   ],
                   { maxBuffer: 4e6 },
@@ -133,6 +153,29 @@ for (const part of roots) {
       normals.push(...normal.toArray().map((v) => +v.toFixed(4)));
     }
   });
+  // Mirrored LDraw subparts (e.g. left/right arms) carry negative transforms.
+  // Once baked, preserve outward winding instead of relying on renderer state.
+  for (let i = 0; i < positions.length; i += 9) {
+    const a = positions.slice(i, i + 3),
+      b = positions.slice(i + 3, i + 6).map((v, k) => v - a[k]),
+      c = positions.slice(i + 6, i + 9).map((v, k) => v - a[k]);
+    const cross = [
+      b[1] * c[2] - b[2] * c[1],
+      b[2] * c[0] - b[0] * c[2],
+      b[0] * c[1] - b[1] * c[0],
+    ];
+    if (cross.reduce((sum, v, k) => sum + v * normals[i + k], 0) < 0)
+      for (let k = 0; k < 3; k++) {
+        [positions[i + 3 + k], positions[i + 6 + k]] = [
+          positions[i + 6 + k],
+          positions[i + 3 + k],
+        ];
+        [normals[i + 3 + k], normals[i + 6 + k]] = [
+          normals[i + 6 + k],
+          normals[i + 3 + k],
+        ];
+      }
+  }
   const min = [Infinity, Infinity, Infinity],
     max = [-Infinity, -Infinity, -Infinity];
   for (let i = 0; i < positions.length; i++) {
@@ -156,4 +199,23 @@ await writeFile(
             .join('\n')}\n`,
       )
       .join('\n'),
+);
+
+// Compact, original-mesh diagrams and extents shared by instructions and placement.
+const special = roots.slice(roots.indexOf('3062b'));
+await writeFile(
+  'lib/special-part-data.ts',
+  '// Generated from vendored LDraw geometry by scripts/prepare-parts.mjs.\nexport const SPECIAL_DATA: Record<string, { min: number[]; max: number[]; triangles: number[][] }> = ' +
+    JSON.stringify(
+      Object.fromEntries(
+        special.map((id) => {
+          const { positions, min, max } = result[id];
+          const triangles = [];
+          for (let i = 0; i < positions.length; i += 9)
+            triangles.push(positions.slice(i, i + 9));
+          return [id, { min, max, triangles }];
+        }),
+      ),
+    ) +
+    ';\n',
 );
