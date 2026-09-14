@@ -116,7 +116,13 @@ export default function MeshDraftViewer({
               );
               overlay.add(new T.Box3Helper(new T.Box3(lo, hi), 0xe17a38));
             }
-            if (!partData) continue;
+            if (
+              !partData ||
+              r.placed === false ||
+              (r.placementStatus &&
+                !['kept', 'adjusted'].includes(r.placementStatus))
+            )
+              continue;
             const assembly = positionedComponent(
               r.kind,
               [(p.x - (w + 2) / 2) * 20, -p.y * 8, (p.z - (d + 2) / 2) * 20],

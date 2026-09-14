@@ -18,6 +18,9 @@ export default function ComponentEditor({
   picking,
   onPicking,
   disabled = false,
+  autoStatus = '',
+  autoBusy = false,
+  onAuto,
 }: {
   disabled?: boolean;
   mesh: TriangleMesh;
@@ -28,9 +31,14 @@ export default function ComponentEditor({
   onSelect: (id: string) => void;
   picking: boolean;
   onPicking: (p: boolean) => void;
+  autoStatus?: string;
+  autoBusy?: boolean;
+  onAuto?: () => void;
 }) {
   const [hint, setHint] = useState('颜色候选不等于物件识别；人物请手动定位。');
   const active = regions.find((r) => r.id === selected);
+  // Manual components must be located before being included; they never
+  // silently materialise at the scene origin.
   function add(kind: ComponentKind) {
     const id = crypto.randomUUID();
     onChange([
@@ -39,6 +47,7 @@ export default function ComponentEditor({
         id,
         kind,
         placed: false,
+        positionLocked: true,
         anchor: [0.5, 0, 0.5],
         ...COMPONENT_SIZES[kind],
         rotation: kind === 'statue' ? 2 : 0,
@@ -47,8 +56,21 @@ export default function ComponentEditor({
     onSelect(id);
     onPicking(true);
   }
-  function patch(patch: Partial<ComponentRegion>) {
-    onChange(regions.map((r) => (r.id === selected ? { ...r, ...patch } : r)));
+  function patch(update: Partial<ComponentRegion>) {
+    onChange(
+      regions.map((r) =>
+        r.id === selected
+          ? {
+              ...r,
+              ...update,
+              placementStatus: undefined,
+              ...(update.anchor
+                ? { referenceAnchor: update.anchor, positionLocked: true }
+                : {}),
+            }
+          : r,
+      ),
+    );
   }
   return (
     <section className="component-editor">
@@ -60,7 +82,7 @@ export default function ComponentEditor({
           <div>
             <h3>用合适的零件替换细节</h3>
             <p>
-              选择组件，再点击上方草稿中物件的底部。橙框内的旧方块会被清除。
+              先检查树、火盆和人物候选的位置；无法在原位附近安装的组件会保留原网格，等待你调整。
             </p>
           </div>
           <span>部件装配 · 试验版</span>
@@ -87,12 +109,20 @@ export default function ComponentEditor({
         <div className="component-suggestions">
           <button
             onClick={() => {
+              if (onAuto) {
+                onAuto();
+                return;
+              }
               const hints = suggestComponents(mesh, resolution);
               if (hints.length) {
                 onChange(
                   [
                     ...regions,
-                    ...hints.map((r) => ({ ...r, id: crypto.randomUUID() })),
+                    ...hints.map((r) => ({
+                      ...r,
+                      id: crypto.randomUUID(),
+                      placed: true,
+                    })),
                   ].slice(0, 12),
                 );
                 onSelect('');
@@ -103,11 +133,11 @@ export default function ComponentEditor({
                   : '没有可靠颜色候选。请用上面的组件按钮手动定位。',
               );
             }}
-            disabled={regions.length >= 12}
+            disabled={regions.length >= 12 || autoBusy}
           >
-            从颜色查找树 / 火焰候选
+            {autoBusy ? '正在自动识别…' : '重新自动识别树 / 火焰 / 人物'}
           </button>
-          <output>{hint}</output>
+          <output>{autoStatus || hint}</output>
         </div>
         {!!regions.length && (
           <>
@@ -122,6 +152,12 @@ export default function ComponentEditor({
                   }}
                 >
                   {i + 1}. {COMPONENT_LABELS[r.kind]}
+                  {r.placed === false
+                    ? ' · 待定位'
+                    : r.placementStatus &&
+                        !['kept', 'adjusted'].includes(r.placementStatus)
+                      ? ' · 待调整'
+                      : ''}
                   {r.placed === false ? ' · 待定位' : ''}
                 </button>
               ))}
@@ -150,6 +186,19 @@ export default function ComponentEditor({
                     移除组件
                   </button>
                 </div>
+                <label className="placement-lock">
+                  <input
+                    type="checkbox"
+                    checked={active.positionLocked === true}
+                    onChange={(e) =>
+                      patch({
+                        positionLocked: e.target.checked,
+                        referenceAnchor: active.anchor,
+                      })
+                    }
+                  />
+                  锁定当前位置，生成时不自动移动
+                </label>
                 <div className="component-fields">
                   {['左右位置', '底部高度', '前后位置'].map((label, a) => (
                     <label key={label}>
@@ -221,7 +270,7 @@ export default function ComponentEditor({
               </div>
             ) : (
               <p className="field-hint">
-                选择一个组件，检查位置和清除范围后再生成。可以随时移除，恢复原草稿的转换。
+                组件已自动放置，可以直接生成成品；这里用于核对位置和清除范围，或移除不需要的组件。
               </p>
             )}
           </>

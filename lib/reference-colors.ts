@@ -1,7 +1,15 @@
 import { PALETTE, type Raster } from './brick-engine.ts';
-import type { TriangleMesh } from './mesh-types.ts';
+import { MESH_FEATURE, type TriangleMesh } from './mesh-types.ts';
 
 const SIZE = 96;
+// Olive foliage is warm and desaturated: its green channel barely beats red but
+// clearly beats blue, while sand, brick, timber and grey all keep red well above
+// green. Recognising it here, on the picture, is what keeps a tree from being
+// lost when the nearest brick colour happens to be the sand around it.
+function isFoliage(r: number, g: number, b: number) {
+  const value = Math.max(r, g, b);
+  return r - g <= 10 && g - b >= 12 && value >= 30 && value <= 210;
+}
 function lab(r: number, g: number, b: number) {
   const f = (v: number) => {
     v /= 255;
@@ -52,6 +60,15 @@ export function referenceMask(image: Raster) {
       data[i * 4 + 1],
       data[i * 4 + 2],
     ]);
+    const distance = (i: number, c: number[]) =>
+      Math.abs(data[i * 4] - c[0]) +
+      Math.abs(data[i * 4 + 1] - c[1]) +
+      Math.abs(data[i * 4 + 2] - c[2]);
+    // Grow the background from the border with a *local* tolerance, so a soft
+    // studio gradient or a vignette is followed to its end, while the step onto
+    // a differently coloured object is far too large to cross. A global test
+    // against the corner colours alone stops at the first gradient step and
+    // leaves half the backdrop inside the silhouette.
     const seen = new Uint8Array(w * h),
       queue: number[] = [];
     for (let x = 0; x < w; x++) queue.push(x, (h - 1) * w + x);
@@ -60,20 +77,20 @@ export function referenceMask(image: Raster) {
       const i = queue[at];
       if (seen[i]) continue;
       seen[i] = 1;
-      if (
-        !corners.some(
-          (c) =>
-            Math.hypot(
-              data[i * 4] - c[0],
-              data[i * 4 + 1] - c[1],
-              data[i * 4 + 2] - c[2],
-            ) < 48,
-        )
-      )
-        continue;
-      mask[i] = 0;
+      const corner = corners.some((c) => distance(i, c) < 84);
+      let neighbour = false;
       const x = i % w,
         y = Math.floor(i / w);
+      for (const j of [
+        x ? i - 1 : -1,
+        x + 1 < w ? i + 1 : -1,
+        y ? i - w : -1,
+        y + 1 < h ? i + w : -1,
+      ])
+        if (j >= 0 && !mask[j] && distance(i, [data[j * 4], data[j * 4 + 1], data[j * 4 + 2]]) < 30)
+          neighbour = true;
+      if (!corner && !neighbour) continue;
+      mask[i] = 0;
       if (x) queue.push(i - 1);
       if (x + 1 < w) queue.push(i + 1);
       if (y) queue.push(i - w);
@@ -260,6 +277,7 @@ export function colorFromReference(
       }
   }
   const faceColors = new Int16Array(p.length / 9).fill(-1),
+    features = new Uint8Array(p.length / 9),
     counts = new Uint32Array(PALETTE.length);
   let observed = 0;
   for (let i = 0; i < p.length; i += 9) {
@@ -280,6 +298,8 @@ export function colorFromReference(
     )
       continue;
     const colorVotes = new Uint8Array(PALETTE.length);
+    let sampled = 0,
+      foliage = 0;
     for (let dy = -1; dy <= 1; dy++)
       for (let dx = -1; dx <= 1; dx++) {
         const xx = px + dx,
@@ -287,19 +307,24 @@ export function colorFromReference(
         if (xx < 0 || xx >= image.width || yy < 0 || yy >= image.height)
           continue;
         const k = yy * image.width + xx;
-        if (mask[k])
-          colorVotes[
-            match(
-              image.data[k * 4],
-              image.data[k * 4 + 1],
-              image.data[k * 4 + 2],
-            )
-          ]++;
+        if (mask[k]) {
+          const r = image.data[k * 4],
+            g = image.data[k * 4 + 1],
+            b = image.data[k * 4 + 2];
+          colorVotes[match(r, g, b)]++;
+          sampled++;
+          if (isFoliage(r, g, b)) foliage++;
+        }
       }
     let c = 0;
     for (let j = 1; j < colorVotes.length; j++)
       if (colorVotes[j] > colorVotes[c]) c = j;
     faceColors[i / 9] = c;
+    // A leaf's own brick colour is a detour: only the picture can say whether
+    // this face is canopy. Half of a small window is enough, so a leaf piece
+    // the size of a couple of pixels still counts.
+    if (foliage >= 2 && foliage * 2 >= sampled)
+      features[i / 9] |= MESH_FEATURE.foliage;
     counts[c]++;
     observed++;
   }
@@ -315,28 +340,39 @@ export function colorFromReference(
       baseChroma = Math.hypot(base[1], base[2]);
     const hueSimilarity =
       (c[1] * base[1] + c[2] * base[2]) / Math.max(1, chroma * baseChroma);
+    // A near-black neutral in a photograph is a shadow, not a black part: with
+    // shadow reduction on it becomes the darkest grey instead of a hole. This
+    // only applies while the model's own material is light.
+    if (softenShadows && base[0] >= 65 && c[0] < 30 && chroma < 12) {
+      const lifted = [c[0] + (base[0] - c[0]) * 0.45, c[1], c[2]];
+      let best = index,
+        distance = Infinity;
+      colors.forEach((candidate, i) => {
+        const d = candidate.reduce((sum, v, a) => sum + (v - lifted[a]) ** 2, 0);
+        if (d < distance) {
+          distance = d;
+          best = i;
+        }
+      });
+      return best;
+    }
     if (
       !softenShadows ||
       base[0] < 65 ||
       c[0] > base[0] - 18 ||
-      chroma < 15 ||
       hueSimilarity < 0.91
     )
       return index;
-    const target = c.map((value, axis) => value * 0.35 + base[axis] * 0.65);
-    let best = index,
-      distance = Infinity;
-    colors.forEach((candidate, i) => {
-      const d = candidate.reduce((sum, v, a) => sum + (v - target[a]) ** 2, 0);
-      if (d < distance) {
-        distance = d;
-        best = i;
-      }
-    });
-    return best;
+    // A darker colour in the main material's own hue family is shading, a
+    // brick joint or a soft shadow rather than a different part. Stepping it
+    // down one shade still leaves whole walls looking like another material,
+    // so it is folded back into the dominant material instead.
+    return dominant;
   });
   // Unseen surfaces have no trustworthy texture. Use broad material bands
-  // rather than copying a nearby dark doorway through to the back wall.
+  // rather than copying a nearby dark doorway through to the back wall. A dark
+  // neutral colour is an opening or a shadow, not a material: it only votes for
+  // the back wall when the model's own dominant material is dark.
   const bands = Array.from(
     { length: 16 },
     () => new Uint32Array(PALETTE.length),
@@ -352,8 +388,16 @@ export function colorFromReference(
         ),
       ),
     );
+  const opening = (index: number) => {
+    const c = rgb[index],
+      max = Math.max(...c),
+      min = Math.min(...c);
+    return max < 120 && (max === 0 || (max - min) / max < 0.15);
+  };
+  const keepOpenings = opening(dominant);
   for (let t = 0; t < faceColors.length; t++)
-    if (faceColors[t] >= 0) bands[bandAt(t * 9)][faceColors[t]]++;
+    if (faceColors[t] >= 0 && (keepOpenings || !opening(faceColors[t])))
+      bands[bandAt(t * 9)][faceColors[t]]++;
   const bandColors = bands.map((v) =>
     v.some(Boolean) ? v.indexOf(Math.max(...v)) : dominant,
   );
@@ -366,6 +410,7 @@ export function colorFromReference(
   return {
     ...mesh,
     colors: out,
+    features,
     coloring: {
       method: 'reference-projection',
       ...camera,

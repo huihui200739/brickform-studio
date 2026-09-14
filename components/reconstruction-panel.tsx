@@ -6,7 +6,12 @@ import { PALETTE } from '@/lib/brick-engine';
 import type { TriangleMesh } from '@/lib/mesh-types';
 import { readGLB } from '@/lib/read-glb';
 import ComponentEditor from './component-editor';
+import PlacementReview from './placement-review';
+import type { PlacementReport } from '@/lib/placement-policy';
 import type { ComponentRegion } from '@/lib/semantic-components';
+import { VIEW_LABELS, type ViewAxis } from '@/lib/multiview';
+import { estimatePitch } from '@/lib/brick-reader';
+import { referenceMask } from '@/lib/reference-colors';
 import MeshDraftViewer from './mesh-draft-viewer';
 // oxlint-disable-next-line import/default -- Vite exports the public worker asset URL.
 import workerUrl from '@/lib/image-design.worker.ts?worker&url';
@@ -37,7 +42,45 @@ export default function ReconstructionPanel({
 }) {
   const [regions, setRegions] = useState<ComponentRegion[]>([]),
     [selected, setSelected] = useState(''),
-    [picking, setPicking] = useState(false);
+    [picking, setPicking] = useState(false),
+    [autoComponents, setAutoComponents] = useState(true),
+    [statueGuess, setStatueGuess] = useState(true),
+    [componentNote, setComponentNote] = useState(''),
+    [placementReports, setPlacementReports] = useState<PlacementReport[]>([]),
+    [autoBusy, setAutoBusy] = useState(false);
+  // Three-view mode: outlines are intersected instead of guessing a volume.
+  const [inputMode, setInputMode] = useState<'single' | 'views' | 'face'>(
+      'single',
+    ),
+    [face, setFace] = useState<{
+      raster: Raster;
+      preview: string;
+      coverage: number;
+      spanX: number;
+      studs: number;
+      auto: number;
+    } | null>(null),
+    [faceDepth, setFaceDepth] = useState(8),
+    [faceError, setFaceError] = useState(''),
+    [views, setViews] = useState<
+      Partial<
+        Record<
+          ViewAxis,
+          {
+            raster: Raster;
+            url: string;
+            preview: string;
+            coverage: number;
+            mirrored: boolean;
+          }
+        >
+      >
+    >({}),
+    [viewError, setViewError] = useState('');
+  const faceInput = useRef<HTMLInputElement | null>(null),
+    viewFiles = useRef<Partial<Record<ViewAxis, HTMLInputElement | null>>>({}),
+    viewsRef = useRef(views);
+  viewsRef.current = views;
   const [configured, setConfigured] = useState<boolean | null>(null),
     [provider, setProvider] = useState(''),
     [softenShadows, setSoftenShadows] = useState(true),
@@ -48,12 +91,17 @@ export default function ReconstructionPanel({
     [glbUrl, setGlbUrl] = useState(''),
     [job, setJob] = useState<Job | null>(null),
     [draft, setDraft] = useState<TriangleMesh | null>(null);
+  const autoGeneration = useRef(0);
   const alive = useRef(true),
     controller = useRef<AbortController | null>(null),
     worker = useRef<Worker | null>(null),
     fileInput = useRef<HTMLInputElement>(null),
     original = useRef<TriangleMesh | null>(null),
-    referenceUrl = useRef('');
+    referenceUrl = useRef(''),
+    autoDone = useRef<{ mesh: TriangleMesh | null; key: string }>({
+      mesh: null,
+      key: '',
+    });
   useEffect(() => {
     alive.current = true;
     const c = new AbortController();
@@ -218,11 +266,11 @@ export default function ReconstructionPanel({
       if (alive.current) setBusy(false);
     }
   }
-  async function runWorker<T>(
+  async function runWorkerMessage(
     payload: unknown,
-    result: 'mesh' | 'model',
-  ): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
+    timeout = 90000,
+  ): Promise<Record<string, unknown>> {
+    return new Promise<Record<string, unknown>>((resolve, reject) => {
       const w = new Worker(new URL(workerUrl, window.location.href), {
         type: 'module',
       });
@@ -230,16 +278,17 @@ export default function ReconstructionPanel({
       const cleanup = () => {
         clearTimeout(timer);
         w.terminate();
-        worker.current = null;
+        if (worker.current === w) worker.current = null;
       };
       const timer = setTimeout(() => {
         cleanup();
         reject(Error('转换超时，请降低积木尺寸。'));
-      }, 90000);
+      }, timeout);
       w.onmessage = (event) => {
         cleanup();
-        if (event.data[result]) resolve(event.data[result]);
-        else reject(Error(event.data.error || '转换失败。'));
+        const data = event.data as Record<string, unknown>;
+        if (data.error) reject(Error(String(data.error)));
+        else resolve(data);
       };
       w.onerror = () => {
         cleanup();
@@ -247,6 +296,14 @@ export default function ReconstructionPanel({
       };
       w.postMessage(payload);
     });
+  }
+  async function runWorker<T>(
+    payload: unknown,
+    result: 'mesh' | 'model',
+  ): Promise<T> {
+    const data = await runWorkerMessage(payload);
+    if (data[result]) return data[result] as T;
+    throw Error('转换失败。');
   }
   async function projectColors(mesh: TriangleMesh, url: string) {
     setPhase('正在对齐参考图视角并恢复配色');
@@ -290,25 +347,288 @@ export default function ReconstructionPanel({
       if (alive.current) setBusy(false);
     }
   }
+  // Ignore stale requests when geometry or options change. Recolouring alone
+  // preserves confirmed mounting points instead of starting another search.
+  useEffect(() => {
+    if (!draft) {
+      autoGeneration.current++;
+      setAutoBusy(false);
+      setPlacementReports([]);
+      return;
+    }
+    const key = `${autoComponents ? 1 : 0}:${statueGuess ? 1 : 0}:${resolution}`;
+    if (autoDone.current.mesh === draft && autoDone.current.key === key) return;
+    // A manual single-colour override keeps the same geometry: the components
+    // were found from the reference picture, so they stay where they are.
+    const recoloured =
+      !draft.coloring &&
+      !!autoDone.current.mesh &&
+      autoDone.current.mesh.positions === draft.positions;
+    const sameOptions = autoDone.current.key === key;
+    autoDone.current = { mesh: draft, key };
+    if (recoloured && sameOptions) {
+      autoGeneration.current++;
+      setAutoBusy(false);
+      return;
+    }
+    setPlacementReports([]);
+    if (!autoComponents) {
+      autoGeneration.current++;
+      setAutoBusy(false);
+      setRegions([]);
+      setSelected('');
+      setComponentNote(
+        '已关闭自动放入目录组件：将直接按网格转换，也可以在下方手动添加。',
+      );
+      return;
+    }
+    void autoDetect(draft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, autoComponents, statueGuess, resolution]);
+  async function autoDetect(mesh: TriangleMesh) {
+    const generation = ++autoGeneration.current;
+    setAutoBusy(true);
+    setComponentNote('正在自动识别枝叶、火焰与人物候选，并检查安装位置…');
+    try {
+      const data = await runWorkerMessage({
+        action: 'components',
+        mesh,
+        options: { resolution },
+        statue: statueGuess,
+      });
+      if (!alive.current || generation !== autoGeneration.current) return;
+      const found = (data.regions as ComponentRegion[]) || [],
+        dropped = (data.dropped as string[]) || [];
+      setRegions(found);
+      setPlacementReports((data.reports as PlacementReport[]) || []);
+      setSelected('');
+      setPicking(false);
+      setComponentNote(
+        found.length
+          ? `找到 ${found.length} 处候选，${found.length - dropped.length} 件可在原位附近安装${dropped.length ? `，${dropped.length} 处需要调整，保留原网格` : ''}。请查看位置检查。`
+          : '没有找到可靠的枝叶、火焰或人物候选；将直接按网格转换，也可以在下方手动添加。',
+      );
+    } catch (e) {
+      if (alive.current && generation === autoGeneration.current) {
+        setRegions([]);
+        setPlacementReports([]);
+        setComponentNote(
+          `自动放置未完成（${e instanceof Error ? e.message : '未知错误'}），将直接按网格转换。`,
+        );
+      }
+    } finally {
+      if (alive.current && generation === autoGeneration.current)
+        setAutoBusy(false);
+    }
+  }
   async function convert() {
     if (!draft) return;
     setBusy(true);
     setError('');
     setPhase('正在把三维体积转换为积木，并检查连接');
     try {
-      const model = await runWorker<Model>(
-        { mesh: draft, options: { resolution }, regions },
-        'model',
-      );
+      const data = await runWorkerMessage({
+        mesh: draft,
+        options: { resolution },
+        regions,
+      });
+      const model = data.model as Model;
       if (alive.current) {
+        const applied = Number(data.applied || 0),
+          dropped = (data.dropped as string[]) || [];
+        setRegions((data.regions as ComponentRegion[]) || regions);
+        setPlacementReports((data.reports as PlacementReport[]) || []);
         onModel(model);
         setPhase(
-          `积木已生成：${model.bricks.length} 块，${model.meshDesign?.smoothTiles || 0} 块光面收口。清单与步骤已同步。`,
+          `积木已生成：${model.bricks.length} 块，${model.meshDesign?.smoothTiles || 0} 块光面收口${applied ? `，含 ${applied} 件目录组件` : ''}${dropped.length ? `；${dropped.length} 件组件未能在原位附近安装，保留原网格` : ''}。清单与步骤已同步。`,
         );
       }
     } catch (e) {
       if (alive.current)
         setError(e instanceof Error ? e.message : '积木转换失败。');
+    } finally {
+      if (alive.current) setBusy(false);
+    }
+  }
+  async function loadView(axis: ViewAxis, file?: File) {
+    if (!file) return;
+    setViewError('');
+    try {
+      if (!file.type.startsWith('image/'))
+        throw Error('请选择 PNG、JPG 或 WebP 图片。');
+      const url = URL.createObjectURL(file),
+        img = new Image();
+      img.src = url;
+      await img.decode();
+      const scale = Math.min(1, 480 / Math.max(img.width, img.height)),
+        canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw Error('无法读取这张图片。');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const raster: Raster = {
+        width: canvas.width,
+        height: canvas.height,
+        data: ctx.getImageData(0, 0, canvas.width, canvas.height).data,
+      };
+      // What the carver will treat as the object, drawn over the picture, so a
+      // shadow or a background that was not separated is visible straight away.
+      const { mask } = referenceMask(raster);
+      let subject = 0;
+      for (let i = 0; i < mask.length; i++) if (mask[i]) subject++;
+      const overlay = ctx.getImageData(0, 0, canvas.width, canvas.height),
+        pixels = overlay.data;
+      for (let i = 0; i < mask.length; i++)
+        if (!mask[i]) {
+          pixels[i * 4] = Math.round(pixels[i * 4] * 0.35 + 210 * 0.65);
+          pixels[i * 4 + 1] = Math.round(pixels[i * 4 + 1] * 0.35 + 60 * 0.65);
+          pixels[i * 4 + 2] = Math.round(pixels[i * 4 + 2] * 0.35 + 60 * 0.65);
+        }
+      ctx.putImageData(overlay, 0, 0);
+      const preview = canvas.toDataURL('image/png');
+      setViews((current) => {
+        const previous = current[axis];
+        if (previous) URL.revokeObjectURL(previous.url);
+        return {
+          ...current,
+          [axis]: {
+            raster,
+            url,
+            preview,
+            coverage: subject / mask.length,
+            mirrored: previous?.mirrored || false,
+          },
+        };
+      });
+    } catch (e) {
+      if (alive.current)
+        setViewError(e instanceof Error ? e.message : '无法读取这张图片。');
+    }
+  }
+  function removeView(axis: ViewAxis) {
+    setViews((current) => {
+      const view = current[axis];
+      if (view) URL.revokeObjectURL(view.url);
+      const next = { ...current };
+      delete next[axis];
+      return next;
+    });
+    setViewError('');
+  }
+  async function carveViews() {
+    const list = (['front', 'side', 'top'] as ViewAxis[])
+      .filter((axis) => views[axis])
+      .map((axis) => ({
+        axis,
+        image: views[axis]!.raster,
+        mirrored: views[axis]!.mirrored,
+      }));
+    setBusy(true);
+    setViewError('');
+    try {
+      if (list.length < 2)
+        throw Error('请至少上传正视图和侧视图：一个方向的轮廓无法确定体积。');
+      const data = await runWorkerMessage({
+        action: 'views',
+        views: list,
+        options: { resolution },
+        name: '三视图积木',
+      });
+      const model = data.model as Model;
+      if (alive.current) {
+        onModel(model);
+        setPhase(
+          `三视图雕刻完成：${model.bricks.length} 块零件，体积由轮廓相交得到，没有经过生成式推测。`,
+        );
+      }
+    } catch (e) {
+      if (alive.current)
+        setViewError(e instanceof Error ? e.message : '三视图转换失败。');
+    } finally {
+      if (alive.current) setBusy(false);
+    }
+  }
+  async function loadFace(file?: File) {
+    if (!file) return;
+    setFaceError('');
+    try {
+      if (!file.type.startsWith('image/'))
+        throw Error('请选择 PNG、JPG 或 WebP 图片。');
+      const url = URL.createObjectURL(file),
+        img = new Image();
+      img.src = url;
+      await img.decode();
+      const scale = Math.min(1, 720 / Math.max(img.width, img.height)),
+        canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw Error('无法读取这张图片。');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const raster: Raster = {
+        width: canvas.width,
+        height: canvas.height,
+        data: ctx.getImageData(0, 0, canvas.width, canvas.height).data,
+      };
+      URL.revokeObjectURL(url);
+      const { mask, left, right } = referenceMask(raster);
+      let subject = 0;
+      for (let i = 0; i < mask.length; i++) if (mask[i]) subject++;
+      const overlay = ctx.getImageData(0, 0, canvas.width, canvas.height),
+        pixels = overlay.data;
+      for (let i = 0; i < mask.length; i++)
+        if (!mask[i]) {
+          pixels[i * 4] = Math.round(pixels[i * 4] * 0.3 + 210 * 0.7);
+          pixels[i * 4 + 1] = Math.round(pixels[i * 4 + 1] * 0.3 + 60 * 0.7);
+          pixels[i * 4 + 2] = Math.round(pixels[i * 4 + 2] * 0.3 + 60 * 0.7);
+        }
+      ctx.putImageData(overlay, 0, 0);
+      const spanX = right - left + 1,
+        estimate = estimatePitch(raster),
+        auto = estimate.pitch
+          ? Math.max(4, Math.round(spanX / estimate.pitch))
+          : 0;
+      setFace({
+        raster,
+        preview: canvas.toDataURL('image/png'),
+        coverage: subject / mask.length,
+        spanX,
+        studs: auto || 40,
+        auto,
+      });
+      if (!auto || estimate.confidence < 0.35)
+        setFaceError(
+          '凸点间距没有可靠识别出来，请手动填写正面宽度（凸点数）—— 可以数底板上的凸点。',
+        );
+    } catch (e) {
+      if (alive.current)
+        setFaceError(e instanceof Error ? e.message : '无法读取这张图片。');
+    }
+  }
+  async function readFace() {
+    if (!face) return;
+    setBusy(true);
+    setFaceError('');
+    try {
+      const data = await runWorkerMessage({
+        action: 'blueprint',
+        raster: face.raster,
+        pitch: face.spanX / Math.max(2, face.studs),
+        depth: faceDepth,
+        options: { resolution },
+        name: '正面图纸',
+      });
+      const model = data.model as Model;
+      if (alive.current) {
+        onModel(model);
+        setPhase(
+          `正面图纸：读出 ${model.blueprintDesign?.bricks ?? 0} 块零件，正面宽度 ${model.blueprintDesign?.studs ?? 0} 凸点。`,
+        );
+      }
+    } catch (e) {
+      if (alive.current)
+        setFaceError(e instanceof Error ? e.message : '读图失败。');
     } finally {
       if (alive.current) setBusy(false);
     }
@@ -321,6 +641,272 @@ export default function ReconstructionPanel({
     setDraft({ ...draft, colors, coloring: undefined });
   }
   if (!active) return null;
+  const modeSwitch = (
+    <div className="reconstruction-actions input-mode-switch">
+      <button
+        className={inputMode === 'single' ? 'primary' : ''}
+        aria-pressed={inputMode === 'single'}
+        onClick={() => setInputMode('single')}
+      >
+        单图重建
+      </button>
+      <button
+        className={inputMode === 'views' ? 'primary' : ''}
+        aria-pressed={inputMode === 'views'}
+        onClick={() => setInputMode('views')}
+      >
+        三视图重建
+      </button>
+      <button
+        className={inputMode === 'face' ? 'primary' : ''}
+        aria-pressed={inputMode === 'face'}
+        onClick={() => setInputMode('face')}
+      >
+        正面图纸
+      </button>
+      <span>
+        {inputMode === 'views'
+          ? '正交轮廓相交求体积：不做 AI 推测，也不会因相机拟合而错位。'
+          : inputMode === 'face'
+            ? '参考图本身就是乐高模型时，直接读出砖块排布。'
+            : '一张图重建三维草稿，背面与配色为推测。'}
+      </span>
+    </div>
+  );
+  if (inputMode === 'face')
+    return (
+      <section className="reconstruction-panel">
+        <div className="reconstruction-heading">
+          <Box size={23} />
+          <div>
+            <h2>正面图纸</h2>
+            <p>按凸点间距读出正面的砖块排布，逐块还原。</p>
+          </div>
+        </div>
+        {modeSwitch}
+        <p className="field-hint">
+          需要一张<strong>正对</strong>
+          的乐高模型图（正交或接近正交、无明显透视）。
+          凸点间距从图上的凸点周期估计，估不准时请手动填写正面宽度 ——
+          数一下底板上的凸点即可。
+          只有正面被读到：侧面、背面与内部结构是假设值。
+        </p>
+        <div className="view-slots single">
+          <div className={`view-slot ${face ? 'ready' : ''}`}>
+            <strong>
+              正面图
+              <small>必填</small>
+            </strong>
+            {face ? (
+              <>
+                <img src={face.preview} alt="正面图与识别到的主体" />
+                <small className="view-slot-coverage">
+                  主体占画面 {(face.coverage * 100).toFixed(0)}%
+                </small>
+              </>
+            ) : (
+              <span className="view-slot-empty">还没有图片</span>
+            )}
+            <div className="view-slot-actions">
+              <button onClick={() => faceInput.current?.click()}>
+                {face ? '换一张' : '选择图片'}
+              </button>
+            </div>
+            <input
+              ref={faceInput}
+              className="sr-only"
+              type="file"
+              accept="image/*"
+              aria-label="上传正面图"
+              onChange={(e) => {
+                void loadFace(e.target.files?.[0]);
+                e.target.value = '';
+              }}
+            />
+          </div>
+          <div className="face-fields">
+            <label>
+              正面宽度（凸点）
+              <input
+                type="number"
+                min="4"
+                max="200"
+                value={face?.studs ?? 40}
+                disabled={!face}
+                onChange={(e) =>
+                  setFace((current) =>
+                    current
+                      ? {
+                          ...current,
+                          studs: Math.max(
+                            4,
+                            Math.min(200, +e.target.value || 4),
+                          ),
+                        }
+                      : current,
+                  )
+                }
+              />
+              <small>
+                {face?.auto
+                  ? `自动估计 ${face.auto} 凸点`
+                  : '自动估计不可靠，请手动填写'}
+              </small>
+            </label>
+            <label>
+              进深（凸点）
+              <input
+                type="number"
+                min="2"
+                max="48"
+                value={faceDepth}
+                onChange={(e) =>
+                  setFaceDepth(Math.max(2, Math.min(48, +e.target.value || 2)))
+                }
+              />
+              <small>侧面读不到，按此值拉伸</small>
+            </label>
+          </div>
+        </div>
+        <div className="reconstruction-actions convert-actions">
+          <button
+            className="primary"
+            disabled={busy || !face}
+            onClick={() => void readFace()}
+          >
+            {busy ? <LoaderCircle size={17} className="spin" /> : null}
+            生成积木成品 →
+          </button>
+          <span>{resolution} 凸点精度 · 正面逐块还原，进深为假设值</span>
+        </div>
+        {phase && <output className="reconstruction-status">{phase}</output>}
+        {faceError && (
+          <p className="reconstruction-error" role="alert">
+            {faceError}
+          </p>
+        )}
+      </section>
+    );
+  if (inputMode === 'views')
+    return (
+      <section className="reconstruction-panel">
+        <div className="reconstruction-heading">
+          <Box size={23} />
+          <div>
+            <h2>三视图重建</h2>
+            <p>正 / 侧 / 俯三个轮廓相交，直接算出体积。</p>
+          </div>
+        </div>
+        {modeSwitch}
+        <p className="field-hint">
+          三张图必须是<strong>同一个模型</strong>
+          的正交投影，不是分别画出来的三张插画： 可以用同一个三维模型导出正交正
+          / 侧 / 俯视图，或让图像工具生成时明确要求
+          「正交投影、无透视、无光影、纯色背景、同一模型同一比例」。
+          侧视图按「从右侧看」：物体正面在画面左边；俯视图按「从上方看」：物体正面在画面下方，
+          方向不对时点「左右翻转」。
+        </p>
+        <p className="field-hint">
+          俯视图可选，而且只有<strong>真正的平面图</strong>
+          才有用：如果俯视图还能看到塔的竖直侧面，
+          那是鸟瞰透视图，会把体积撑大，请直接不要上传它，只用正视 + 侧视。
+          三张图的比例对不上时（宽深比差 15% 以上）会直接报错并给出数字。
+        </p>
+        <div className="view-slots">
+          {(['front', 'side', 'top'] as ViewAxis[]).map((axis) => (
+            <div
+              className={`view-slot ${views[axis] ? 'ready' : ''}`}
+              key={axis}
+            >
+              <strong>
+                {VIEW_LABELS[axis]}
+                <small>{axis === 'top' ? '可选' : '必填'}</small>
+              </strong>
+              {views[axis] ? (
+                <>
+                  <img
+                    className={views[axis]!.mirrored ? 'mirrored' : ''}
+                    src={views[axis]!.preview}
+                    alt={`${VIEW_LABELS[axis]}参考图与识别到的主体`}
+                  />
+                  <small className="view-slot-coverage">
+                    主体占画面 {(views[axis]!.coverage * 100).toFixed(0)}%
+                    {views[axis]!.coverage > 0.85
+                      ? ' · 背景可能没有分离干净'
+                      : ''}
+                  </small>
+                </>
+              ) : (
+                <span className="view-slot-empty">还没有图片</span>
+              )}
+              <div className="view-slot-actions">
+                <button onClick={() => viewFiles.current[axis]?.click()}>
+                  {views[axis] ? '换一张' : '选择图片'}
+                </button>
+                {views[axis] && (
+                  <>
+                    <button
+                      className={views[axis]!.mirrored ? 'active' : ''}
+                      onClick={() =>
+                        setViews((current) => ({
+                          ...current,
+                          [axis]: {
+                            ...current[axis]!,
+                            mirrored: !current[axis]!.mirrored,
+                          },
+                        }))
+                      }
+                    >
+                      左右翻转
+                    </button>
+                    <button onClick={() => removeView(axis)}>移除</button>
+                  </>
+                )}
+              </div>
+              <input
+                ref={(node) => {
+                  viewFiles.current[axis] = node;
+                }}
+                className="sr-only"
+                type="file"
+                accept="image/*"
+                aria-label={`上传${VIEW_LABELS[axis]}图片`}
+                onChange={(e) => {
+                  void loadView(axis, e.target.files?.[0]);
+                  e.target.value = '';
+                }}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="reconstruction-actions convert-actions">
+          <button
+            className="primary"
+            disabled={busy || Object.keys(views).length < 2}
+            onClick={() => void carveViews()}
+          >
+            {busy ? <LoaderCircle size={17} className="spin" /> : null}
+            生成积木成品 →
+          </button>
+          <span>
+            {resolution} 凸点精度 ·{' '}
+            {Object.keys(views).length < 2
+              ? '至少需要正视与侧视'
+              : `已上传 ${Object.keys(views).length} 个视图`}
+          </span>
+        </div>
+        {phase && <output className="reconstruction-status">{phase}</output>}
+        {viewError && (
+          <p className="reconstruction-error" role="alert">
+            {viewError}
+          </p>
+        )}
+        <p className="field-hint">
+          只能复活轮廓里有的东西：被遮挡的凹面、任何视图都看不到的内部结构无法恢复，
+          也不能凭空加出照片里没有的细节。转换后仍会做零件连接检查。
+        </p>
+      </section>
+    );
   return (
     <section className="reconstruction-panel">
       <div className="reconstruction-heading">
@@ -343,6 +929,7 @@ export default function ReconstructionPanel({
           </a>
         </div>
       )}
+      {modeSwitch}
       <div className="reconstruction-actions">
         <button
           className="primary"
@@ -405,25 +992,50 @@ export default function ReconstructionPanel({
             selected={selected}
             picking={picking}
             onPick={(anchor) => {
-              if (busy) return;
+              if (busy || autoBusy) return;
               setRegions((current) =>
                 current.map((r) =>
-                  r.id === selected ? { ...r, anchor, placed: true } : r,
+                  r.id === selected
+                    ? {
+                        ...r,
+                        anchor,
+                        referenceAnchor: anchor,
+                        positionLocked: true,
+                        placed: true,
+                        placementStatus: undefined,
+                      }
+                    : r,
                 ),
+              );
+              setPlacementReports((current) =>
+                current.filter((r) => r.id !== selected),
               );
               setPicking(false);
             }}
           />
           <ComponentEditor
-            disabled={busy}
+            disabled={busy || autoBusy}
             mesh={draft}
             resolution={resolution}
             regions={regions}
-            onChange={setRegions}
+            onChange={(next) => {
+              setRegions(next);
+              setPlacementReports([]);
+            }}
             selected={selected}
             onSelect={setSelected}
             picking={picking}
             onPicking={setPicking}
+            autoStatus={componentNote}
+            autoBusy={autoBusy}
+            onAuto={() => void autoDetect(draft)}
+          />
+          <PlacementReview
+            reports={placementReports}
+            onSelect={(id) => {
+              setSelected(id);
+              setPicking(false);
+            }}
           />
           <details className="color-settings">
             <summary>
@@ -494,13 +1106,43 @@ export default function ReconstructionPanel({
             )}
             <button
               className="primary"
-              disabled={busy || regions.some((r) => r.placed === false)}
+              disabled={busy || autoBusy}
               onClick={() => void convert()}
             >
+              {busy ? <LoaderCircle size={17} className="spin" /> : null}
               生成积木成品 →
             </button>
             <span>{resolution} 凸点精度 · 同步生成零件清单与拼装步骤</span>
           </div>
+          <label className="reconstruction-color">
+            <input
+              type="checkbox"
+              checked={autoComponents}
+              disabled={busy}
+              onChange={(e) => setAutoComponents(e.target.checked)}
+            />
+            自动放入目录组件{' '}
+            <span>
+              自动识别火焰，并按形状猜测树与人物位置；位置仅供复核，可随时移除。
+            </span>
+          </label>
+          <label className="reconstruction-color">
+            <input
+              type="checkbox"
+              checked={statueGuess}
+              disabled={busy || !autoComponents}
+              onChange={(e) => setStatueGuess(e.target.checked)}
+            />
+            自动猜测树与人物位置{' '}
+            <span>
+              单张图片无法可靠识别它们：树按地面上孤立的深色小体积猜测，人物放在两个火盆之间，务必核对。
+            </span>
+          </label>
+          {autoBusy && (
+            <output className="reconstruction-status">
+              正在自动放置目录组件并检查安装位置…
+            </output>
+          )}
           <p className="field-hint">
             组件按真实零件尺寸装配；未标记区域继续按网格转换。人物关节、附件插接及具体颜色组合仍需复核。
           </p>

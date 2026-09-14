@@ -1,4 +1,12 @@
 import {
+  placementCandidates,
+  mountingPoint,
+  reportPlacement,
+  type PlacementReport,
+} from './placement-policy.ts';
+import { COMPONENT_LABELS } from './semantic-components.ts';
+import type { V3 } from './assembly-catalog.ts';
+import {
   addComponents,
   insideRegion,
   regionPlacement,
@@ -15,13 +23,26 @@ import {
 import { groupImageAssembly } from './image-design.ts';
 import type { TriangleMesh } from './mesh-types.ts';
 
+// Conversion is split in two stages: the triangle volume is cast once, and each
+// component-placement attempt re-reads that volume. Autoplacement can therefore
+// test many bottom positions without paying for the voxelisation again.
+export type MeshVolume = {
+  cells: Map<string, { color: number; support: boolean }>;
+  triangles: number;
+  w: number;
+  h: number;
+  d: number;
+  dominant: number;
+  openRows: number;
+  intersected: number;
+};
+
 // Cast through a genuine triangle volume, retaining separate depth intervals
 // and openings. Image brightness is never used to invent depth.
-export function meshToDesign(
+export function buildMeshVolume(
   mesh: TriangleMesh,
   resolution = 28,
-  regions: ComponentRegion[] = [],
-): Model {
+): MeshVolume {
   const p = mesh.positions,
     n = p.length / 9;
   if (
@@ -47,8 +68,6 @@ export function meshToDesign(
   const w = Math.max(1, Math.ceil(span[0] * scale)),
     h = Math.max(1, Math.ceil((span[1] * scale) / 0.4)),
     d = Math.max(1, Math.ceil(span[2] * scale));
-  validateRegions(regions, [w, h, d]);
-  const placements = regions.map((r) => regionPlacement(r, [w, h, d]));
   const hits: { x: number; color: number }[][] = Array.from(
     { length: h * d },
     () => [],
@@ -170,6 +189,20 @@ export function meshToDesign(
       '三维草稿有较多开放边界，无法可靠填充体积。请换一个闭合 GLB 模型或重新生成草稿。',
     );
   surface.forEach((v, k) => cells.set(k, v));
+  return { cells, triangles: n, w, h, d, dominant, openRows, intersected };
+}
+// Assemble the brick model from a cast volume and the requested component
+// replacements. Strict on purpose: any component that cannot be seated throws.
+function assembleVolume(
+  mesh: TriangleMesh,
+  volume: MeshVolume,
+  resolution: number,
+  regions: ComponentRegion[],
+): Model {
+  const { w, h, d, dominant, openRows, intersected, triangles } = volume,
+    cells = new Map(volume.cells);
+  validateRegions(regions, [w, h, d]);
+  const placements = regions.map((r) => regionPlacement(r, [w, h, d]));
   let removedCells = 0;
   for (const key of cells.keys()) {
     const p = key.split(',').map(Number) as [number, number, number];
@@ -363,7 +396,7 @@ export function meshToDesign(
     method: 'mesh-volume',
     smoothTiles,
     referenceColors: !!mesh.coloring,
-    triangles: n,
+    triangles,
     resolution,
     openRowFraction: openRows / Math.max(1, intersected),
   };
@@ -399,4 +432,141 @@ export function meshToDesign(
         : '积木结构未通过连接检查，请降低尺寸后重试。',
     );
   return model;
+}
+export function meshToDesign(
+  mesh: TriangleMesh,
+  resolution = 28,
+  regions: ComponentRegion[] = [],
+): Model {
+  return assembleVolume(
+    mesh,
+    buildMeshVolume(mesh, resolution),
+    resolution,
+    regions,
+  );
+}
+export type AutoComponentResult = {
+  model: Model;
+  applied: ComponentRegion[];
+  dropped: ComponentRegion[];
+  reports: PlacementReport[];
+  attempts: number;
+};
+export function meshToDesignAuto(
+  mesh: TriangleMesh,
+  resolution = 28,
+  regions: ComponentRegion[] = [],
+  budget = 48,
+): AutoComponentResult {
+  if (regions.length > 12) throw Error('一次最多替换 12 个组件。');
+  const volume = buildMeshVolume(mesh, resolution),
+    grid: V3 = [volume.w, volume.h, volume.d];
+  const limit = Math.max(
+    0,
+    Math.min(96, Number.isFinite(budget) ? Math.floor(budget) : 48),
+  );
+  let attempts = 0;
+  const attempt = (list: ComponentRegion[]) => {
+    if (attempts >= limit) return null;
+    attempts++;
+    try {
+      return assembleVolume(mesh, volume, resolution, list);
+    } catch {
+      return null;
+    }
+  };
+  const applied: ComponentRegion[] = [],
+    dropped: ComponentRegion[] = [],
+    reports: PlacementReport[] = [];
+  let model: Model | null = null;
+  const origin = (r: ComponentRegion) =>
+    mountingPoint({ ...r, anchor: r.referenceAnchor || r.anchor }, grid);
+  const candidates = regions.map((r) => placementCandidates(r, grid));
+  // The first candidates always keep the original snapped mounting points.
+  if (regions.length && candidates.every((c) => c.length)) {
+    const initial = candidates.map((c) => c[0]);
+    model = attempt(initial);
+    if (model) applied.push(...initial);
+  }
+  if (!model) {
+    // Every accepted addition is validated WITH the existing assembly. This
+    // avoids accepting independently valid components then silently deleting
+    // earlier components when the combined model fails.
+    const visited = new Set<number>();
+    for (let i = 0; i < regions.length; i++) {
+      if (visited.has(i)) continue;
+      visited.add(i);
+      const original = origin(regions[i]);
+      // Preserve a genuinely level pair's relative spacing. Do not invent a
+      // model-wide symmetry axis or force different pedestals to one height.
+      const partner = regions.findIndex(
+        (r, j) =>
+          j > i &&
+          !visited.has(j) &&
+          r.placed !== false &&
+          regions[i].placed !== false &&
+          r.kind === regions[i].kind &&
+          origin(r)[1] === original[1] &&
+          origin(r)[2] === original[2] &&
+          (r.anchor[0] - 0.5) * (regions[i].anchor[0] - 0.5) < 0,
+      );
+      const share = Math.max(
+        1,
+        Math.floor(
+          (limit - attempts) / Math.max(1, regions.length - visited.size + 1),
+        ),
+      );
+      const stop = Math.min(limit, attempts + share * (partner >= 0 ? 2 : 1));
+      let accepted: ComponentRegion[] | undefined;
+      for (const first of candidates[i]) {
+        if (attempts >= stop) break;
+        const list = [first];
+        if (partner >= 0) {
+          const p = mountingPoint(first, grid),
+            d = p.map((v, a) => v - original[a]);
+          const otherOrigin = origin(regions[partner]);
+          const second = candidates[partner].find((c) =>
+            mountingPoint(c, grid).every((v, a) => v - otherOrigin[a] === d[a]),
+          );
+          if (!second) continue;
+          list.push(second);
+        }
+        const result = attempt([...applied, ...list]);
+        if (result) {
+          model = result;
+          accepted = list;
+          break;
+        }
+      }
+      if (partner >= 0) visited.add(partner);
+      if (accepted) applied.push(...accepted);
+      else {
+        dropped.push(regions[i]);
+        if (partner >= 0) dropped.push(regions[partner]);
+      }
+    }
+  }
+  if (!model) model = assembleVolume(mesh, volume, resolution, []);
+  for (const r of regions)
+    reports.push(
+      reportPlacement(
+        r,
+        applied.find((a) => a.id === r.id),
+        grid,
+        COMPONENT_LABELS[r.kind],
+        attempts >= limit,
+      ),
+    );
+  for (const r of applied)
+    r.placementStatus = reports.find((v) => v.id === r.id)!.status;
+  if (model.semanticDesign) {
+    model.semanticDesign.autoPlaced = true;
+    model.semanticDesign.dropped = dropped.map((r) => r.id);
+  }
+  model.componentPlacement = reports;
+  if (reports.length)
+    model.assembly!.reference +=
+      ' 组件位置检查：' +
+      reports.map((r) => r.name + '：' + r.message).join('；');
+  return { model, applied, dropped, reports, attempts };
 }

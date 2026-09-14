@@ -1,3 +1,4 @@
+import type { PlacementReport } from './placement-policy.ts';
 import { ASSEMBLY_PARTS, type Pose } from './assembly-catalog.ts';
 import { validateAssembly } from './assembly-validation.ts';
 export const PALETTE = [
@@ -34,6 +35,7 @@ export type Brick = {
   step?: number;
 };
 export type Model = {
+  componentPlacement?: PlacementReport[];
   name: string;
   bricks: Brick[];
   width: number;
@@ -48,6 +50,8 @@ export type Model = {
     components: { id: string; name: string; kind: string; parts: number }[];
     removedCells: number;
     reviewRequired: true;
+    autoPlaced?: boolean;
+    dropped?: string[];
   };
   meshDesign?: {
     method: 'mesh-volume';
@@ -56,6 +60,19 @@ export type Model = {
     triangles: number;
     resolution: number;
     openRowFraction: number;
+  };
+  blueprintDesign?: {
+    method: 'face-reading';
+    bricks: number;
+    studs: number;
+    depth: number;
+    pitch: number;
+  };
+  viewsDesign?: {
+    method: 'silhouette-carving';
+    views: string[];
+    resolution: number;
+    cells: number;
   };
   imageDesign?: {
     shape: 'sculpture' | 'relief';

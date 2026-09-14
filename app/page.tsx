@@ -22,6 +22,7 @@ import Image from 'next/image';
 import ModelViewer from '@/components/model-viewer';
 import AssemblyViewer from '@/components/assembly-viewer';
 import BuildGuide from '@/components/build-guide';
+import PlacementReview from '@/components/placement-review';
 import ReconstructionPanel from '@/components/reconstruction-panel';
 import { previewRange, type PreviewMode } from '@/lib/preview-state';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -113,6 +114,13 @@ export default function Home() {
   const activeWorker = useRef<Worker | null>(null);
   const parts = useMemo(() => inventory(model.bricks), [model]);
   const validation = useMemo(() => validateModel(model), [model]);
+  // A finished brick model can come from the single-image mesh path or from the
+  // three-view silhouette carve, and both behave the same in the workbench.
+  const brickReady = !!(
+    model.meshDesign ||
+    model.viewsDesign ||
+    model.blueprintDesign
+  );
   const shownParts = parts.filter((p) =>
     `${p.part} ${PARTS[p.part]} ${PALETTE[p.color].name}`.includes(
       search.trim(),
@@ -389,7 +397,7 @@ export default function Home() {
             <Blocks size={21} />
           </span>
           brickform<span className="brand-cn">积木工坊</span>
-          <span className="beta">V14</span>
+          <span className="beta">V19</span>
         </Link>
         <span className="workspace-title">设计工作台</span>
         <button className="header-help" onClick={() => setHelp(true)}>
@@ -830,18 +838,14 @@ export default function Home() {
               </div>
               <div className="surface-switch">
                 <button
-                  aria-pressed={
-                    surface === 'draft' || !model.meshDesign || dirty
-                  }
+                  aria-pressed={surface === 'draft' || !brickReady || dirty}
                   onClick={() => setSurface('draft')}
                 >
                   三维草稿
                 </button>
                 <button
-                  disabled={!model.meshDesign || dirty}
-                  aria-pressed={
-                    surface === 'bricks' && !!model.meshDesign && !dirty
-                  }
+                  disabled={!brickReady || dirty}
+                  aria-pressed={surface === 'bricks' && brickReady && !dirty}
                   onClick={() => setSurface('bricks')}
                 >
                   积木成品
@@ -853,7 +857,7 @@ export default function Home() {
           {mode === 'mesh' && (
             <ReconstructionPanel
               key={source?.url || 'empty'}
-              active={surface === 'draft' || !model.meshDesign || dirty}
+              active={surface === 'draft' || !brickReady || dirty}
               image={source?.imageData}
               name={source?.name || '我的三维积木'}
               resolution={resolution}
@@ -864,23 +868,36 @@ export default function Home() {
             />
           )}
           {(mode !== 'mesh' ||
-            (model.meshDesign && !dirty && surface === 'bricks')) && (
+            (brickReady && !dirty && surface === 'bricks')) && (
             <>
               <section className="preview-panel">
                 <div className="design-topline">
                   <div className="design-title-group">
                     <span className="design-type">
-                      {model.meshDesign
-                        ? '三维网格 / 积木转换'
-                        : model.imageDesign
-                          ? model.imageDesign.shape === 'sculpture'
-                            ? '通用图片 / 轮廓立体'
-                            : '通用图片 / 图片浮雕'
-                          : model.assembly
-                            ? model.reconstruction
-                              ? '体积重建 / 小鸭侧面图'
-                              : '部件模板 / 小鸭'
-                            : '平面浮雕设计'}
+                      {model.blueprintDesign
+                        ? `正面图纸 / 逐块识别（${model.blueprintDesign.studs} 凸点宽 · ${model.blueprintDesign.bricks} 块）`
+                        : model.viewsDesign
+                          ? `三视图 / 轮廓雕刻（${model.viewsDesign.views
+                              .map(
+                                (v) =>
+                                  ({
+                                    front: '正视',
+                                    side: '侧视',
+                                    top: '俯视',
+                                  })[v] || v,
+                              )
+                              .join(' + ')}）`
+                          : model.meshDesign
+                            ? '三维网格 / 积木转换'
+                            : model.imageDesign
+                              ? model.imageDesign.shape === 'sculpture'
+                                ? '通用图片 / 轮廓立体'
+                                : '通用图片 / 图片浮雕'
+                              : model.assembly
+                                ? model.reconstruction
+                                  ? '体积重建 / 小鸭侧面图'
+                                  : '部件模板 / 小鸭'
+                                : '平面浮雕设计'}
                     </span>
                     <input
                       className="design-name"
@@ -1066,6 +1083,9 @@ export default function Home() {
                 </div>
               </section>
               <section className="output-panel">
+                {model.componentPlacement && (
+                  <PlacementReview reports={model.componentPlacement} />
+                )}
                 <Tabs
                   value={tab}
                   onValueChange={(v) => {

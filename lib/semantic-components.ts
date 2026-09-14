@@ -12,7 +12,7 @@ import {
 import { SPECIAL_DATA } from './special-part-data.ts';
 import { SPECIAL_PORTS } from './special-connectors.ts';
 import type { Brick, Model } from './brick-engine.ts';
-import type { TriangleMesh } from './mesh-types.ts';
+import { MESH_FEATURE, type TriangleMesh } from './mesh-types.ts';
 export type ComponentKind = 'tree' | 'brazier' | 'statue';
 export type ComponentRegion = {
   id: string;
@@ -21,6 +21,18 @@ export type ComponentRegion = {
   // Bottom centre, in normalized original mesh coordinates. Bounds are stud/
   // plate units; changing overall resolution never scales a catalog part.
   anchor: V3;
+  // Legacy candidate hints. Only those within the original placement limit
+  // may be considered; remote fallback locations are rejected.
+  fallbackAnchors?: V3[];
+  // Initial intended position, retained through every automatic retry.
+  referenceAnchor?: V3;
+  positionLocked?: boolean;
+  placementStatus?:
+    | 'kept'
+    | 'adjusted'
+    | 'conflict'
+    | 'unpositioned'
+    | 'budget';
   width: number;
   depth: number;
   height: number;
@@ -458,21 +470,50 @@ export function addComponents(
 }
 // Color clusters are suggestions, never semantic claims. No temple-specific
 // coordinates, file names, or automatic application of uncertain detections.
+export type ComponentHint = ComponentRegion & { source: 'color' | 'guess' };
+// HSV keeps foliage and flames apart from the sand, grey and white bricks that
+// dominate most reconstructions. Saturation, not just green dominance, is what
+// separates a green canopy from a beige wall.
+function hueSaturation(r: number, g: number, b: number) {
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b),
+    chroma = max - min,
+    sat = max ? chroma / max : 0;
+  if (!chroma) return { hue: -1, sat, value: max };
+  const h =
+    max === r
+      ? ((g - b) / chroma + 6) % 6
+      : max === g
+        ? (b - r) / chroma + 2
+        : (r - g) / chroma + 4;
+  return { hue: h * 60, sat, value: max };
+}
 export function suggestComponents(
   mesh: TriangleMesh,
   resolution: number,
-): ComponentRegion[] {
+  options: { statue?: boolean } = {},
+): ComponentHint[] {
   const { min, span, grid } = meshFrame(mesh, resolution);
-  const buckets = new Map<string, { kind: ComponentKind; points: V3[] }>();
+  const buckets = new Map<string, Map<string, V3[]>>();
+  const dark = new Map<string, V3[]>();
+  const add = (map: Map<string, V3[]>, key: string, p: V3) => {
+    const cell = map.get(key) || [];
+    cell.push(p);
+    map.set(key, cell);
+  };
   for (let t = 0; t < mesh.colors.length / 3; t++) {
     const [r, g, b] = Array.from(mesh.colors.slice(t * 3, t * 3 + 3));
+    const { hue, sat, value } = hueSaturation(r, g, b);
+    // The picture, not the brick colour, is what settles whether a face is
+    // canopy: an olive leaf can be quantised to the sand around it, and this
+    // flag was read before that happened.
     const kind: ComponentKind | undefined =
-      g > r * 1.18 && g > b * 1.12 && g > 45
+      (mesh.features?.[t] || 0) & MESH_FEATURE.foliage ||
+      (sat >= 0.15 && value >= 35 && hue >= 65 && hue <= 175)
         ? 'tree'
-        : r > 170 && g > 55 && g < 180 && b < 70 && r > g * 1.45
+        : sat >= 0.45 && value >= 90 && (hue < 45 || hue > 350)
           ? 'brazier'
           : undefined;
-    if (!kind) continue;
     const p = [0, 1, 2].map(
       (a) =>
         ([0, 1, 2].reduce((s, j) => s + mesh.positions[t * 9 + j * 3 + a], 0) /
@@ -480,40 +521,196 @@ export function suggestComponents(
           min[a]) /
         span[a],
     ) as V3;
-    const key = `${kind}:${Math.floor(p[0] * 8)}:${Math.floor(p[2] * 8)}`;
-    const cell = buckets.get(key) || { kind, points: [] };
-    cell.points.push(p);
-    buckets.set(key, cell);
+    // Dark neutral faces include the flat base plate and the rim around it,
+    // which would otherwise join every object into one cluster; only faces
+    // standing above that plane can describe a tree or an opening. They are
+    // bucketed on a finer grid because a rim is a thin sliver that must not
+    // swallow a nearby compact object.
+    const isDark = sat <= 0.3 && value <= 125 && p[1] >= 0.06;
+    if (!kind && !isDark) continue;
+    const key = kind
+      ? `${Math.floor(p[0] * 8)}:${Math.floor(p[2] * 8)}`
+      : `${Math.floor(p[0] * 16)}:${Math.floor(p[2] * 16)}`;
+    if (kind) {
+      const map = buckets.get(kind) || new Map<string, V3[]>();
+      buckets.set(kind, map);
+      add(map, key, p);
+    } else add(dark, key, p);
   }
-  const candidates: ComponentRegion[] = [];
-  for (const cell of [...buckets.values()].sort(
-    (a, b) => b.points.length - a.points.length,
-  )) {
-    if (cell.points.length < 12) continue;
-    const center = cell.points
-      .reduce((sum, p) => sum.map((v, a) => v + p[a]) as V3, [0, 0, 0])
-      .map((v) => v / cell.points.length) as V3;
+  const candidates: ComponentHint[] = [];
+  const accepted: ReturnType<typeof regionPlacement>[] = [];
+  const place = (
+    kind: ComponentKind,
+    anchor: V3,
+    source: 'color' | 'guess',
+    fallbackAnchors?: V3[],
+  ): ComponentHint | undefined => {
+    const region: ComponentHint = {
+      id: `${source === 'guess' ? 'guess' : 'hint'}-${candidates.length + 1}`,
+      kind,
+      anchor,
+      referenceAnchor: [...anchor],
+      ...(fallbackAnchors?.length ? { fallbackAnchors } : {}),
+      ...COMPONENT_SIZES[kind],
+      rotation: kind === 'statue' ? 2 : 0,
+      source,
+    };
+    const box = regionPlacement(region, grid);
     if (
-      candidates.some(
-        (r) =>
-          Math.hypot(r.anchor[0] - center[0], r.anchor[2] - center[2]) < 0.15,
+      kind !== 'statue' &&
+      accepted.some((other) =>
+        [0, 1, 2].every(
+          (a) =>
+            Math.min(other.max[a], box.max[a]) -
+              Math.max(other.min[a], box.min[a]) >
+            0,
+        ),
       )
     )
-      continue;
-    const size = COMPONENT_SIZES[cell.kind];
-    center[1] = Math.max(
+      return undefined;
+    accepted.push(box);
+    candidates.push(region);
+    return region;
+  };
+  const push = (
+    kind: ComponentKind,
+    points: V3[],
+    source: 'color' | 'guess',
+  ) => {
+    const anchor = centerOf(points);
+    anchor[1] = Math.max(
       0,
-      Math.min(...cell.points.map((p) => p[1])) -
-        (cell.kind === 'tree' ? 10 : 8) / grid[1],
+      Math.min(...points.map((p) => p[1])) -
+        (kind === 'tree' ? 10 : kind === 'brazier' ? 8 : 4) / grid[1],
     );
-    candidates.push({
-      id: `hint-${candidates.length + 1}`,
-      kind: cell.kind,
-      anchor: center,
-      ...size,
-      rotation: 0,
-    });
+    return place(kind, anchor, source);
+  };
+  // A canopy or a flame spread over several ground cells; merging neighbouring
+  // cells before thresholding is what keeps a real tree from being dropped.
+  const coloured = (['tree', 'brazier'] as ComponentKind[]).flatMap((kind) =>
+    mergeCells(buckets.get(kind) || new Map())
+      .filter((points) => points.length >= 12)
+      .map((points) => ({ kind, points })),
+  );
+  for (const cluster of coloured.sort(
+    (a, b) => b.points.length - a.points.length,
+  )) {
+    push(cluster.kind, cluster.points, 'color');
     if (candidates.length === 6) break;
   }
+  // Dark faces above the flat base plate and its rim. A low, compact, upright
+  // mass standing on the ground reads as a tree or bush; a facade recess is
+  // just as tall but sits high on the wall, so height and footprint separate
+  // the two. Both are guesses, never colour detections.
+  const darkClusters = mergeCells(dark)
+    .filter((points) => points.length >= 20)
+    .map((points) => ({
+      points,
+      x: extent(points, 0),
+      y: extent(points, 1),
+      z: extent(points, 2),
+    }));
+  const trees = darkClusters
+    .filter(
+      (c) =>
+        (c.y[0] + c.y[1]) / 2 < 0.45 &&
+        c.y[1] - c.y[0] >= 0.08 &&
+        c.x[1] - c.x[0] <= 0.3 &&
+        c.z[1] - c.z[0] <= 0.3,
+    )
+    .sort((a, b) => b.points.length - a.points.length)
+    .slice(0, 2);
+  for (const tree of trees) {
+    if (candidates.length >= 6) break;
+    push('tree', tree.points, 'guess');
+  }
+  // A person is not a colour either. Two flames flank an entrance, and the
+  // figure in such a reference usually stands between them on the recess
+  // floor; otherwise the tallest dark recess is the best available guess.
+  if (options.statue !== false && candidates.length < 6) {
+    const flames = candidates.filter((c) => c.kind === 'brazier');
+    const pair = nearestPair(flames);
+    if (pair) {
+      const mx = (pair[0].anchor[0] + pair[1].anchor[0]) / 2,
+        mz = (pair[0].anchor[2] + pair[1].anchor[2]) / 2,
+        // The figure stands inside the opening between the flames, not on the
+        // steps in front of it: take the depth and floor from the dark faces
+        // in that column of the facade.
+        column = darkClusters
+          .flatMap((c) => c.points)
+          .filter((q) => Math.abs(q[0] - mx) < 0.12),
+        floor = column.length
+          ? Math.min(...column.map((q) => q[1]))
+          : Math.max(pair[0].anchor[1], pair[1].anchor[1]),
+        depth = column.length
+          ? column.map((q) => q[2]).sort((a, b) => a - b)[
+              Math.floor(column.length / 2)
+            ]
+          : mz;
+      // Keep the inferred entrance position even if it overlaps a neighbour.
+      // The assembler reports the conflict; detection must not relocate a
+      // statue sideways just to make its bounding box fit.
+      place('statue', [mx, floor, depth], 'guess');
+    } else {
+      const tallest = [...darkClusters].sort(
+        (a, b) => b.y[1] - b.y[0] - (a.y[1] - a.y[0]),
+      )[0];
+      if (tallest) push('statue', tallest.points, 'guess');
+    }
+  }
   return candidates;
+}
+function extent(points: V3[], axis: number): [number, number] {
+  const values = points.map((p) => p[axis]);
+  return [Math.min(...values), Math.max(...values)];
+}
+// The two flames closest to each other on the ground are the likeliest pair
+// framing a single entrance.
+function nearestPair<T extends { anchor: V3 }>(items: T[]): [T, T] | undefined {
+  let best: [T, T] | undefined,
+    distance = Infinity;
+  for (let i = 0; i < items.length; i++)
+    for (let j = i + 1; j < items.length; j++) {
+      const d = Math.hypot(
+        items[i].anchor[0] - items[j].anchor[0],
+        items[i].anchor[2] - items[j].anchor[2],
+      );
+      if (d < distance) {
+        distance = d;
+        best = [items[i], items[j]];
+      }
+    }
+  return best;
+}
+// Flood fill over the 8 x 8 ground grid, joining cells that touch, including
+// diagonally, so one object is never split into sub-threshold fragments.
+function mergeCells(cells: Map<string, V3[]>): V3[][] {
+  const seen = new Set<string>(),
+    clusters: V3[][] = [];
+  for (const start of cells.keys()) {
+    if (seen.has(start)) continue;
+    seen.add(start);
+    const queue = [start],
+      points: V3[] = [];
+    while (queue.length) {
+      const key = queue.pop()!;
+      points.push(...cells.get(key)!);
+      const [cx, cz] = key.split(':').map(Number);
+      for (let dx = -1; dx <= 1; dx++)
+        for (let dz = -1; dz <= 1; dz++) {
+          const next = `${cx + dx}:${cz + dz}`;
+          if (cells.has(next) && !seen.has(next)) {
+            seen.add(next);
+            queue.push(next);
+          }
+        }
+    }
+    clusters.push(points);
+  }
+  return clusters;
+}
+function centerOf(points: V3[]): V3 {
+  return points
+    .reduce((sum, p) => sum.map((v, a) => v + p[a]) as V3, [0, 0, 0])
+    .map((v) => v / points.length) as V3;
 }
