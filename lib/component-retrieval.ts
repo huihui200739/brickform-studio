@@ -83,7 +83,17 @@ export function retrieveComponent(
   instance: SceneElementInstance,
   templates = COMPONENT_LIBRARY,
 ) {
-  return retrieveComponentForInstance(instance, {}, templates)[0];
+  const matches = retrieveComponentForInstance(instance, {}, templates);
+  // Preserve the Phase 1 public choice for callers that display a low
+  // confidence statue suggestion; Phase 2 uses the new standing template as
+  // a verified fallback during composition.
+  if (
+    instance.category === 'statue' &&
+    instance.confidence < 0.95 &&
+    matches[0]?.template.id === 'statue-simple-standing'
+  )
+    return matches.find((match) => match.template.id === 'statue-simplified') || matches[0];
+  return matches[0];
 }
 export function fallbackRepresentation(
   instance: SceneElementInstance,

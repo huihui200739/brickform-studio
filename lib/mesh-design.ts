@@ -25,6 +25,7 @@ import {
   nearestColor,
   validateModel,
   type Model,
+  type Raster,
 } from './brick-engine.ts';
 import { groupImageAssembly } from './image-design.ts';
 import type { TriangleMesh } from './mesh-types.ts';
@@ -33,6 +34,15 @@ import { classifyStructure } from './structure-classifier.ts';
 import { generateLatticeTowerScaffold } from './procedural-structures.ts';
 import { aestheticScore } from './aesthetic-packing.ts';
 import { applyRepresentationTransaction } from './composition/transaction.ts';
+import {
+  createModelView,
+  createReferenceView,
+  makeRepresentationResult,
+  validateElementVisibility,
+  type ReferenceView,
+} from './representation/visibility-validation.ts';
+import type { ReferenceCamera } from './reference-colors.ts';
+import type { SceneElementInstance } from './scene/scene-types.ts';
 
 // Conversion is split in two stages: the triangle volume is cast once, and each
 // component-placement attempt re-reads that volume. Autoplacement can therefore
@@ -56,6 +66,124 @@ export type PreservedRegion = {
   preserveCavity: boolean;
   preserveDepthSeparation: boolean;
 };
+
+export type VisibilityContext = {
+  image?: Raster;
+  camera?: ReferenceCamera;
+};
+
+function ensureSceneElement(region: ComponentRegion): ComponentRegion {
+  if (region.sceneElement) return region;
+  const category = region.kind;
+  const sceneElement: SceneElementInstance = {
+    id: region.id,
+    category,
+    confidence: region.confidence ?? 1,
+    anchorUV: region.imageUV,
+    worldAnchor: [...region.anchor],
+    scaleHint: {
+      width: region.width,
+      depth: region.depth,
+      height: region.height,
+    },
+    importance: category === 'statue' ? 'primary' : 'secondary',
+    importanceScore: category === 'statue' ? 1 : 0.5,
+    mustRepresent: category === 'statue',
+    detectionSource: region.source === 'color' ? 'color' : 'heuristic',
+    anchorKind: category === 'statue' ? 'surface' : 'ground',
+    evidence: ['legacy region promoted to a scene instance'],
+  };
+  return { ...region, sceneElement };
+}
+
+function visibilityView(
+  mesh: TriangleMesh,
+  model: Model,
+  resolution: number,
+  context?: VisibilityContext,
+): ReferenceView {
+  if (context?.image) {
+    try {
+      return createReferenceView(mesh, context.image, resolution, context.camera);
+    } catch {
+      // A missing or invalid reference cannot make a valid component disappear.
+    }
+  }
+  return createModelView(model, context?.camera);
+}
+
+function auditRepresentation(
+  model: Model,
+  region: ComponentRegion,
+  view: ReferenceView,
+  fallbackLevel: number,
+) {
+  const element = region.sceneElement!;
+  const section = `component-${region.id}`;
+  const requestedKind = region.representation || 'component';
+  const actualKind = region.representation || 'component';
+  const result = makeRepresentationResult(
+    element,
+    requestedKind,
+    actualKind,
+    model,
+    section,
+    fallbackLevel,
+  );
+  const checked = validateElementVisibility(element, result, view, model);
+  checked.committed = checked.brickCount > 0 && checked.visibleFromReference;
+  region.representationResult = checked;
+  return checked;
+}
+
+function reserveCommittedGeometry(model: Model) {
+  model.reservedVolumes = (model.representationResults || [])
+    .filter((result) => result.committed && result.bbox3d)
+    .map((result) => result.bbox3d!);
+  model.semanticReservedCells = (model.representationResults || [])
+    .filter((result) => result.committed)
+    .flatMap((result) => {
+      const ids = new Set(result.brickIds);
+      return model.bricks
+        .filter((brick) => ids.has(brick.id))
+        .flatMap((brick) => {
+          const cells: string[] = [];
+          for (let x = Math.floor(brick.x); x < Math.ceil(brick.x + brick.w); x++)
+            for (let y = Math.floor(brick.y); y < Math.ceil(brick.y + brick.h); y++)
+              for (let z = Math.floor(brick.z); z < Math.ceil(brick.z + brick.d); z++)
+                cells.push(`${x},${y},${z}`);
+          return cells;
+        });
+    });
+}
+
+function focalFallbackCandidates(region: ComponentRegion): ComponentRegion[] {
+  if (region.kind !== 'statue') return [];
+  const ids = ['statue-simplified', 'statue-relief', 'statue-simple-standing'];
+  const candidates: ComponentRegion[] = ids.flatMap((id) => {
+    const template = componentTemplate(id);
+    if (!template) return [];
+    return [{
+      ...region,
+      templateId: id,
+      representation: id === 'statue-relief' ? 'relief' as const : 'semantic-template' as const,
+      width: template.bboxStuds.width,
+      depth: template.bboxStuds.depth,
+      height: template.bboxStuds.height,
+    }];
+  });
+  const forced = componentTemplate('statue-simple-standing');
+  if (forced)
+    candidates.push({
+      ...region,
+      templateId: forced.id,
+      representation: 'voxel',
+      width: forced.bboxStuds.width,
+      depth: Math.min(2, forced.bboxStuds.depth),
+      height: forced.bboxStuds.height,
+    });
+  return candidates;
+}
 
 // Cast through a genuine triangle volume, retaining separate depth intervals
 // and openings. Image brightness is never used to invent depth.
@@ -509,9 +637,11 @@ export function meshToDesign(
   mesh: TriangleMesh,
   resolution = 28,
   regions: ComponentRegion[] = [],
+  visibility?: VisibilityContext,
 ): Model {
+  regions = regions.map(ensureSceneElement);
   if (regions.some((r) => r.autoRefinement))
-    return meshToDesignAuto(mesh, resolution, regions).model;
+    return meshToDesignAuto(mesh, resolution, regions, 48, visibility).model;
   const eligible = regions.filter(
     (r) =>
       r.placementStatus !== 'rejected' &&
@@ -526,6 +656,24 @@ export function meshToDesign(
   const structure = classifyStructure(mesh);
   model.structureCategory = structure.category;
   model.structureConfidence = structure.confidence;
+  const view = visibilityView(mesh, model, resolution, visibility);
+  const applied = eligible.filter((r) => r.sceneElement);
+  model.representationResults = applied.map((r) => auditRepresentation(model, r, view, 0));
+  reserveCommittedGeometry(model);
+  model.sceneElements = applied.map((r) => ({
+    ...r.sceneElement!,
+    chosenRepresentation: r.representation || 'component',
+    chosenTemplateId: r.templateId,
+    outcome: 'committed',
+    representationResult: r.representationResult,
+  }));
+  model.representationPlans = model.sceneElements.map((element) => ({
+    elementId: element.id,
+    kind: element.chosenRepresentation || 'generic-geometry',
+    templateId: element.chosenTemplateId,
+    confidence: element.confidence,
+    reason: ['legacy composition audited after commit'],
+  }));
   return model;
 }
 export type AutoComponentResult = {
@@ -540,8 +688,10 @@ export function meshToDesignAuto(
   resolution = 28,
   regions: ComponentRegion[] = [],
   budget = 48,
+  visibility?: VisibilityContext,
 ): AutoComponentResult {
   if (regions.length > 64) throw Error('一次最多替换 64 个组件。');
+  regions = regions.map(ensureSceneElement);
   // Manual overrides and sufficiently confident automatic proposals can enter
   // a trial. Automatic confirmation happens only after the trial commits.
   const eligible = regions.filter(
@@ -672,26 +822,43 @@ export function meshToDesignAuto(
   const structure = classifyStructure(mesh);
   model.structureCategory = structure.category;
   model.structureConfidence = structure.confidence;
-  // A primary subject is never allowed to disappear merely because its first
-  // representation failed. Try the compact focal template at the same anchor
-  // before falling back to the untouched voxel model.
-  for (const failed of [...dropped]) {
-    if (!requiresFocalPreservation(failed.sceneElement) || failed.kind !== 'statue') continue;
-    const fallback = componentTemplate('statue-simplified');
-    if (!fallback || attempts >= limit) continue;
-    const candidate: ComponentRegion = {
-      ...failed,
-      templateId: fallback.id,
-      representation: 'semantic-template',
-      width: fallback.bboxStuds.width,
-      depth: fallback.bboxStuds.depth,
-      height: fallback.bboxStuds.height,
-    };
-    const result = attempt([...applied, candidate]);
-    if (!result) continue;
-    model = result;
-    applied.push(candidate);
-    dropped.splice(dropped.indexOf(failed), 1);
+  // Presence in metadata is insufficient for a focal element. Audit the
+  // committed bricks from the reference view, then transactionally try the
+  // ordered fallback chain until a visible representation is committed.
+  const view = visibilityView(mesh, model, resolution, visibility);
+  const focalRegions = [...applied, ...dropped].filter((r) =>
+    requiresFocalPreservation(r.sceneElement),
+  );
+  for (const focal of focalRegions) {
+    const current = applied.find((r) => r.id === focal.id);
+    if (current && auditRepresentation(model, current, view, 0).committed)
+      continue;
+    let committed = false;
+    const fallbacks = focalFallbackCandidates(focal);
+    for (let level = 1; level <= fallbacks.length && !committed; level++) {
+      const fallback = fallbacks[level - 1];
+      const candidatesForFallback = placementCandidates(fallback, grid).slice(0, 9);
+      for (const candidate of candidatesForFallback) {
+        if (attempts >= limit) break;
+        const trialApplied = applied.filter((r) => r.id !== focal.id);
+        const trial = attempt([...trialApplied, candidate]);
+        if (!trial) continue;
+        const checked = auditRepresentation(trial, candidate, visibilityView(mesh, trial, resolution, visibility), level);
+        if (!checked.committed) continue;
+        model = trial;
+        const index = applied.findIndex((r) => r.id === focal.id);
+        if (index >= 0) applied.splice(index, 1, candidate);
+        else applied.push(candidate);
+        const droppedIndex = dropped.findIndex((r) => r.id === focal.id);
+        if (droppedIndex >= 0) dropped.splice(droppedIndex, 1);
+        committed = true;
+        break;
+      }
+    }
+    if (!committed && current) {
+      const failed = current.representationResult;
+      if (failed) failed.failureReasons.push('all focal fallbacks failed visibility validation');
+    }
   }
   for (const r of regions)
     reports.push(
@@ -715,10 +882,15 @@ export function meshToDesignAuto(
     model.semanticDesign.autoPlaced = true;
     model.semanticDesign.dropped = dropped.map((r) => r.id);
   }
+  const finalView = visibilityView(mesh, model, resolution, visibility);
+  for (const appliedRegion of applied)
+    if (!appliedRegion.representationResult || !appliedRegion.representationResult.committed)
+      auditRepresentation(model, appliedRegion, finalView, appliedRegion.representationResult?.fallbackLevel || 0);
   model.sceneElements = regions.filter(r=>r.sceneElement).map(r=>{
     const committed=applied.find(a=>a.id===r.id);
     return {...r.sceneElement!,chosenRepresentation:committed?.representation ?? r.representation ?? 'voxel',
       chosenTemplateId:committed?.templateId,outcome:committed?'committed':'preserved',
+      representationResult:committed?.representationResult,
       reason:reports.find(p=>p.id===r.id)?.message};
   });
   model.repeatedGroups=repeatedGroups(model.sceneElements);
@@ -730,6 +902,23 @@ export function meshToDesignAuto(
     confidence: element.confidence,
     reason: element.reason ? [element.reason] : ['preserved source geometry'],
   }));
+  model.representationResults = [...applied, ...regions]
+    .filter((r, index, all) =>
+      r.representationResult && all.findIndex((candidate) => candidate.id === r.id) === index,
+    )
+    .map((r) => r.representationResult!);
+  reserveCommittedGeometry(model);
+  if (model.assembly && model.representationResults.length)
+    model.assembly.reference +=
+      ' 表达验证：' +
+      model.representationResults
+        .map((result) =>
+          `${result.elementId} brickCount=${result.brickCount} ` +
+          `bbox=${result.bbox3d ? 'valid' : 'invalid'} ` +
+          `visibleFromReference=${result.visibleFromReference} ` +
+          `fallbackLevel=${result.fallbackLevel}`,
+        )
+        .join('；');
   model.aesthetic = aestheticScore(model);
   model.componentPlacement = reports;
   if (reports.length && model.assembly)

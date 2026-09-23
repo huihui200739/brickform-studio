@@ -1,6 +1,7 @@
 export type {
   RepresentationKind,
   RepresentationPlan,
+  RepresentationResult,
 } from '../scene/scene-types.ts';
 
 import type { SceneElementInstance } from '../scene/scene-types.ts';

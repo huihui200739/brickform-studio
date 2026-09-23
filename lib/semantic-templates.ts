@@ -45,6 +45,24 @@ export function simplifiedStatue(): Brick[] {
     part('3023', 11, -0.5, 6, 0),
   ];
 }
+
+/**
+ * A dependable ordinary-brick focal fallback. It intentionally uses a
+ * readable pedestal, lower body, shoulders, arms and head instead of a
+ * minifigure assembly so it can remain visible when a relief cannot be seated.
+ */
+export function simplifiedStandingStatue(): Brick[] {
+  return [
+    part('3020', 7, 0, 1, 0),
+    part('3003', 7, 0, 3, 0),
+    part('3003', 11, 0, 6, 0),
+    part('3004', 11, -1.5, 6, 0),
+    part('3004', 11, 1.5, 6, 0),
+    part('3005', 11, 0, 9, 0),
+    part('3023', 11, -0.5, 7, 0),
+    part('3023', 11, 0.5, 7, 0),
+  ];
+}
 export function reliefStatue(instance?: SceneElementInstance): Brick[] {
   if (!instance?.imageMask || !instance.imageMaskSize)
     throw Error('浮雕模板缺少实例轮廓');

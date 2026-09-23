@@ -68,6 +68,7 @@ export type SceneElementInstance = {
   chosenTemplateId?: string;
   outcome?: 'pending' | 'committed' | 'preserved';
   reason?: string;
+  representationResult?: RepresentationResult;
 };
 
 export type SceneElementGroup = {
@@ -96,6 +97,23 @@ export type RepresentationPlan = {
   templateId?: string;
   confidence: number;
   reason: string[];
+};
+
+/** Verified geometry produced by a plan, using IDs from the final model. */
+export type RepresentationResult = {
+  elementId: string;
+  requestedKind: RepresentationKind;
+  actualKind: RepresentationKind;
+  committed: boolean;
+  brickIds: number[];
+  bbox3d?: BBox3d;
+  brickCount: number;
+  visibleFromReference: boolean;
+  projectedCoverage?: number;
+  occlusionRatio?: number;
+  projectedBox?: ImageBox;
+  fallbackLevel: number;
+  failureReasons: string[];
 };
 
 export type SceneAnalysis = {

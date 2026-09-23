@@ -97,9 +97,15 @@ self.onmessage = async (
     // Component placement never blocks the finished product: anything that
     // cannot be seated is reported instead of failing the whole conversion.
     const auto = refined.length
-      ? meshToDesignAuto(mesh, options.resolution, refined)
+      ? meshToDesignAuto(mesh, options.resolution, refined, 48, {
+          image: raster,
+          camera: event.data.camera || mesh.coloring,
+        })
       : {
-          model: meshToDesign(mesh, options.resolution),
+          model: meshToDesign(mesh, options.resolution, [], {
+            image: raster,
+            camera: event.data.camera || mesh.coloring,
+          }),
           applied: [] as ComponentRegion[],
           dropped: [] as ComponentRegion[],
         };

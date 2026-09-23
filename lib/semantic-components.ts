@@ -20,6 +20,7 @@ import {
   type SceneElement,
 } from './component-library.ts';
 import type { RepresentationKind } from './scene-elements.ts';
+import type { RepresentationResult } from './scene/scene-types.ts';
 export { componentBricks } from './component-parts.ts';
 import { componentBricks } from './component-parts.ts';
 export type ComponentKind = 'tree' | 'brazier' | 'statue';
@@ -58,6 +59,7 @@ export type ComponentRegion = {
   evidence?: string[];
   confirmed?: boolean;
   sceneElement?: SceneElement;
+  representationResult?: RepresentationResult;
   templateId?: string;
   representation?: RepresentationKind;
   templateCandidates?: string[];

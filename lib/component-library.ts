@@ -1,6 +1,6 @@
 import type { Brick } from './brick-engine.ts';
 import { componentBricks } from './component-parts.ts';
-import { simplifiedTree, reliefStatue, simplifiedStatue } from './semantic-templates.ts';
+import { simplifiedTree, reliefStatue, simplifiedStatue, simplifiedStandingStatue } from './semantic-templates.ts';
 import type { SceneElementInstance, SceneCategory } from './scene-elements.ts';
 export type {
   SceneCategory,
@@ -85,6 +85,18 @@ export const COMPONENT_LIBRARY: LegoComponentTemplate[] = [
     build: reliefStatue,
     requiresMask: true,
     fallback: 'relief',
+  },
+  {
+    id: 'statue-simple-standing',
+    name: '简化站立雕像',
+    category: 'statue',
+    tags: ['focal', 'standing', 'fallback'],
+    bboxStuds: { width: 6, depth: 4, height: 14 },
+    anchor: { kind: 'ground', localPoint: [0, 0, 0] },
+    colors: [7, 11],
+    representation: 'template',
+    build: simplifiedStandingStatue,
+    fallback: 'voxel',
   },
   {
     id: 'statue-simplified',
