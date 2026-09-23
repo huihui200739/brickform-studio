@@ -9,7 +9,7 @@ import {
   type ComponentRegion,
 } from './semantic-components.ts';
 import { meshToDesign, meshToDesignAuto } from './mesh-design.ts';
-import { validateModel } from './brick-engine.ts';
+import { inventory, toLDraw, validateModel } from './brick-engine.ts';
 import { MESH_FEATURE, type TriangleMesh } from './mesh-types.ts';
 
 // The fixtures are deliberately geometric: nothing here is a temple template.
@@ -50,7 +50,11 @@ void test('two flames on opposite sides are seated as one mirrored pair', () => 
     (h) => h.kind === 'brazier',
   );
   assert.equal(hints.length, 2);
-  const auto = meshToDesignAuto(mesh, 20, hints);
+  const auto = meshToDesignAuto(
+    mesh,
+    20,
+    hints.map((h) => ({ ...h, confirmed: true })),
+  );
   assert.equal(auto.dropped.length, 0);
   const [a, b] = auto.applied;
   assert.equal(a.anchor[1], b.anchor[1], 'the pair shares one height');
@@ -80,7 +84,7 @@ void test('a low compact dark mass reads as a tree while a facade recess does no
     'the tree stands on the low dark mass, not on the recess',
   );
 });
-void test('two flames put the figure between them at the entrance', () => {
+void test('two flames never determine a statue location, even when legacy guessing is requested', () => {
   const mesh = shapes([
     { box: [0, 0, 0, 20, 1, 20], color: SAND },
     { box: [3, 1, 5, 1, 2, 1], color: FLAME, segments: [2, 2, 2] },
@@ -91,14 +95,7 @@ void test('two flames put the figure between them at the entrance', () => {
   const flames = hints.filter((h) => h.kind === 'brazier'),
     statue = hints.find((h) => h.kind === 'statue');
   assert.equal(flames.length, 2);
-  assert.ok(statue, 'a figure is still offered');
-  assert.equal(statue.source, 'guess');
-  assert.ok(
-    Math.abs(
-      statue.anchor[0] - (flames[0].anchor[0] + flames[1].anchor[0]) / 2,
-    ) < 1e-6,
-    'the figure stands between the two flames',
-  );
+  assert.equal(statue, undefined);
 });
 void test('detection separates foliage and flames from sand, grey and white bricks', () => {
   const mesh = shapes([
@@ -116,13 +113,8 @@ void test('detection separates foliage and flames from sand, grey and white bric
     'orange flame becomes a brazier candidate',
   );
   assert.ok(
-    kinds.includes('statue'),
-    'a dark upright mass becomes a person guess',
-  );
-  assert.equal(
-    hints.find((h) => h.kind === 'statue')!.source,
-    'guess',
-    'the person is always labelled a guess, never a colour detection',
+    !kinds.includes('statue'),
+    'statue guessing is disabled by default',
   );
   assert.equal(hints.length, new Set(hints.map((h) => h.id)).size);
   // Candidates must never overlap, otherwise conversion rejects the whole set.
@@ -135,7 +127,7 @@ void test('detection separates foliage and flames from sand, grey and white bric
   const auto = meshToDesignAuto(
     mesh,
     20,
-    hints.map((h) => ({ ...h, placed: true })),
+    hints.map((h) => ({ ...h, placed: true, confirmed: true })),
   );
   assert.equal(auto.applied.length + auto.dropped.length, hints.length);
 });
@@ -214,7 +206,7 @@ void test('a tree the palette paints sand is still seated, because the picture s
   const auto = meshToDesignAuto(
     mesh,
     20,
-    hints.map((h) => ({ ...h, placed: true })),
+    hints.map((h) => ({ ...h, placed: true, confirmed: true })),
   );
   assert.equal(auto.dropped.length, 0, 'the tree is seated');
   assert.equal(validateModel(auto.model).connected, true);
@@ -242,8 +234,8 @@ void test('a component that cannot be seated never blocks the finished product',
   assert.equal(auto.applied.length, 0);
   assert.equal(auto.dropped.length, 1);
   assert.equal(
-    auto.model.bricks.length,
-    base.bricks.length,
+    JSON.stringify(auto.model.bricks),
+    JSON.stringify(base.bricks),
     'the conversion falls back to the plain grid model',
   );
   assert.equal(auto.model.semanticDesign, undefined);
@@ -363,4 +355,90 @@ void test('a later impossible component cannot erase an earlier accepted compone
   assert.equal(auto.reports[1].status, 'budget');
   assert.equal(auto.model.semanticDesign!.components.length, 1);
   assert.equal(validateModel(auto.model).connected, true);
+});
+
+void test('automatic refinement commits high confidence only and rollback preserves every original brick', () => {
+  const mesh = shapes([
+    { box: [0, 0, 0, 20, 1, 20], color: SAND },
+    { box: [3, 1, 5, 1, 2, 1], color: FLAME, segments: [2, 2, 2] },
+    { box: [9, 1, 10, 2, 5, 2], color: DARK, segments: [2, 3, 2] },
+  ]);
+  const baseline = meshToDesign(mesh, 28);
+  const candidate = suggestComponents(mesh, 28).find(
+    (r) => r.kind === 'brazier',
+  )!;
+  assert.ok(candidate);
+  const low = {
+    ...candidate,
+    autoRefinement: true,
+    autoScoreWithInstallation: 0.45,
+    confirmed: false,
+  };
+  const high = { ...low, autoScoreWithInstallation: 0.95 };
+  assert.deepEqual(meshToDesignAuto(mesh,28,[{...low,confirmed:true}]).model.bricks,baseline.bricks,'stale automatic confirmation cannot bypass current confidence');
+  for (const region of [
+    low,
+    { ...high, placementStatus: 'rejected' as const },
+    { ...high, kind: 'statue' as const },
+  ]) {
+    const result = meshToDesignAuto(mesh, 28, [region]);
+    assert.deepEqual(result.model.bricks, baseline.bricks);
+    assert.equal(result.applied.length, 0);
+  }
+  const result = meshToDesignAuto(mesh, 28, [high]);
+  assert.equal(result.applied.length, 1);
+  assert.equal(result.applied[0].confirmed, true);
+  assert.ok(result.model.semanticDesign?.components.length);
+  const parts = result.model.bricks.filter((b) =>
+    b.section?.startsWith('component-'),
+  );
+  assert.ok(parts.length);
+  assert.equal(
+    inventory(result.model.bricks).reduce((sum, p) => sum + p.quantity, 0),
+    result.model.bricks.length,
+  );
+  for (const part of parts)
+    assert.ok(toLDraw(result.model).includes(`${part.part}.dat`));
+  assert.ok(
+    result.model.assembly!.steps.some((s) =>
+      s.section.startsWith('component-'),
+    ),
+  );
+  assert.deepEqual(
+    meshToDesignAuto(mesh, 28, [high]).model.bricks,
+    result.model.bricks,
+  );
+  assert.equal(high.confirmed, false, 'input decision is not mutated');
+  const impossible = {
+    ...high,
+    anchor: [0.5, 1, 0.5] as [number, number, number],
+    referenceAnchor: [0.5, 1, 0.5] as [number, number, number],
+    positionLocked: true,
+  };
+  const failed = meshToDesignAuto(mesh, 28, [impossible], 0);
+  assert.deepEqual(failed.model.bricks, baseline.bricks);
+});
+
+void test('mixed low confidence proposals cannot shift eligible pair indices', () => {
+  const mesh = shapes([
+    { box: [0, 0, 0, 20, 1, 20], color: SAND },
+    { box: [3, 1, 5, 1, 2, 1], color: FLAME, segments: [2, 2, 2] },
+    { box: [16, 1, 5, 1, 2, 1], color: FLAME, segments: [2, 2, 2] },
+  ]);
+  const pair = suggestComponents(mesh, 28)
+    .filter((r) => r.kind === 'brazier')
+    .map((r) => ({
+      ...r,
+      autoRefinement: true,
+      autoScoreWithInstallation: 0.95,
+    }));
+  assert.equal(pair.length, 2);
+  const low = { ...pair[0], id: 'low', autoScoreWithInstallation: 0.1 };
+  const result = meshToDesignAuto(mesh, 28, [low, ...pair]);
+  assert.equal(result.applied.length, 2);
+  assert.equal(result.dropped.length, 1);
+  assert.deepEqual(
+    result.model.bricks,
+    meshToDesignAuto(mesh, 28, pair).model.bricks,
+  );
 });

@@ -46,6 +46,8 @@ export default function ComponentEditor({
       {
         id,
         kind,
+        source: 'manual',
+        confirmed: true,
         placed: false,
         positionLocked: true,
         anchor: [0.5, 0, 0.5],
@@ -63,7 +65,8 @@ export default function ComponentEditor({
           ? {
               ...r,
               ...update,
-              placementStatus: undefined,
+              autoRefinement: false,
+              placementStatus: update.placementStatus,
               ...(update.anchor
                 ? { referenceAnchor: update.anchor, positionLocked: true }
                 : {}),
@@ -72,6 +75,9 @@ export default function ComponentEditor({
       ),
     );
   }
+  const reliable = regions.filter(
+    (r) => r.source === 'color' && (r.confidence || 0) >= 0.6 && !r.confirmed,
+  );
   return (
     <section className="component-editor">
       <fieldset
@@ -107,6 +113,26 @@ export default function ComponentEditor({
           ))}
         </div>
         <div className="component-suggestions">
+          {reliable.length > 0 && (
+            <button
+              onClick={() =>
+                onChange(
+                  regions.map((r) =>
+                    reliable.some((x) => x.id === r.id)
+                      ? {
+                          ...r,
+                          confirmed: true,
+                          autoRefinement: false,
+                          placementStatus: 'confirmed',
+                        }
+                      : r,
+                  ),
+                )
+              }
+            >
+              确认 {reliable.length} 个可靠候选
+            </button>
+          )}
           <button
             onClick={() => {
               if (onAuto) {
@@ -135,7 +161,7 @@ export default function ComponentEditor({
             }}
             disabled={regions.length >= 12 || autoBusy}
           >
-            {autoBusy ? '正在自动识别…' : '重新自动识别树 / 火焰 / 人物'}
+            {autoBusy ? '正在自动识别…' : '重新检测图片中的树 / 火焰'}
           </button>
           <output>{autoStatus || hint}</output>
         </div>
@@ -185,6 +211,20 @@ export default function ComponentEditor({
                   >
                     移除组件
                   </button>
+                  {active.source && active.source !== 'manual' && (
+                    <button
+                      onClick={() => patch({ placementStatus: 'rejected' })}
+                    >
+                      忽略
+                    </button>
+                  )}
+                  {active.source && active.source !== 'manual' && (
+                    <button
+                      onClick={() => patch({ confirmed: !active.confirmed })}
+                    >
+                      {active.confirmed ? '取消确认' : '确认并应用'}
+                    </button>
+                  )}
                 </div>
                 <label className="placement-lock">
                   <input
@@ -270,7 +310,7 @@ export default function ComponentEditor({
               </div>
             ) : (
               <p className="field-hint">
-                组件已自动放置，可以直接生成成品；这里用于核对位置和清除范围，或移除不需要的组件。
+                默认无需确认：可靠增强自动提交，其余保留原几何。这里仅用于人工覆盖自动结果。
               </p>
             )}
           </>

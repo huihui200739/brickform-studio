@@ -3,7 +3,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Brickform 积木工坊 · 图片变成积木设计',
   description:
-    '从小鸭侧面图测量比例，重建对称体积，查看真实零件 3D、零件清单和拼装步骤。V4 实验版，尚不支持通用物体识别。',
+    '从单图、三视图、正面图纸或 GLB 生成可检查的积木设计、真实零件清单和逐块拼装说明。',
 };
 export default function RootLayout({
   children,

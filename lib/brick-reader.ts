@@ -50,7 +50,9 @@ function luminance(image: Raster) {
     out = new Float32Array(width * height);
   for (let i = 0; i < out.length; i++)
     out[i] =
-      0.2126 * data[i * 4] + 0.7152 * data[i * 4 + 1] + 0.0722 * data[i * 4 + 2];
+      0.2126 * data[i * 4] +
+      0.7152 * data[i * 4 + 1] +
+      0.0722 * data[i * 4 + 2];
   return out;
 }
 // Period of a repeating signal, found by autocorrelation. The smallest lag
@@ -213,7 +215,10 @@ export function readFront(image: Raster, options: ReadOptions = {}): Blueprint {
         if (mean > median + 6) boundary.add(from + i);
       });
     }
-    const reach = Math.max(3, Math.round((along === 'x' ? pitch : plate) * 0.3));
+    const reach = Math.max(
+      3,
+      Math.round((along === 'x' ? pitch : plate) * 0.3),
+    );
     let seam = 0,
       face = 0,
       n = 0;
@@ -275,7 +280,12 @@ export function readFront(image: Raster, options: ReadOptions = {}): Blueprint {
         const i = y * width + x;
         if (!mask[i]) continue;
         votes[
-          nearestColor(image.data[i * 4], image.data[i * 4 + 1], image.data[i * 4 + 2], true)
+          nearestColor(
+            image.data[i * 4],
+            image.data[i * 4 + 1],
+            image.data[i * 4 + 2],
+            true,
+          )
         ]++;
         n++;
       }
@@ -445,7 +455,16 @@ export function blueprintToModel(
       for (let z = Math.max(0, d - 2); z < d; z++)
         cells.set(`${x},${y + 2},${z}`, { color: colour, support: false });
     }
-  const raw = finishModel(cells, w, h + 2, d, 'image', name, resolution, dominant);
+  const raw = finishModel(
+    cells,
+    w,
+    h + 2,
+    d,
+    'image',
+    name,
+    resolution,
+    dominant,
+  );
   if (raw.bricks.length > 14000)
     throw Error('此尺寸超过 14000 块零件，请降低积木尺寸后再转换。');
   const model = groupImageAssembly(raw);
@@ -458,7 +477,12 @@ export function blueprintToModel(
   };
   model.assembly!.reference = `正面按参考图的砖块排布逐块还原；侧面、背面与内部结构未从图中读到，进深 ${d} 凸点为假设值。未做实物拼装验证。`;
   const check = validateModel(model);
-  if (check.collisions || check.unsupported || check.invalidParts || !check.connected)
+  if (
+    check.collisions ||
+    check.unsupported ||
+    check.invalidParts ||
+    !check.connected
+  )
     throw Error(
       `读出的图纸未能装配（重叠 ${check.collisions} · 缺支撑 ${check.unsupported} · 连通 ${check.connected ? '是' : '否'}），请换更清晰的正面图或调整尺寸。`,
     );

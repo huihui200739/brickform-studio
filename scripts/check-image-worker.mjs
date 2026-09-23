@@ -91,7 +91,7 @@ for (const filename of fs.readdirSync(chunkDir)) {
       background: 'auto',
       mode: 'auto',
     };
-    self.onmessage({
+    await self.onmessage({
       data: {
         raster: { width: 16, height: 16, data },
         name: 'Worker launch check',
@@ -100,7 +100,7 @@ for (const filename of fs.readdirSync(chunkDir)) {
     });
     assert.ok(result.model?.bricks.length > 0, result.error);
     assert.ok(result.model.assembly.steps.length > 0);
-    self.onmessage({
+    await self.onmessage({
       data: {
         raster: { width: 1, height: 1, data: [0, 0, 0, 0] },
         name: 'empty',
@@ -111,7 +111,7 @@ for (const filename of fs.readdirSync(chunkDir)) {
     const cube = new BoxGeometry(4, 5, 6).toNonIndexed();
     const colors = new Uint8Array(cube.attributes.position.count);
     for (let i = 0; i < colors.length; i += 3) colors.set([215, 186, 140], i);
-    self.onmessage({
+    await self.onmessage({
       data: {
         mesh: {
           positions: new Float32Array(cube.attributes.position.array),
@@ -123,7 +123,7 @@ for (const filename of fs.readdirSync(chunkDir)) {
     });
     assert.ok(result.model?.meshDesign, result.error);
     assert.ok(result.model.bricks.some((b) => b.color === 7));
-    self.onmessage({
+    await self.onmessage({
       data: {
         action: 'color',
         mesh: {
@@ -144,6 +144,22 @@ for (const filename of fs.readdirSync(chunkDir)) {
       result.mesh.colors.some((c, i) => i % 3 === 2 && c === 191),
       'reference blue reaches the mesh',
     );
+    // Actual bundled async semantic pipeline: no reference confirmation step.
+    await self.onmessage({
+      data: {
+        mesh: {
+          positions: new Float32Array(cube.attributes.position.array),
+          colors,
+          name: 'Automatic fallback',
+        },
+        raster: { width: 16, height: 16, data },
+        options: { resolution: 28 },
+        autoSemanticRefinement: true,
+      },
+    });
+    assert.ok(result.model?.bricks.length > 0, result.error);
+    assert.equal(result.applied, 0);
+    assert.ok(!result.model.semanticDesign);
     cube.dispose();
     checked++;
   }

@@ -1,11 +1,16 @@
 'use client';
 import type { PlacementReport } from '@/lib/placement-policy';
 const labels = {
+  'auto-applied': '已自动应用',
+  preserved: '未替换，已保留原始几何',
   kept: '原位安装',
   adjusted: '小范围校正',
   conflict: '需要调整',
   unpositioned: '等待定位',
   budget: '需要复核',
+  candidate: '待确认候选',
+  confirmed: '已确认',
+  rejected: '已忽略',
 };
 export default function PlacementReview({
   reports,

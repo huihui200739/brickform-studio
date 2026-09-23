@@ -36,6 +36,8 @@ export type Brick = {
 };
 export type Model = {
   componentPlacement?: PlacementReport[];
+  sceneElements?: import('./scene-elements.ts').SceneElementInstance[];
+  repeatedGroups?: import('./scene-elements.ts').RepeatedElementGroup[];
   name: string;
   bricks: Brick[];
   width: number;
@@ -47,7 +49,7 @@ export type Model = {
   resolution: number;
   shape: 'sculpture' | 'relief';
   semanticDesign?: {
-    components: { id: string; name: string; kind: string; parts: number }[];
+    components: { id: string; name: string; kind: string; parts: number; templateId?: string; instanceId?: string }[];
     removedCells: number;
     reviewRequired: true;
     autoPlaced?: boolean;
@@ -124,6 +126,46 @@ export const PARTS: Record<string, string> = Object.fromEntries([
 type Cell = { color: number; support: boolean };
 type Cells = Map<string, Cell>;
 const key = (x: number, y: number, z: number) => `${x},${y},${z}`;
+
+export type SurfaceColorSummary = {
+  colors: number[];
+  dominant: number | undefined;
+  boundaryEdges: number;
+  exposedCells: number;
+};
+
+/** Summarise only cells exposed by a candidate brick. Hidden voxel colours are ignored. */
+export function summarizeSurfaceColors(
+  cells: Array<{ x: number; y: number; z: number; color: number }>,
+): SurfaceColorSummary {
+  const counts = new Map<number, number>();
+  const occupied = new Map<string, number>();
+  cells.forEach((cell) => {
+    counts.set(cell.color, (counts.get(cell.color) ?? 0) + 1);
+    occupied.set(key(cell.x, cell.y, cell.z), cell.color);
+  });
+  let dominant: number | undefined;
+  for (const [color, count] of counts)
+    if (dominant === undefined || count > (counts.get(dominant) ?? 0))
+      dominant = color;
+  let boundaryEdges = 0;
+  for (const cell of cells) {
+    for (const [dx, dy, dz] of [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+    ]) {
+      const adjacent = occupied.get(key(cell.x + dx, cell.y + dy, cell.z + dz));
+      if (adjacent !== undefined && adjacent !== cell.color) boundaryEdges++;
+    }
+  }
+  return {
+    colors: [...counts.keys()].sort((a, b) => a - b),
+    dominant,
+    boundaryEdges,
+    exposedCells: cells.length,
+  };
+}
 export function nearestColor(
   r: number,
   g: number,
@@ -155,10 +197,38 @@ function pack(
 ): Brick[] {
   const bricks: Brick[] = fixed.map((b) => ({ ...b }));
   const used = new Set<string>();
-  for (const b of fixed)
+  const surface = new Set<string>();
+  const topOwners = new Map<string, Set<Brick>>();
+  const directions = [
+    [1, 0, 0],
+    [-1, 0, 0],
+    [0, 1, 0],
+    [0, -1, 0],
+    [0, 0, 1],
+    [0, 0, -1],
+  ];
+  for (const cell of cells.keys()) {
+    const [x, y, z] = cell.split(',').map(Number);
+    if (
+      directions.some(([dx, dy, dz]) => !cells.has(key(x + dx, y + dy, z + dz)))
+    )
+      surface.add(cell);
+  }
+  const registerTop = (brick: Brick) => {
+    for (let x = brick.x; x < brick.x + brick.w; x++)
+      for (let z = brick.z; z < brick.z + brick.d; z++) {
+        const k = key(x, brick.y + brick.h, z);
+        const owners = topOwners.get(k) || new Set<Brick>();
+        owners.add(brick);
+        topOwners.set(k, owners);
+      }
+  };
+  for (const b of bricks) {
     for (let x = b.x; x < b.x + b.w; x++)
       for (let z = b.z; z < b.z + b.d; z++)
         for (let y = b.y; y < b.y + b.h; y++) used.add(key(x, y, z));
+    registerTop(b);
+  }
   for (let y = 0; y < height; y++)
     for (let z = 0; z < depth; z++)
       for (let x = 0; x < width; x++) {
@@ -173,40 +243,79 @@ function pack(
             .map((rot) => ({ ...p, w: rot ? p.d : p.w, d: rot ? p.w : p.d }));
         });
         let chosen = candidates[candidates.length - 1];
+        let chosenColor = start.color;
         let bestScore = -Infinity;
         for (const p of candidates) {
           if (base && y === 0 && z % 2 === 1 && x === 0 && p.w > 1) continue;
           if (y === 1 && Math.floor(x / 2) % 2 === 1 && z === 0 && p.d > 2)
             continue;
           let valid = true;
+          const exposed: Array<{
+            x: number;
+            y: number;
+            z: number;
+            color: number;
+          }> = [];
           for (let dy = 0; dy < p.h && valid; dy++)
             for (let dz = 0; dz < p.d && valid; dz++)
               for (let dx = 0; dx < p.w; dx++) {
                 const k = key(x + dx, y + dy, z + dz),
                   c = cells.get(k);
-                if (
-                  !c ||
-                  c.color !== start.color ||
-                  c.support !== start.support ||
-                  used.has(k)
-                ) {
+                if (!c || c.support !== start.support || used.has(k)) {
                   valid = false;
                   break;
                 }
+                // A brick remains one real colour. Hidden voxel colours do
+                // not matter; only exposed cells need to agree on that colour.
+                if (surface.has(k))
+                  exposed.push({
+                    x: x + dx,
+                    y: y + dy,
+                    z: z + dz,
+                    color: c.color,
+                  });
               }
           if (valid) {
+            const colorSummary = summarizeSurfaceColors(exposed);
+            if (colorSummary.colors.length > 1) continue;
+            const colour = colorSummary.dominant ?? start.color;
             if (base) {
               chosen = p;
+              chosenColor = colour;
               break;
             }
             let contact = 0;
+            const supporters = new Set<Brick>();
             for (let dx = 0; dx < p.w; dx++)
-              for (let dz = 0; dz < p.d; dz++)
-                if (cells.has(key(x + dx, y - 1, z + dz))) contact++;
+              for (let dz = 0; dz < p.d; dz++) {
+                const owners = topOwners.get(key(x + dx, y, z + dz));
+                if (owners?.size) {
+                  contact++;
+                  owners.forEach((owner) => supporters.add(owner));
+                }
+              }
+            const exactStack =
+              supporters.size === 1 &&
+              [...supporters].some(
+                (below) =>
+                  below.x === x &&
+                  below.z === z &&
+                  below.w === p.w &&
+                  below.d === p.d,
+              );
+            // Part count remains the main objective. Between equal-volume
+            // candidates, prefer one that bonds more lower parts and avoid
+            // repeating the exact same footprint on the next course.
             const score =
-              (contact > 0 ? 1000 : 0) + p.w * p.d * p.h + (p.h === 3 ? 2 : 0);
+              (contact > 0 ? 10000 : 0) +
+              p.w * p.d * p.h * 100 +
+              supporters.size * 10 +
+              contact -
+              (exactStack ? 20 : 0) +
+              (p.h === 3 ? 2 : 0);
             if (score > bestScore) {
               chosen = p;
+              chosenColor = colour;
               bestScore = score;
             }
           }
@@ -215,7 +324,7 @@ function pack(
           for (let dz = 0; dz < chosen.d; dz++)
             for (let dx = 0; dx < chosen.w; dx++)
               used.add(key(x + dx, y + dy, z + dz));
-        bricks.push({
+        const brick: Brick = {
           id: bricks.length + 1,
           part: chosen.id,
           x,
@@ -224,9 +333,11 @@ function pack(
           w: chosen.w,
           d: chosen.d,
           h: chosen.h,
-          color: start.color,
+          color: chosenColor,
           support: start.support,
-        });
+        };
+        bricks.push(brick);
+        registerTop(brick);
       }
   return bricks;
 }
@@ -307,6 +418,7 @@ export function finishModel(
     shape: 'sculpture',
   };
 }
+
 export function sampleModel(resolution = 28, depth = 12): Model {
   const width = resolution + 2,
     height = Math.round(resolution * 1.9) + 2,

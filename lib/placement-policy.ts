@@ -7,7 +7,16 @@ import type { V3 } from './assembly-catalog.ts';
 export type PlacementReport = {
   id: string;
   name: string;
-  status: 'kept' | 'adjusted' | 'conflict' | 'unpositioned' | 'budget';
+  status:
+    | 'kept'
+    | 'adjusted'
+    | 'conflict'
+    | 'unpositioned'
+    | 'budget'
+    | 'auto-applied'
+    | 'preserved'
+    | 'candidate'
+    | 'rejected';
   target: V3;
   actual?: V3;
   delta?: V3;
@@ -87,23 +96,48 @@ export function reportPlacement(
     { ...requested, anchor: requested.referenceAnchor || requested.anchor },
     grid,
   );
+  if (requested.placementStatus === 'rejected')
+    return {
+      id: requested.id,
+      name,
+      target,
+      status: 'rejected',
+      message: '已忽略特殊组件，保留原始几何。',
+    };
+  if (!actual && requested.autoRefinement)
+    return {
+      id: requested.id,
+      name,
+      target,
+      status: 'preserved',
+      message:
+        '自动增强未提交：定位置信度不足或安装检查失败，保留原始几何继续生成。',
+    };
   if (!actual)
     return {
       id: requested.id,
       name,
       target,
       status:
-        requested.placed === false
-          ? 'unpositioned'
-          : exhausted
-            ? 'budget'
-            : 'conflict',
+        requested.source &&
+        requested.confirmed !== true &&
+        requested.source !== 'manual'
+          ? 'candidate'
+          : requested.placed === false
+            ? 'unpositioned'
+            : exhausted
+              ? 'budget'
+              : 'conflict',
       message:
-        requested.placed === false
-          ? '尚未定位：请点击草稿中的物件底部。'
-          : exhausted
-            ? '本轮未找到可用位置，保留原网格。可手动定位后重试。'
-            : '原位置附近无法连接或存在干涉，保留原网格；未挪到其他区域。',
+        requested.source &&
+        requested.confirmed !== true &&
+        requested.source !== 'manual'
+          ? '自动候选：尚未确认，不会替换网格或进入最终清单。'
+          : requested.placed === false
+            ? '尚未定位：请点击草稿中的物件底部。'
+            : exhausted
+              ? '本轮未找到可用位置，保留原网格。可手动定位后重试。'
+              : '原位置附近无法连接或存在干涉，保留原网格；未挪到其他区域。',
     };
   const delta = placementDelta(actual, grid),
     adjusted = delta.some((v) => v !== 0);
@@ -113,7 +147,7 @@ export function reportPlacement(
     target,
     actual: mountingPoint(actual, grid),
     delta,
-    status: adjusted ? 'adjusted' : 'kept',
+    status: requested.autoRefinement ? 'auto-applied' : adjusted ? 'adjusted' : 'kept',
     message: adjusted
       ? `微调：左右 ${delta[0]} 凸点，上下 ${delta[1]} 薄板层，前后 ${delta[2]} 凸点。`
       : '保持原落点，仅按积木网格对齐。',

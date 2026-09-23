@@ -13,6 +13,7 @@
     "lint": "oxlint",
     "format": "oxfmt",
     "test": "node --experimental-strip-types --test lib/*.test.ts",
+    "benchmark": "node --experimental-strip-types scripts/benchmark-packing.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -11,7 +11,7 @@ import {
   COMPONENT_SIZES,
 } from './semantic-components.ts';
 import { validateAssembly } from './assembly-validation.ts';
-import { meshToDesign } from './mesh-design.ts';
+import { meshToDesign, meshToDesignAuto } from './mesh-design.ts';
 import { inventory, toLDraw, type Model } from './brick-engine.ts';
 import { installationText, detailDiagram } from './build-instructions.ts';
 import { brickFaces } from './assembly-diagram.ts';
@@ -196,3 +196,35 @@ void test('removing a statue preserves a real full-width bridge above the openin
   assert.ok(bridges.every((b) => b.w === 8 && b.d === 2 && b.h === 1));
   assert.equal(validateAssembly(m).connected, true);
 });
+
+for (const kind of ['tree', 'brazier'] as const) {
+  void test(`${kind}: reliable automatic proposal commits bricks, BOM and instructions without a user confirmation`, () => {
+    const mesh=fixture();
+    const input={...region(kind),source:'color' as const,autoRefinement:true,confirmed:false,replacementConfidence:0.9};
+    const result=meshToDesignAuto(mesh,28,[input]);
+    assert.equal(result.applied.length,1);
+    assert.equal(result.applied[0].confirmed,true);
+    assert.equal(result.applied[0].autoConfirmed,true);
+    assert.equal(result.applied[0].source,'color');
+    assert.equal(result.reports[0].status,'auto-applied');
+    const section=`component-${input.id}`;
+    const parts=result.model.bricks.filter((b)=>b.section===section);
+    assert.equal(parts.length,componentBricks(kind).length);
+    assert.ok(result.model.assembly!.sections.some((s)=>s.id===section));
+    assert.equal(result.model.assembly!.steps.filter((s)=>s.section===section).length,parts.length);
+    for(const b of parts) {
+      assert.ok(inventory(result.model.bricks).some((p)=>p.part===b.part&&p.color===b.color));
+      assert.ok(toLDraw(result.model).includes(`${b.part}.dat`));
+    }
+    assert.equal(input.confirmed,false);
+    const baseline=meshToDesign(mesh,28);
+    const low=meshToDesignAuto(mesh,28,[{...input,replacementConfidence:0.4}]);
+    assert.equal(low.reports[0].status,'preserved');
+    assert.deepEqual(low.model.bricks,baseline.bricks);
+    const failed=meshToDesignAuto(mesh,28,[{...input,width:100}]);
+    assert.ok(failed.attempts>0);
+    assert.equal(failed.applied.length,0);
+    assert.equal(failed.reports[0].status,'preserved');
+    assert.deepEqual(failed.model.bricks,baseline.bricks);
+  });
+}

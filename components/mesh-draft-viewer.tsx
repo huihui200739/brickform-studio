@@ -102,6 +102,7 @@ export default function MeshDraftViewer({
           const f = meshFrame(mesh, resolution),
             [w, , d] = f.grid;
           for (const r of regions) {
+            if (r.placementStatus === 'rejected') continue;
             const p = regionPlacement(r, f.grid);
             if (r.id === selected) {
               const lo = new T.Vector3(
@@ -120,7 +121,9 @@ export default function MeshDraftViewer({
               !partData ||
               r.placed === false ||
               (r.placementStatus &&
-                !['kept', 'adjusted'].includes(r.placementStatus))
+                !['kept', 'adjusted', 'candidate', 'confirmed', 'auto-applied'].includes(
+                  r.placementStatus,
+                ))
             )
               continue;
             const assembly = positionedComponent(
@@ -128,6 +131,8 @@ export default function MeshDraftViewer({
               [(p.x - (w + 2) / 2) * 20, -p.y * 8, (p.z - (d + 2) / 2) * 20],
               r.rotation,
               { width: w + 2, depth: d + 2 },
+              r.templateId,
+              r.sceneElement,
             );
             const group = new T.Group();
             group.scale.setScalar(1 / f.scale);
@@ -154,6 +159,8 @@ export default function MeshDraftViewer({
                 new T.MeshStandardMaterial({
                   color: PALETTE[b.color].hex,
                   roughness: 0.4,
+                  transparent: !r.confirmed && r.source !== 'manual',
+                  opacity: r.confirmed || r.source === 'manual' ? 1 : 0.35,
                 }),
               );
               obj.applyMatrix4(new T.Matrix4().set(...viewerPose(b.pose!)));
@@ -161,9 +168,9 @@ export default function MeshDraftViewer({
             }
             overlay.add(group);
           }
-          material.transparent = regions.length > 0;
-          material.opacity = regions.length ? 0.24 : 1;
-          material.depthWrite = !regions.length;
+          material.transparent = !!selected;
+          material.opacity = selected ? 0.65 : 1;
+          material.depthWrite = true;
           material.needsUpdate = true;
         };
         refresh.current = updateRegions;

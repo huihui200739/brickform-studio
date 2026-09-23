@@ -9,6 +9,7 @@ import ComponentEditor from './component-editor';
 import PlacementReview from './placement-review';
 import type { PlacementReport } from '@/lib/placement-policy';
 import type { ComponentRegion } from '@/lib/semantic-components';
+import { mergeRefinementRegions } from '@/lib/semantic-refinement';
 import { VIEW_LABELS, type ViewAxis } from '@/lib/multiview';
 import { estimatePitch } from '@/lib/brick-reader';
 import { referenceMask } from '@/lib/reference-colors';
@@ -44,7 +45,6 @@ export default function ReconstructionPanel({
     [selected, setSelected] = useState(''),
     [picking, setPicking] = useState(false),
     [autoComponents, setAutoComponents] = useState(true),
-    [statueGuess, setStatueGuess] = useState(true),
     [componentNote, setComponentNote] = useState(''),
     [placementReports, setPlacementReports] = useState<PlacementReport[]>([]),
     [autoBusy, setAutoBusy] = useState(false);
@@ -170,10 +170,12 @@ export default function ReconstructionPanel({
           setSelected('');
           setPicking(false);
           setDraft(mesh);
-          if (provider === 'local') {
-            referenceUrl.current = '/api/reconstruction' + q + '&reference=1';
+          let readyMesh = mesh;
+          if (image) {
+            referenceUrl.current = image;
             try {
               const colored = await projectColors(mesh, referenceUrl.current);
+              readyMesh = colored;
               if (alive.current) setDraft(colored);
             } catch (e) {
               if (alive.current)
@@ -182,7 +184,7 @@ export default function ReconstructionPanel({
                 );
             }
           }
-          if (alive.current) setPhase('草稿已就绪，请旋转检查形状与配色');
+          if (alive.current) await convert(readyMesh);
         }
         return;
       }
@@ -305,8 +307,7 @@ export default function ReconstructionPanel({
     if (data[result]) return data[result] as T;
     throw Error('转换失败。');
   }
-  async function projectColors(mesh: TriangleMesh, url: string) {
-    setPhase('正在对齐参考图视角并恢复配色');
+  async function readReferenceRaster(url: string): Promise<Raster> {
     const img = new Image();
     img.src = url;
     await img.decode();
@@ -322,6 +323,11 @@ export default function ReconstructionPanel({
       height: canvas.height,
       data: ctx.getImageData(0, 0, canvas.width, canvas.height).data,
     };
+    return raster;
+  }
+  async function projectColors(mesh: TriangleMesh, url: string) {
+    setPhase('正在对齐参考图视角并恢复配色');
+    const raster = await readReferenceRaster(url);
     return runWorker<TriangleMesh>(
       { action: 'color', mesh, raster, softenShadows },
       'mesh',
@@ -350,13 +356,14 @@ export default function ReconstructionPanel({
   // Ignore stale requests when geometry or options change. Recolouring alone
   // preserves confirmed mounting points instead of starting another search.
   useEffect(() => {
+    if (busy) return;
     if (!draft) {
       autoGeneration.current++;
       setAutoBusy(false);
       setPlacementReports([]);
       return;
     }
-    const key = `${autoComponents ? 1 : 0}:${statueGuess ? 1 : 0}:${resolution}`;
+    const key = `${autoComponents ? 1 : 0}:${resolution}`;
     if (autoDone.current.mesh === draft && autoDone.current.key === key) return;
     // A manual single-colour override keeps the same geometry: the components
     // were found from the reference picture, so they stay where they are.
@@ -375,42 +382,42 @@ export default function ReconstructionPanel({
     if (!autoComponents) {
       autoGeneration.current++;
       setAutoBusy(false);
-      setRegions([]);
+      setRegions((current) => current.filter((r) => !r.autoRefinement));
       setSelected('');
       setComponentNote(
-        '已关闭自动放入目录组件：将直接按网格转换，也可以在下方手动添加。',
+        '已关闭自动语义增强：将直接按网格转换，也可以在下方手动添加。',
       );
       return;
     }
     void autoDetect(draft);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft, autoComponents, statueGuess, resolution]);
+  }, [draft, autoComponents, resolution]);
   async function autoDetect(mesh: TriangleMesh) {
     const generation = ++autoGeneration.current;
     setAutoBusy(true);
-    setComponentNote('正在自动识别枝叶、火焰与人物候选，并检查安装位置…');
+    setComponentNote('正在从原图定位树与火焰；不确定时保留原几何。');
     try {
       const data = await runWorkerMessage({
         action: 'components',
         mesh,
         options: { resolution },
-        statue: statueGuess,
+        raster: image
+          ? await readReferenceRaster(referenceUrl.current || image)
+          : undefined,
+        regions,
+        autoSemanticRefinement: autoComponents,
       });
       if (!alive.current || generation !== autoGeneration.current) return;
-      const found = (data.regions as ComponentRegion[]) || [],
-        dropped = (data.dropped as string[]) || [];
-      setRegions(found);
+      const found = (data.regions as ComponentRegion[]) || [];
+      setRegions((current) => mergeRefinementRegions(current, found));
       setPlacementReports((data.reports as PlacementReport[]) || []);
       setSelected('');
       setPicking(false);
       setComponentNote(
-        found.length
-          ? `找到 ${found.length} 处候选，${found.length - dropped.length} 件可在原位附近安装${dropped.length ? `，${dropped.length} 处需要调整，保留原网格` : ''}。请查看位置检查。`
-          : '没有找到可靠的枝叶、火焰或人物候选；将直接按网格转换，也可以在下方手动添加。',
+        `图片检测 ${found.length} 个区域；可靠替换自动提交，其余保留原几何，无需确认。`,
       );
     } catch (e) {
       if (alive.current && generation === autoGeneration.current) {
-        setRegions([]);
         setPlacementReports([]);
         setComponentNote(
           `自动放置未完成（${e instanceof Error ? e.message : '未知错误'}），将直接按网格转换。`,
@@ -421,16 +428,22 @@ export default function ReconstructionPanel({
         setAutoBusy(false);
     }
   }
-  async function convert() {
-    if (!draft) return;
+  async function convert(target = draft) {
+    if (!target) return;
     setBusy(true);
     setError('');
     setPhase('正在把三维体积转换为积木，并检查连接');
     try {
       const data = await runWorkerMessage({
-        mesh: draft,
+        mesh: target,
         options: { resolution },
-        regions,
+        regions: target === draft ? regions : [],
+        raster: image
+          ? await readReferenceRaster(referenceUrl.current || image).catch(
+              () => undefined,
+            )
+          : undefined,
+        autoSemanticRefinement: autoComponents,
       });
       const model = data.model as Model;
       if (alive.current) {
@@ -440,7 +453,7 @@ export default function ReconstructionPanel({
         setPlacementReports((data.reports as PlacementReport[]) || []);
         onModel(model);
         setPhase(
-          `积木已生成：${model.bricks.length} 块，${model.meshDesign?.smoothTiles || 0} 块光面收口${applied ? `，含 ${applied} 件目录组件` : ''}${dropped.length ? `；${dropped.length} 件组件未能在原位附近安装，保留原网格` : ''}。清单与步骤已同步。`,
+          `积木已生成：${model.bricks.length} 块，${model.meshDesign?.smoothTiles || 0} 块光面收口${applied ? `，含 ${applied} 件目录组件` : ''}${dropped.length ? `；${dropped.length} 处未提交特殊组件，保留原网格` : ''}。清单与步骤已同步。`,
         );
       }
     } catch (e) {
@@ -941,7 +954,7 @@ export default function ReconstructionPanel({
           ) : (
             <Box size={17} />
           )}
-          {provider === 'local' ? '在本机生成三维草稿' : '生成三维草稿'}
+          {provider === 'local' ? '在本机生成积木模型' : '生成积木模型'}
         </button>
         {job && !draft && (
           <button disabled={busy} onClick={() => void reconstruct(true)}>
@@ -970,7 +983,7 @@ export default function ReconstructionPanel({
           : configured
             ? '云端生成会将图片发送给 Meshy，并使用其 API 额度。'
             : '在线工作台可以导入 GLB；无账号图片重建在本机工作台运行。'}{' '}
-        草稿仍可能推测错误，请先检查形状再转换。
+        可靠细节自动增强；未可靠识别的细节保留网格形状继续生成。
       </p>
       {phase && (
         <output className="reconstruction-status">
@@ -998,6 +1011,7 @@ export default function ReconstructionPanel({
                   r.id === selected
                     ? {
                         ...r,
+                        autoRefinement: false,
                         anchor,
                         referenceAnchor: anchor,
                         positionLocked: true,
@@ -1013,30 +1027,33 @@ export default function ReconstructionPanel({
               setPicking(false);
             }}
           />
-          <ComponentEditor
-            disabled={busy || autoBusy}
-            mesh={draft}
-            resolution={resolution}
-            regions={regions}
-            onChange={(next) => {
-              setRegions(next);
-              setPlacementReports([]);
-            }}
-            selected={selected}
-            onSelect={setSelected}
-            picking={picking}
-            onPicking={setPicking}
-            autoStatus={componentNote}
-            autoBusy={autoBusy}
-            onAuto={() => void autoDetect(draft)}
-          />
-          <PlacementReview
-            reports={placementReports}
-            onSelect={(id) => {
-              setSelected(id);
-              setPicking(false);
-            }}
-          />
+          <details className="color-settings">
+            <summary>高级组件编辑（可选）</summary>
+            <ComponentEditor
+              disabled={busy || autoBusy}
+              mesh={draft}
+              resolution={resolution}
+              regions={regions}
+              onChange={(next) => {
+                setRegions(next);
+                setPlacementReports([]);
+              }}
+              selected={selected}
+              onSelect={setSelected}
+              picking={picking}
+              onPicking={setPicking}
+              autoStatus={componentNote}
+              autoBusy={autoBusy}
+              onAuto={() => void autoDetect(draft)}
+            />
+            <PlacementReview
+              reports={placementReports}
+              onSelect={(id) => {
+                setSelected(id);
+                setPicking(false);
+              }}
+            />
+          </details>
           <details className="color-settings">
             <summary>
               调整配色{' '}
@@ -1121,26 +1138,14 @@ export default function ReconstructionPanel({
               disabled={busy}
               onChange={(e) => setAutoComponents(e.target.checked)}
             />
-            自动放入目录组件{' '}
+            自动语义增强{' '}
             <span>
-              自动识别火焰，并按形状猜测树与人物位置；位置仅供复核，可随时移除。
-            </span>
-          </label>
-          <label className="reconstruction-color">
-            <input
-              type="checkbox"
-              checked={statueGuess}
-              disabled={busy || !autoComponents}
-              onChange={(e) => setStatueGuess(e.target.checked)}
-            />
-            自动猜测树与人物位置{' '}
-            <span>
-              单张图片无法可靠识别它们：树按地面上孤立的深色小体积猜测，人物放在两个火盆之间，务必核对。
+              可靠对象自动替换；定位不确定或安装失败时保留原几何。雕像保持网格形状。
             </span>
           </label>
           {autoBusy && (
             <output className="reconstruction-status">
-              正在自动放置目录组件并检查安装位置…
+              正在分析原图；无需人工确认…
             </output>
           )}
           <p className="field-hint">

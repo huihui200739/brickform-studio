@@ -87,7 +87,11 @@ export function referenceMask(image: Raster) {
         y ? i - w : -1,
         y + 1 < h ? i + w : -1,
       ])
-        if (j >= 0 && !mask[j] && distance(i, [data[j * 4], data[j * 4 + 1], data[j * 4 + 2]]) < 30)
+        if (
+          j >= 0 &&
+          !mask[j] &&
+          distance(i, [data[j * 4], data[j * 4 + 1], data[j * 4 + 2]]) < 30
+        )
           neighbour = true;
       if (!corner && !neighbour) continue;
       mask[i] = 0;
@@ -114,13 +118,17 @@ export function referenceMask(image: Raster) {
   return { mask, left, right, top, bottom };
 }
 
-type Camera = { yaw: number; pitch: number; perspective: number };
-export function colorFromReference(
+export type ReferenceCamera = {
+  yaw: number;
+  pitch: number;
+  perspective: number;
+};
+type Camera = ReferenceCamera;
+export function referenceAlignment(
   mesh: TriangleMesh,
   image: Raster,
   override?: Camera,
-  softenShadows = true,
-): TriangleMesh {
+) {
   const { mask, left, right, top, bottom } = referenceMask(image),
     p = mesh.positions;
   const lo = [Infinity, Infinity, Infinity],
@@ -242,8 +250,38 @@ export function colorFromReference(
           }
         }
   }
-  const view = project(camera),
-    N = 192,
+  const view = project(camera);
+  return {
+    camera,
+    confidence: Math.max(0, Math.min(1, score(camera))),
+    view,
+    mask,
+    left,
+    right,
+    top,
+    bottom,
+    lo,
+    hi,
+    center,
+    extent,
+  };
+}
+export function estimateReferenceCamera(
+  mesh: TriangleMesh,
+  image: Raster,
+): ReferenceCamera {
+  return referenceAlignment(mesh, image).camera;
+}
+export function colorFromReference(
+  mesh: TriangleMesh,
+  image: Raster,
+  override?: ReferenceCamera,
+  softenShadows = true,
+): TriangleMesh {
+  const { camera, view, mask, left, right, top, bottom, lo, hi, extent } =
+    referenceAlignment(mesh, image, override);
+  const p = mesh.positions;
+  const N = 192,
     depth = new Float32Array(N * N).fill(-Infinity),
     coords = new Float32Array(p.length);
   for (let i = 0; i < p.length; i += 3) {
@@ -348,7 +386,10 @@ export function colorFromReference(
       let best = index,
         distance = Infinity;
       colors.forEach((candidate, i) => {
-        const d = candidate.reduce((sum, v, a) => sum + (v - lifted[a]) ** 2, 0);
+        const d = candidate.reduce(
+          (sum, v, a) => sum + (v - lifted[a]) ** 2,
+          0,
+        );
         if (d < distance) {
           distance = d;
           best = i;

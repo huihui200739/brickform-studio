@@ -13,6 +13,14 @@ import { SPECIAL_DATA } from './special-part-data.ts';
 import { SPECIAL_PORTS } from './special-connectors.ts';
 import type { Brick, Model } from './brick-engine.ts';
 import { MESH_FEATURE, type TriangleMesh } from './mesh-types.ts';
+import {
+  componentTemplate,
+  fallbackRepresentation,
+  retrieveComponent,
+  type SceneElement,
+} from './component-library.ts';
+export { componentBricks } from './component-parts.ts';
+import { componentBricks } from './component-parts.ts';
 export type ComponentKind = 'tree' | 'brazier' | 'statue';
 export type ComponentRegion = {
   id: string;
@@ -32,7 +40,26 @@ export type ComponentRegion = {
     | 'adjusted'
     | 'conflict'
     | 'unpositioned'
-    | 'budget';
+    | 'budget'
+    | 'auto-applied'
+    | 'preserved'
+    | 'candidate'
+    | 'confirmed'
+    | 'rejected';
+  /** Detection provenance. Automatic detections remain candidates until confirmed. */
+  source?: 'color' | 'guess' | 'manual';
+  confidence?: number;
+  imageUV?: [number, number];
+  replacementConfidence?: number;
+  autoRefinement?: boolean;
+  autoConfirmed?: boolean;
+  autoScoreWithInstallation?: number;
+  evidence?: string[];
+  confirmed?: boolean;
+  sceneElement?: SceneElement;
+  templateId?: string;
+  representation?: 'component' | 'template' | 'relief' | 'voxel';
+  templateCandidates?: string[];
   width: number;
   depth: number;
   height: number;
@@ -96,7 +123,7 @@ export function insideRegion(
   return point.every((v, i) => v >= region.min[i] && v < region.max[i]);
 }
 export function validateRegions(regions: ComponentRegion[], grid: V3) {
-  if (regions.length > 12) throw Error('一次最多替换 12 个组件。');
+  if (regions.length > 64) throw Error('一次最多替换 64 个组件。');
   const ids = new Set<string>();
   for (const r of regions) {
     if (r.placed === false)
@@ -134,272 +161,19 @@ export function validateRegions(regions: ComponentRegion[], grid: V3) {
       )
         throw Error('两个替换区域重叠了，请缩小范围或移动组件。');
 }
-const rx = (degree: number): M3 => {
-  const c = Math.cos((degree * Math.PI) / 180),
-    s = Math.sin((degree * Math.PI) / 180);
-  return [1, 0, 0, 0, c, -s, 0, s, c];
-};
-const rz = (degree: number): M3 => {
-  const c = Math.cos((degree * Math.PI) / 180),
-    s = Math.sin((degree * Math.PI) / 180);
-  return [c, -s, 0, s, c, 0, 0, 0, 1];
-};
-export function componentBricks(kind: ComponentKind): Brick[] {
-  const bricks: Brick[] = [];
-  function put(
-    part: string,
-    color: number,
-    position: V3,
-    matrix: M3,
-    installation: string,
-  ) {
-    const b: Brick = {
-      id: bricks.length + 1,
-      part,
-      color,
-      pose: { position, matrix },
-      x: 0,
-      y: 0,
-      z: 0,
-      w: 0,
-      h: 0,
-      d: 0,
-      installation,
-    };
-    bricks.push(b);
-    return b;
-  }
-  function attach(
-    parent: Brick,
-    parentPort: number,
-    part: string,
-    childPort: number,
-    color: number,
-    matrix: M3,
-    text: string,
-  ) {
-    const at = worldPoint(
-      parent.pose!,
-      SPECIAL_PORTS[parent.part][parentPort].point,
-    );
-    return put(
-      part,
-      color,
-      at.map(
-        (v, i) =>
-          v - transform(matrix, SPECIAL_PORTS[part][childPort].point)[i],
-      ) as V3,
-      matrix,
-      text,
-    );
-  }
-  // Standard 2 x 2 mounting plate is counted and installed first.
-  put(
-    '3022',
-    7,
-    [0, -8, 0],
-    IDENTITY,
-    '把这块 2 × 2 薄板安装在标记的四个凸点上，作为组件底座。',
-  );
-  if (kind === 'tree') {
-    const jumper = put(
-      '87580',
-      7,
-      [0, -16, 0],
-      IDENTITY,
-      '把中心单凸点薄板扣在底板上，树干将安装在正中央。',
-    );
-    let trunk = attach(
-      jumper,
-      4,
-      '3062b',
-      0,
-      9,
-      IDENTITY,
-      '将圆砖接在正中央的凸点上，作为树干。',
-    );
-    for (let i = 0; i < 2; i++)
-      trunk = attach(
-        trunk,
-        1,
-        '3062b',
-        0,
-        9,
-        IDENTITY,
-        '把下一节圆砖接在树干顶端，保持垂直。',
-      );
-    let leaf = attach(
-      trunk,
-      1,
-      '2423',
-      0,
-      5,
-      rotate(0),
-      '将枝叶片根部的圆孔扣在树干顶部，枝叶朝后伸出。',
-    );
-    for (let i = 1; i < 4; i++)
-      leaf = attach(
-        leaf,
-        1,
-        '2423',
-        0,
-        5,
-        rotate(i),
-        `在上一片枝叶根部继续叠一片，转向${['', '左', '前', '右'][i]}，形成展开的树冠。`,
-      );
-  } else if (kind === 'brazier') {
-    const jumper = put(
-      '87580',
-      1,
-      [0, -16, 0],
-      IDENTITY,
-      '把中心单凸点薄板装在底板上，让火盆位于正中央。',
-    );
-    const dish = attach(
-      jumper,
-      4,
-      '4740',
-      0,
-      1,
-      IDENTITY,
-      '将黑色碟形件中心的底孔扣在中央凸点上。',
-    );
-    const holder = attach(
-      dish,
-      1,
-      '85861',
-      0,
-      1,
-      IDENTITY,
-      '把空心凸点圆板接到碟形件中央，为火焰预留插孔。',
-    );
-    attach(
-      holder,
-      2,
-      '6126b',
-      0,
-      6,
-      rx(90),
-      '握住火焰底部，将短插杆插入中央圆孔。火尖向上；不要按压细长火尖。',
-    );
-  } else {
-    const right = put(
-      '3816c',
-      11,
-      [0, -36, -8.75],
-      IDENTITY,
-      '人物面向前方。将右脚底部的孔对准底板左后凸点；腿部通常随髋部成套购买，不建议拆卸已装好的关节。',
-    );
-    const hips = attach(
-      right,
-      1,
-      '3815b',
-      0,
-      11,
-      IDENTITY,
-      '将髋部与右腿关节对齐；若使用已组装腿部，可连同下一块一起完成。',
-    );
-    attach(
-      hips,
-      1,
-      '3817c',
-      1,
-      11,
-      IDENTITY,
-      '安装另一条腿，两只脚平齐，分别接到底板的两个凸点上。',
-    );
-    const torso = attach(
-      hips,
-      2,
-      '973',
-      0,
-      11,
-      IDENTITY,
-      '将躯干底部套在髋部上，肩部在上方，人物面向前方。',
-    );
-    const armR = attach(
-      torso,
-      2,
-      '3818',
-      0,
-      11,
-      rz(9.792),
-      '对齐人物右肩安装右臂。已带手臂的躯干可保持原装。',
-    );
-    const armL = attach(
-      torso,
-      3,
-      '3819',
-      0,
-      11,
-      rz(-9.792),
-      '对齐人物左肩安装左臂，两臂自然垂下。',
-    );
-    const handR = attach(
-      armR,
-      1,
-      '3820',
-      0,
-      11,
-      multiply(rz(9.792), rx(45)),
-      '将右手的短轴对准右臂末端孔，握口朝向前方。',
-    );
-    const handL = attach(
-      armL,
-      1,
-      '3820',
-      0,
-      11,
-      multiply(rz(-9.792), rx(45)),
-      '将左手的短轴装入左臂，握口朝向前方。',
-    );
-    const head = attach(
-      torso,
-      1,
-      '3626c',
-      0,
-      11,
-      IDENTITY,
-      '把无印刷灰色头部套在颈部圆柱上，作为石雕头部。',
-    );
-    attach(
-      head,
-      1,
-      '3844',
-      0,
-      11,
-      IDENTITY,
-      '把头盔套在头部上，面部开口朝前。',
-    );
-    attach(
-      handR,
-      1,
-      '4497',
-      0,
-      11,
-      IDENTITY,
-      '将长矛杆扣入右手握口，尖端朝上。可轻转手臂调整方向。',
-    );
-    attach(
-      handL,
-      1,
-      '3846',
-      0,
-      11,
-      IDENTITY,
-      '将盾牌背面的握柄扣入左手，盾面朝前。检查配件与建筑之间留有间隙。',
-    );
-  }
-  return bricks;
-}
 export function positionedComponent(
   kind: ComponentKind,
   origin: V3,
   rotation: number,
   model: Pick<Model, 'width' | 'depth'>,
+  templateId?: string,
+  instance?: SceneElement,
 ): Brick[] {
   const m = rotate(rotation);
-  return componentBricks(kind).map((b) => {
+  const template = templateId ? componentTemplate(templateId) : undefined;
+  if (templateId && (!template || template.category !== kind)) throw Error('实例模板不可用');
+  const parts = template ? template.build(instance) : componentBricks(kind);
+  return parts.map((b) => {
     const pose = {
       matrix: multiply(m, b.pose!.matrix),
       position: add(origin, transform(m, b.pose!.position)),
@@ -438,12 +212,14 @@ export function addComponents(
   for (const r of regions) {
     const { x, y, z } = regionPlacement(r, grid),
       section = `component-${r.id}`,
-      label = COMPONENT_LABELS[r.kind];
+      label = (r.templateId && componentTemplate(r.templateId)?.name) || COMPONENT_LABELS[r.kind];
     const parts = positionedComponent(
       r.kind,
       [(x - model.width / 2) * 20, -y * 8, (z - model.depth / 2) * 20],
       r.rotation,
       model,
+      r.templateId,
+      r.sceneElement,
     );
     model.assembly!.sections.push({ id: section, name: label });
     model.semanticDesign.components.push({
@@ -451,6 +227,8 @@ export function addComponents(
       name: label,
       kind: r.kind,
       parts: parts.length,
+      templateId: r.templateId,
+      instanceId: r.sceneElement?.id || r.id,
     });
     for (const b of parts) {
       const step = model.assembly!.steps.length;
@@ -554,7 +332,24 @@ export function suggestComponents(
       ...COMPONENT_SIZES[kind],
       rotation: kind === 'statue' ? 2 : 0,
       source,
+      sceneElement: {
+        id: `${source}-${candidates.length + 1}`,
+        category: kind,
+        confidence: source === 'guess' ? 0.35 : 0.6,
+        worldAnchor: anchor,
+        scaleHint: COMPONENT_SIZES[kind],
+      },
+      confirmed: false,
+      confidence: source === 'guess' ? 0.35 : 0.6,
+      evidence:
+        source === 'guess'
+          ? ['来自颜色/形状启发式推测，尚未得到用户确认']
+          : ['来自参考图颜色或网格特征候选，尚未得到用户确认'],
     };
+    const element = region.sceneElement!;
+    const match = retrieveComponent(element);
+    region.templateId = match?.template.id;
+    region.representation = fallbackRepresentation(element, match);
     const box = regionPlacement(region, grid);
     if (
       kind !== 'statue' &&
@@ -624,63 +419,13 @@ export function suggestComponents(
     if (candidates.length >= 6) break;
     push('tree', tree.points, 'guess');
   }
-  // A person is not a colour either. Two flames flank an entrance, and the
-  // figure in such a reference usually stands between them on the recess
-  // floor; otherwise the tallest dark recess is the best available guess.
-  if (options.statue !== false && candidates.length < 6) {
-    const flames = candidates.filter((c) => c.kind === 'brazier');
-    const pair = nearestPair(flames);
-    if (pair) {
-      const mx = (pair[0].anchor[0] + pair[1].anchor[0]) / 2,
-        mz = (pair[0].anchor[2] + pair[1].anchor[2]) / 2,
-        // The figure stands inside the opening between the flames, not on the
-        // steps in front of it: take the depth and floor from the dark faces
-        // in that column of the facade.
-        column = darkClusters
-          .flatMap((c) => c.points)
-          .filter((q) => Math.abs(q[0] - mx) < 0.12),
-        floor = column.length
-          ? Math.min(...column.map((q) => q[1]))
-          : Math.max(pair[0].anchor[1], pair[1].anchor[1]),
-        depth = column.length
-          ? column.map((q) => q[2]).sort((a, b) => a - b)[
-              Math.floor(column.length / 2)
-            ]
-          : mz;
-      // Keep the inferred entrance position even if it overlaps a neighbour.
-      // The assembler reports the conflict; detection must not relocate a
-      // statue sideways just to make its bounding box fit.
-      place('statue', [mx, floor, depth], 'guess');
-    } else {
-      const tallest = [...darkClusters].sort(
-        (a, b) => b.y[1] - b.y[0] - (a.y[1] - a.y[0]),
-      )[0];
-      if (tallest) push('statue', tallest.points, 'guess');
-    }
-  }
+  // No statue detector exists here. Dark recesses and paired flames cannot
+  // determine a statue's location, even when a legacy caller requests one.
   return candidates;
 }
 function extent(points: V3[], axis: number): [number, number] {
   const values = points.map((p) => p[axis]);
   return [Math.min(...values), Math.max(...values)];
-}
-// The two flames closest to each other on the ground are the likeliest pair
-// framing a single entrance.
-function nearestPair<T extends { anchor: V3 }>(items: T[]): [T, T] | undefined {
-  let best: [T, T] | undefined,
-    distance = Infinity;
-  for (let i = 0; i < items.length; i++)
-    for (let j = i + 1; j < items.length; j++) {
-      const d = Math.hypot(
-        items[i].anchor[0] - items[j].anchor[0],
-        items[i].anchor[2] - items[j].anchor[2],
-      );
-      if (d < distance) {
-        distance = d;
-        best = [items[i], items[j]];
-      }
-    }
-  return best;
 }
 // Flood fill over the 8 x 8 ground grid, joining cells that touch, including
 // diagonally, so one object is never split into sub-threshold fragments.

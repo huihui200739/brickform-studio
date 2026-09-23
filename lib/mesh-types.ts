@@ -18,4 +18,10 @@ export type TriangleMesh = {
     perspective: number;
     observedFraction: number;
   };
+  statueFallback?: {
+    cells: Array<[number, number, number]>;
+    width: number;
+    height: number;
+    depth: number;
+  };
 };

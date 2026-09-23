@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { BoxGeometry } from 'three';
-import { meshToDesign } from './mesh-design.ts';
+import { meshToDesign, meshToDesignAuto } from './mesh-design.ts';
 import { inventory, validateModel, type Model } from './brick-engine.ts';
 import type { TriangleMesh } from './mesh-types.ts';
 import { manualHTML } from './manual.ts';
@@ -132,4 +132,19 @@ void test('48-stud finishing keeps the occupied volume, connected tiled tops and
     inventory(model.bricks).reduce((s, p) => s + p.quantity, 0),
     model.bricks.length,
   );
+});
+
+void test('nonempty statue fallback initializes assembly before writing reference and exports instructions', () => {
+  const mesh = boxes([[0,0,0,20,1,20],[0,1,0,3,8,3]]);
+  mesh.statueFallback={width:2,height:5,depth:1,cells:[]};
+  for(let x=9;x<11;x++) for(let y=3;y<8;y++) mesh.statueFallback.cells.push([x,y,10]);
+  for(const model of [meshToDesign(mesh,20),meshToDesignAuto(mesh,20).model]) {
+    assert.ok(model.assembly);
+    assert.match(model.assembly.reference,/参考图提取的轮廓/);
+    assert.match(manualHTML(model),/参考图提取的轮廓/);
+    assert.ok(occupied(model,10,8,11));
+    assert.equal(validateModel(model).unsupported,0);
+  }
+  delete mesh.statueFallback;
+  assert.doesNotMatch(meshToDesign(mesh,20).assembly!.reference,/参考图提取的轮廓/);
 });

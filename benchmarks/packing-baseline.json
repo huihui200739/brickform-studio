@@ -1,0 +1,269 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "solid-box",
+      "hash": "fe44041604344b69",
+      "deterministic": true,
+      "metrics": {
+        "totalParts": 43,
+        "measuredParts": 43,
+        "excludedParts": 0,
+        "addedSupportParts": 0,
+        "smallParts": 9,
+        "smallPartRate": 0.20930232558139536,
+        "aboveGroundParts": 25,
+        "bridgeCandidateParts": 25,
+        "exactStackedParts": 4,
+        "exactStackRate": 0.16,
+        "multiSupportParts": 21,
+        "multiSupportRate": 0.84,
+        "lowContactParts": 0,
+        "lowContactRate": 0,
+        "supportInterfaces": 64,
+        "singleStudInterfaces": 17,
+        "singleStudInterfaceRate": 0.265625,
+        "averageSupportPartners": 2.56,
+        "maxExactStackRun": 2,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 43
+        }
+      }
+    },
+    {
+      "id": "striped-box",
+      "hash": "5a1cae9203aadd0a",
+      "deterministic": true,
+      "metrics": {
+        "totalParts": 269,
+        "measuredParts": 269,
+        "excludedParts": 0,
+        "addedSupportParts": 0,
+        "smallParts": 195,
+        "smallPartRate": 0.724907063197026,
+        "aboveGroundParts": 251,
+        "bridgeCandidateParts": 65,
+        "exactStackedParts": 50,
+        "exactStackRate": 0.7692307692307693,
+        "multiSupportParts": 14,
+        "multiSupportRate": 0.2153846153846154,
+        "lowContactParts": 0,
+        "lowContactRate": 0,
+        "supportInterfaces": 284,
+        "singleStudInterfaces": 203,
+        "singleStudInterfaceRate": 0.7147887323943662,
+        "averageSupportPartners": 1.1314741035856575,
+        "maxExactStackRun": 7,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 269
+        }
+      }
+    },
+    {
+      "id": "noisy-interior-box",
+      "hash": "fe44041604344b69",
+      "deterministic": true,
+      "metrics": {
+        "totalParts": 43,
+        "measuredParts": 43,
+        "excludedParts": 0,
+        "addedSupportParts": 0,
+        "smallParts": 9,
+        "smallPartRate": 0.20930232558139536,
+        "aboveGroundParts": 25,
+        "bridgeCandidateParts": 25,
+        "exactStackedParts": 4,
+        "exactStackRate": 0.16,
+        "multiSupportParts": 21,
+        "multiSupportRate": 0.84,
+        "lowContactParts": 0,
+        "lowContactRate": 0,
+        "supportInterfaces": 64,
+        "singleStudInterfaces": 17,
+        "singleStudInterfaceRate": 0.265625,
+        "averageSupportPartners": 2.56,
+        "maxExactStackRun": 2,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 43
+        }
+      }
+    },
+    {
+      "id": "stairs",
+      "hash": "682980bc9a5c0bc1",
+      "deterministic": true,
+      "metrics": {
+        "totalParts": 27,
+        "measuredParts": 27,
+        "excludedParts": 0,
+        "addedSupportParts": 0,
+        "smallParts": 6,
+        "smallPartRate": 0.2222222222222222,
+        "aboveGroundParts": 15,
+        "bridgeCandidateParts": 15,
+        "exactStackedParts": 0,
+        "exactStackRate": 0,
+        "multiSupportParts": 15,
+        "multiSupportRate": 1,
+        "lowContactParts": 0,
+        "lowContactRate": 0,
+        "supportInterfaces": 40,
+        "singleStudInterfaces": 10,
+        "singleStudInterfaceRate": 0.25,
+        "averageSupportPartners": 2.6666666666666665,
+        "maxExactStackRun": 0,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 27
+        }
+      }
+    },
+    {
+      "id": "arch",
+      "hash": "f0b0f3299dfd7c12",
+      "deterministic": true,
+      "metrics": {
+        "totalParts": 47,
+        "measuredParts": 47,
+        "excludedParts": 0,
+        "addedSupportParts": 6,
+        "smallParts": 12,
+        "smallPartRate": 0.2553191489361702,
+        "aboveGroundParts": 33,
+        "bridgeCandidateParts": 27,
+        "exactStackedParts": 13,
+        "exactStackRate": 0.48148148148148145,
+        "multiSupportParts": 13,
+        "multiSupportRate": 0.48148148148148145,
+        "lowContactParts": 2,
+        "lowContactRate": 0.06060606060606061,
+        "supportInterfaces": 59,
+        "singleStudInterfaces": 16,
+        "singleStudInterfaceRate": 0.2711864406779661,
+        "averageSupportPartners": 1.7878787878787878,
+        "maxExactStackRun": 4,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 47
+        }
+      }
+    },
+    {
+      "id": "bridge",
+      "hash": "11f19d65fa89e7ac",
+      "deterministic": true,
+      "metrics": {
+        "totalParts": 44,
+        "measuredParts": 44,
+        "excludedParts": 0,
+        "addedSupportParts": 3,
+        "smallParts": 9,
+        "smallPartRate": 0.20454545454545456,
+        "aboveGroundParts": 28,
+        "bridgeCandidateParts": 25,
+        "exactStackedParts": 9,
+        "exactStackRate": 0.36,
+        "multiSupportParts": 13,
+        "multiSupportRate": 0.52,
+        "lowContactParts": 3,
+        "lowContactRate": 0.10714285714285714,
+        "supportInterfaces": 57,
+        "singleStudInterfaces": 16,
+        "singleStudInterfaceRate": 0.2807017543859649,
+        "averageSupportPartners": 2.0357142857142856,
+        "maxExactStackRun": 3,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 44
+        }
+      }
+    },
+    {
+      "id": "hollow-tower",
+      "hash": "2e3be965492d4ed9",
+      "deterministic": true,
+      "metrics": {
+        "totalParts": 80,
+        "measuredParts": 80,
+        "excludedParts": 0,
+        "addedSupportParts": 0,
+        "smallParts": 15,
+        "smallPartRate": 0.1875,
+        "aboveGroundParts": 45,
+        "bridgeCandidateParts": 45,
+        "exactStackedParts": 0,
+        "exactStackRate": 0,
+        "multiSupportParts": 45,
+        "multiSupportRate": 1,
+        "lowContactParts": 0,
+        "lowContactRate": 0,
+        "supportInterfaces": 127,
+        "singleStudInterfaces": 28,
+        "singleStudInterfaceRate": 0.2204724409448819,
+        "averageSupportPartners": 2.8222222222222224,
+        "maxExactStackRun": 0,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 80
+        }
+      }
+    },
+    {
+      "id": "sample-duck",
+      "hash": "a974175b59fdefdc",
+      "deterministic": true,
+      "metrics": {
+        "totalParts": 678,
+        "measuredParts": 678,
+        "excludedParts": 0,
+        "addedSupportParts": 135,
+        "smallParts": 531,
+        "smallPartRate": 0.7831858407079646,
+        "aboveGroundParts": 613,
+        "bridgeCandidateParts": 97,
+        "exactStackedParts": 44,
+        "exactStackRate": 0.4536082474226804,
+        "multiSupportParts": 41,
+        "multiSupportRate": 0.422680412371134,
+        "lowContactParts": 7,
+        "lowContactRate": 0.011419249592169658,
+        "supportInterfaces": 772,
+        "singleStudInterfaces": 480,
+        "singleStudInterfaceRate": 0.6217616580310881,
+        "averageSupportPartners": 1.2593800978792822,
+        "maxExactStackRun": 10,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 678
+        }
+      }
+    }
+  ]
+}

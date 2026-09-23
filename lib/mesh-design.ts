@@ -1,9 +1,15 @@
+import { componentTemplate } from './component-library.ts';
+import { repeatedGroups } from './scene-elements.ts';
 import {
   placementCandidates,
   mountingPoint,
   reportPlacement,
   type PlacementReport,
 } from './placement-policy.ts';
+import {
+  AUTO_REPLACEMENT_THRESHOLD,
+  automaticReplacementScore,
+} from './semantic-refinement.ts';
 import { COMPONENT_LABELS } from './semantic-components.ts';
 import type { V3 } from './assembly-catalog.ts';
 import {
@@ -35,6 +41,15 @@ export type MeshVolume = {
   dominant: number;
   openRows: number;
   intersected: number;
+  protectedCells: Set<string>;
+};
+export type PreservedRegion = {
+  kind: 'statue';
+  bbox3d: { min: V3; max: V3 };
+  priority: 'high';
+  preserveSilhouette: boolean;
+  preserveCavity: boolean;
+  preserveDepthSeparation: boolean;
 };
 
 // Cast through a genuine triangle volume, retaining separate depth intervals
@@ -160,6 +175,12 @@ export function buildMeshVolume(
     colorCounts[color]++;
   });
   const dominant = colorCounts.indexOf(Math.max(...colorCounts));
+  const protectedCells = new Set<string>();
+  surface.forEach((cell, key) => {
+    const [x, y] = key.split(',').map(Number);
+    if (x > w * 0.3 && x < w * 0.7 && y > 2 && y < h * 0.78)
+      protectedCells.add(key);
+  });
   let openRows = 0,
     intersected = 0;
   hits.forEach((row, i) => {
@@ -189,7 +210,28 @@ export function buildMeshVolume(
       '三维草稿有较多开放边界，无法可靠填充体积。请换一个闭合 GLB 模型或重新生成草稿。',
     );
   surface.forEach((v, k) => cells.set(k, v));
-  return { cells, triangles: n, w, h, d, dominant, openRows, intersected };
+  if (mesh.statueFallback) {
+    const f = mesh.statueFallback;
+    for (const [x, y, z] of f.cells) {
+      if (x < 0 || y < 0 || z < 0 || x >= w || y >= h || z >= d) continue;
+      // Fallback cells are in front of the niche. They are ordinary subject
+      // voxels, but are protected from generic support insertion below.
+      const key = `${x + 1},${y + 2},${z + 1}`;
+      cells.set(key, { color: dominant, support: false });
+      protectedCells.add(key);
+    }
+  }
+  return {
+    cells,
+    triangles: n,
+    w,
+    h,
+    d,
+    dominant,
+    openRows,
+    intersected,
+    protectedCells,
+  };
 }
 // Assemble the brick model from a cast volume and the requested component
 // replacements. Strict on purpose: any component that cannot be seated throws.
@@ -199,7 +241,16 @@ function assembleVolume(
   resolution: number,
   regions: ComponentRegion[],
 ): Model {
-  const { w, h, d, dominant, openRows, intersected, triangles } = volume,
+  const {
+      w,
+      h,
+      d,
+      dominant,
+      openRows,
+      intersected,
+      triangles,
+      protectedCells,
+    } = volume,
     cells = new Map(volume.cells);
   validateRegions(regions, [w, h, d]);
   const placements = regions.map((r) => regionPlacement(r, [w, h, d]));
@@ -303,8 +354,10 @@ function assembleVolume(
     mesh.name,
     resolution,
     dominant,
-    placements.length
-      ? (x, y, z) => placements.some((r) => insideRegion([x, y, z], r))
+    protectedCells.size || placements.length
+      ? (x, y, z) =>
+          protectedCells.has(`${x},${y},${z}`) ||
+          placements.some((r) => insideRegion([x, y, z], r))
       : undefined,
     bridges,
   );
@@ -401,6 +454,9 @@ function assembleVolume(
     openRowFraction: openRows / Math.max(1, intersected),
   };
   model.assembly!.reference = `按三维网格体积生成；保留网格中的前后布局和孔洞。新增辅助支撑 ${model.supportCount} 块，已计入清单。网格可能含 AI 推测，连接检查不代表外观还原或实物稳定性已验证。`;
+  if (mesh.statueFallback?.cells.length)
+    model.assembly!.reference +=
+      ' 已根据参考图提取的轮廓注入普通积木浮雕，未使用人物特殊零件；轮廓与位置仍需外观核对。';
   // Support added by the generic packer must not reoccupy a replacement zone.
   if (
     model.bricks.some((b) =>
@@ -438,11 +494,18 @@ export function meshToDesign(
   resolution = 28,
   regions: ComponentRegion[] = [],
 ): Model {
+  if (regions.some((r) => r.autoRefinement))
+    return meshToDesignAuto(mesh, resolution, regions).model;
+  const eligible = regions.filter(
+    (r) =>
+      r.placementStatus !== 'rejected' &&
+      (r.source === 'manual' || r.confirmed === true || !r.source),
+  );
   return assembleVolume(
     mesh,
     buildMeshVolume(mesh, resolution),
     resolution,
-    regions,
+    eligible,
   );
 }
 export type AutoComponentResult = {
@@ -458,7 +521,20 @@ export function meshToDesignAuto(
   regions: ComponentRegion[] = [],
   budget = 48,
 ): AutoComponentResult {
-  if (regions.length > 12) throw Error('一次最多替换 12 个组件。');
+  if (regions.length > 64) throw Error('一次最多替换 64 个组件。');
+  // Manual overrides and sufficiently confident automatic proposals can enter
+  // a trial. Automatic confirmation happens only after the trial commits.
+  const eligible = regions.filter(
+    (r) =>
+      r.placementStatus !== 'rejected' &&
+      (r.source === 'manual' ||
+        (!r.autoRefinement && (r.confirmed === true || !r.source)) ||
+        (r.autoRefinement === true &&
+          r.source === 'color' &&
+          (r.kind !== 'statue' || r.templateId === 'statue-relief') &&
+          automaticReplacementScore(r) >= AUTO_REPLACEMENT_THRESHOLD)),
+  );
+  const unconfirmed = regions.filter((r) => !eligible.includes(r));
   const volume = buildMeshVolume(mesh, resolution),
     grid: V3 = [volume.w, volume.h, volume.d];
   const limit = Math.max(
@@ -469,6 +545,9 @@ export function meshToDesignAuto(
   const attempt = (list: ComponentRegion[]) => {
     if (attempts >= limit) return null;
     attempts++;
+    // Transaction: assembleVolume clones the unchanged original volume. Both
+    // clearing and special parts exist only in this trial; failure discards it.
+    // Earlier committed replacements are included again in every trial.
     try {
       return assembleVolume(mesh, volume, resolution, list);
     } catch {
@@ -476,14 +555,14 @@ export function meshToDesignAuto(
     }
   };
   const applied: ComponentRegion[] = [],
-    dropped: ComponentRegion[] = [],
+    dropped: ComponentRegion[] = [...unconfirmed],
     reports: PlacementReport[] = [];
   let model: Model | null = null;
   const origin = (r: ComponentRegion) =>
     mountingPoint({ ...r, anchor: r.referenceAnchor || r.anchor }, grid);
-  const candidates = regions.map((r) => placementCandidates(r, grid));
+  const candidates = eligible.map((r) => placementCandidates(r, grid));
   // The first candidates always keep the original snapped mounting points.
-  if (regions.length && candidates.every((c) => c.length)) {
+  if (eligible.length && candidates.every((c) => c.length)) {
     const initial = candidates.map((c) => c[0]);
     model = attempt(initial);
     if (model) applied.push(...initial);
@@ -493,22 +572,23 @@ export function meshToDesignAuto(
     // avoids accepting independently valid components then silently deleting
     // earlier components when the combined model fails.
     const visited = new Set<number>();
-    for (let i = 0; i < regions.length; i++) {
+    for (let i = 0; i < eligible.length; i++) {
       if (visited.has(i)) continue;
       visited.add(i);
-      const original = origin(regions[i]);
+      const original = origin(eligible[i]);
       // Preserve a genuinely level pair's relative spacing. Do not invent a
       // model-wide symmetry axis or force different pedestals to one height.
-      const partner = regions.findIndex(
+      const partner = eligible.findIndex(
         (r, j) =>
           j > i &&
+          !r.autoRefinement && !eligible[i].autoRefinement &&
           !visited.has(j) &&
           r.placed !== false &&
-          regions[i].placed !== false &&
-          r.kind === regions[i].kind &&
+          eligible[i].placed !== false &&
+          r.kind === eligible[i].kind &&
           origin(r)[1] === original[1] &&
           origin(r)[2] === original[2] &&
-          (r.anchor[0] - 0.5) * (regions[i].anchor[0] - 0.5) < 0,
+          (r.anchor[0] - 0.5) * (eligible[i].anchor[0] - 0.5) < 0,
       );
       const share = Math.max(
         1,
@@ -518,13 +598,25 @@ export function meshToDesignAuto(
       );
       const stop = Math.min(limit, attempts + share * (partner >= 0 ? 2 : 1));
       let accepted: ComponentRegion[] | undefined;
-      for (const first of candidates[i]) {
+      const variants = [eligible[i]];
+      for (const id of eligible[i].templateCandidates || []) {
+        if (id === eligible[i].templateId) continue;
+        const template = componentTemplate(id);
+        if (!template || template.category !== eligible[i].kind) continue;
+        variants.push({...eligible[i], templateId:id, representation:template.representation,
+          width:template.bboxStuds.width,depth:template.bboxStuds.depth,height:template.bboxStuds.height});
+      }
+      // Try each expression at the original anchor before spending budget on
+      // movement. A failing large tree cannot starve its small-tree fallback.
+      const options = variants.flatMap(r => placementCandidates(r,grid).slice(0,1));
+      options.push(...candidates[i].slice(1));
+      for (const first of options) {
         if (attempts >= stop) break;
         const list = [first];
         if (partner >= 0) {
           const p = mountingPoint(first, grid),
             d = p.map((v, a) => v - original[a]);
-          const otherOrigin = origin(regions[partner]);
+          const otherOrigin = origin(eligible[partner]);
           const second = candidates[partner].find((c) =>
             mountingPoint(c, grid).every((v, a) => v - otherOrigin[a] === d[a]),
           );
@@ -541,8 +633,8 @@ export function meshToDesignAuto(
       if (partner >= 0) visited.add(partner);
       if (accepted) applied.push(...accepted);
       else {
-        dropped.push(regions[i]);
-        if (partner >= 0) dropped.push(regions[partner]);
+        dropped.push(eligible[i]);
+        if (partner >= 0) dropped.push(eligible[partner]);
       }
     }
   }
@@ -557,15 +649,28 @@ export function meshToDesignAuto(
         attempts >= limit,
       ),
     );
-  for (const r of applied)
+  for (const r of applied) {
     r.placementStatus = reports.find((v) => v.id === r.id)!.status;
+    if (r.autoRefinement) {
+      r.confirmed = true;
+      r.autoConfirmed = true;
+      r.replacementConfidence = automaticReplacementScore(r);
+    }
+  }
   if (model.semanticDesign) {
     model.semanticDesign.autoPlaced = true;
     model.semanticDesign.dropped = dropped.map((r) => r.id);
   }
+  model.sceneElements = regions.filter(r=>r.sceneElement).map(r=>{
+    const committed=applied.find(a=>a.id===r.id);
+    return {...r.sceneElement!,chosenRepresentation:committed?(committed.representation==='component'?'component':'template'):'voxel',
+      chosenTemplateId:committed?.templateId,outcome:committed?'committed':'preserved',
+      reason:reports.find(p=>p.id===r.id)?.message};
+  });
+  model.repeatedGroups=repeatedGroups(model.sceneElements);
   model.componentPlacement = reports;
-  if (reports.length)
-    model.assembly!.reference +=
+  if (reports.length && model.assembly)
+    model.assembly.reference +=
       ' 组件位置检查：' +
       reports.map((r) => r.name + '：' + r.message).join('；');
   return { model, applied, dropped, reports, attempts };

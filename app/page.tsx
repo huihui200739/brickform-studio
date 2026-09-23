@@ -84,7 +84,9 @@ export default function Home() {
   const [fullness, setFullness] = useState(1);
   const [duck, setDuck] = useState<DuckParameters>(DEFAULT_DUCK);
   const [autoReference, setAutoReference] = useState(true);
-  const [resolution, setResolution] = useState(36),
+  // Start random image reconstruction at a usable detail/assembly balance.
+  // 36 remains available as an explicit high-detail choice.
+  const [resolution, setResolution] = useState(28),
     [depth, setDepth] = useState(8);
   const [threshold, setThreshold] = useState(70),
     [background, setBackground] = useState<Options['background']>('auto');
@@ -397,7 +399,7 @@ export default function Home() {
             <Blocks size={21} />
           </span>
           brickform<span className="brand-cn">积木工坊</span>
-          <span className="beta">V19</span>
+          <span className="beta">V20a</span>
         </Link>
         <span className="workspace-title">设计工作台</span>
         <button className="header-help" onClick={() => setHelp(true)}>

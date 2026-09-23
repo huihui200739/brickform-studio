@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFront, blueprintToModel } from './brick-reader.ts';
 import { validateModel, PALETTE, type Raster } from './brick-engine.ts';
-import { referenceMask } from './reference-colors.ts';
 
 type Piece = {
   x: number;
@@ -180,7 +179,7 @@ void test('the read facade becomes a model that passes assembly checks', () => {
   );
   assert.equal(new Set(model.bricks.map((b) => b.id)).size, model.bricks.length);
 });
-void test('a soft-lit facade with low contrast joints is still read piece for piece', () => {
+void test('a soft-lit facade keeps at least five of seven known pieces without merging courses', () => {
   // This is the ground truth the threshold rules are judged on: same layout and
   // same scale as the hard joint test, but lit unevenly and with joints that are
   // only a shade darker than the face they separate.
@@ -207,8 +206,8 @@ void test('a soft-lit facade with low contrast joints is still read piece for pi
   // the target is pieces.length (7). Root cause and the three fix directions are
   // in docs/brick-reader-handoff.md.
   assert.ok(
-    blueprint.bricks.length >= 5,
-    `soft fixture regressed to ${blueprint.bricks.length} pieces, floor is 5, target 7`,
+    blueprint.bricks.length >= 5 && blueprint.bricks.length <= pieces.length,
+    `soft fixture returned ${blueprint.bricks.length} pieces, allowed 5–7 while the known target remains 7`,
   );
   assert.ok(
     new Set(blueprint.bricks.map((b) => b.y)).size >= 2,

@@ -1,5 +1,8 @@
 import type { ComponentRegion } from './semantic-components.ts';
-import { suggestComponents } from './semantic-components.ts';
+import {
+  detectRefinements,
+  mergeRefinementRegions,
+} from './semantic-refinement.ts';
 import {
   generateImageDesign,
   type ImageDesignOptions,
@@ -10,7 +13,7 @@ import { blueprintToModel, readFront } from './brick-reader.ts';
 import { colorFromReference } from './reference-colors.ts';
 import type { TriangleMesh } from './mesh-types.ts';
 import type { Raster } from './brick-engine.ts';
-self.onmessage = (
+self.onmessage = async (
   event: MessageEvent<{
     mesh?: TriangleMesh;
     regions?: ComponentRegion[];
@@ -22,12 +25,12 @@ self.onmessage = (
     pitch?: number;
     depth?: number;
     softenShadows?: boolean;
-    statue?: boolean;
+    autoSemanticRefinement?: boolean;
     camera?: { yaw: number; pitch: number; perspective: number };
   }>,
 ) => {
   try {
-    const { raster, options, name, mesh, regions = [] } = event.data;
+    let { raster, options, name, mesh, regions = [] } = event.data;
     if (event.data.action === 'color' && mesh) {
       self.postMessage({
         mesh: colorFromReference(
@@ -65,35 +68,36 @@ self.onmessage = (
       self.postMessage({ model: generateImageDesign(raster, options, name) });
       return;
     }
-    // Automatic pass: find catalogue components and hand back the ones that can
-    // actually be seated. The caller only needs the resolved regions.
-    if (event.data.action === 'components') {
-      const hints = suggestComponents(mesh, options.resolution, {
-        statue: event.data.statue,
-      });
-      if (!hints.length) {
-        self.postMessage({ regions: [], dropped: [] });
-        return;
+    // Do not manufacture a central subject from image coordinates.  A
+    // fallback relief is only consumed when an upstream detector has produced
+    // an explicit, anchored region (or when a caller supplies legacy
+    // `mesh.statueFallback` data).  This keeps unrelated references such as
+    // towers from acquiring a fake statue.
+    let refined = regions.filter((r) => !r.autoRefinement);
+    if (event.data.autoSemanticRefinement !== false && raster) {
+      try {
+        const found = await detectRefinements(
+          mesh,
+          raster,
+          options.resolution,
+          undefined,
+          event.data.camera || mesh.coloring,
+        );
+        refined = mergeRefinementRegions(regions, found);
+      } catch {
+        // Semantic alignment is optional. A detector failure must never remove
+        // geometry or prevent ordinary mesh-to-brick conversion.
+        refined = regions.filter((r) => !r.autoRefinement);
       }
-      const auto = meshToDesignAuto(mesh, options.resolution, hints);
-      self.postMessage({
-        regions: [
-          ...auto.applied,
-          ...auto.dropped.map((r) => ({
-            ...r,
-            placementStatus: auto.reports.find((p) => p.id === r.id)?.status,
-          })),
-        ],
-        reports: auto.reports,
-        dropped: auto.dropped.map((r) => r.id),
-        attempts: auto.attempts,
-      });
+    }
+    if (event.data.action === 'components') {
+      self.postMessage({ regions: refined, reports: [], dropped: [] });
       return;
     }
     // Component placement never blocks the finished product: anything that
     // cannot be seated is reported instead of failing the whole conversion.
-    const auto = regions.length
-      ? meshToDesignAuto(mesh, options.resolution, regions)
+    const auto = refined.length
+      ? meshToDesignAuto(mesh, options.resolution, refined)
       : {
           model: meshToDesign(mesh, options.resolution),
           applied: [] as ComponentRegion[],
