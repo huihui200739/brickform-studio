@@ -30,6 +30,8 @@ import { groupImageAssembly } from './image-design.ts';
 import type { TriangleMesh } from './mesh-types.ts';
 import { requiresFocalPreservation } from './focal-preservation.ts';
 import { classifyStructure } from './structure-classifier.ts';
+import { generateLatticeTowerScaffold } from './procedural-structures.ts';
+import { aestheticScore } from './aesthetic-packing.ts';
 
 // Conversion is split in two stages: the triangle volume is cast once, and each
 // component-placement attempt re-reads that volume. Autoplacement can therefore
@@ -361,7 +363,18 @@ function assembleVolume(
           protectedCells.has(`${x},${y},${z}`) ||
           placements.some((r) => insideRegion([x, y, z], r))
       : undefined,
-    bridges,
+    [...bridges, ...(() => {
+      const structure = classifyStructure(mesh);
+      if ((structure.category !== 'lattice-tower' && structure.category !== 'tower') || structure.confidence < 0.7)
+        return [];
+      return generateLatticeTowerScaffold(
+        w + 2,
+        h + 2,
+        d + 2,
+        (x, y, z) => cells.has(`${x},${y},${z}`),
+        dominant,
+      );
+    })()],
   );
   // Preserve the occupied volume and full-width bridging plates. An exposed
   // brick becomes two full plates with a tiled top at the original height.
@@ -698,6 +711,7 @@ export function meshToDesignAuto(
       reason:reports.find(p=>p.id===r.id)?.message};
   });
   model.repeatedGroups=repeatedGroups(model.sceneElements);
+  model.aesthetic = aestheticScore(model);
   model.componentPlacement = reports;
   if (reports.length && model.assembly)
     model.assembly.reference +=

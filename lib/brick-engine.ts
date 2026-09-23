@@ -1,6 +1,7 @@
 import type { PlacementReport } from './placement-policy.ts';
 import { ASSEMBLY_PARTS, type Pose } from './assembly-catalog.ts';
 import { validateAssembly } from './assembly-validation.ts';
+import { scorePackingChoice, aestheticScore, type AestheticBreakdown } from './aesthetic-packing.ts';
 export const PALETTE = [
   { name: '白色', hex: '#F4F4F4', ldraw: 15, lego: 1 },
   { name: '黑色', hex: '#242424', ldraw: 0, lego: 26 },
@@ -40,6 +41,7 @@ export type Model = {
   repeatedGroups?: import('./scene-elements.ts').RepeatedElementGroup[];
   structureCategory?: import('./structure-classifier.ts').StructureCategory;
   structureConfidence?: number;
+  aesthetic?: AestheticBreakdown;
   name: string;
   bricks: Brick[];
   width: number;
@@ -311,9 +313,14 @@ function pack(
             const score =
               (contact > 0 ? 10000 : 0) +
               p.w * p.d * p.h * 100 +
-              supporters.size * 10 +
-              contact -
-              (exactStack ? 20 : 0) +
+              scorePackingChoice({
+                area: p.w * p.d,
+                height: p.h,
+                contacts: contact,
+                supporters: supporters.size,
+                exactStack,
+                small: p.w * p.d <= 2,
+              }) +
               (p.h === 3 ? 2 : 0);
             if (score > bestScore) {
               chosen = p;
@@ -407,7 +414,7 @@ export function finishModel(
   bricks = bricks
     .sort((a, b) => a.y - b.y || a.z - b.z || a.x - b.x)
     .map((b, i) => ({ ...b, id: i + 1 }));
-  return {
+  const model: Model = {
     name,
     bricks,
     width,
@@ -419,6 +426,8 @@ export function finishModel(
     supportCount: bricks.filter((b) => b.support).length,
     shape: 'sculpture',
   };
+  model.aesthetic = aestheticScore(model);
+  return model;
 }
 
 export function sampleModel(resolution = 28, depth = 12): Model {
