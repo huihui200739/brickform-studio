@@ -32,6 +32,7 @@ import { requiresFocalPreservation } from './focal-preservation.ts';
 import { classifyStructure } from './structure-classifier.ts';
 import { generateLatticeTowerScaffold } from './procedural-structures.ts';
 import { aestheticScore } from './aesthetic-packing.ts';
+import { applyRepresentationTransaction } from './composition/transaction.ts';
 
 // Conversion is split in two stages: the triangle volume is cast once, and each
 // component-placement attempt re-reads that volume. Autoplacement can therefore
@@ -564,14 +565,24 @@ export function meshToDesignAuto(
   const attempt = (list: ComponentRegion[]) => {
     if (attempts >= limit) return null;
     attempts++;
-    // Transaction: assembleVolume clones the unchanged original volume. Both
-    // clearing and special parts exist only in this trial; failure discards it.
-    // Earlier committed replacements are included again in every trial.
-    try {
-      return assembleVolume(mesh, volume, resolution, list);
-    } catch {
-      return null;
-    }
+    // Every replacement is composed in a trial state. The volume passed to
+    // assembleVolume remains the source state; a failed trial returns it
+    // untouched and therefore cannot erase the detected object.
+    let trialModel: Model | null = null;
+    const transaction = applyRepresentationTransaction({
+      currentState: { regions: [] as ComponentRegion[] },
+      plan: list,
+      cloneCurrentState: (state) => ({ regions: [...state.regions] }),
+      removeOriginalRegion: (trial) => {
+        trial.regions.length = 0;
+      },
+      addRepresentation: (trial, plan) => {
+        trial.regions.push(...plan);
+        trialModel = assembleVolume(mesh, volume, resolution, trial.regions);
+      },
+      validate: () => ({ acceptable: trialModel !== null }),
+    });
+    return transaction.committed ? trialModel : null;
   };
   const applied: ComponentRegion[] = [],
     dropped: ComponentRegion[] = [...unconfirmed],
@@ -711,6 +722,14 @@ export function meshToDesignAuto(
       reason:reports.find(p=>p.id===r.id)?.message};
   });
   model.repeatedGroups=repeatedGroups(model.sceneElements);
+  model.sceneGroups = model.repeatedGroups;
+  model.representationPlans = model.sceneElements.map((element) => ({
+    elementId: element.id,
+    kind: element.chosenRepresentation || 'generic-geometry',
+    templateId: element.chosenTemplateId,
+    confidence: element.confidence,
+    reason: element.reason ? [element.reason] : ['preserved source geometry'],
+  }));
   model.aesthetic = aestheticScore(model);
   model.componentPlacement = reports;
   if (reports.length && model.assembly)

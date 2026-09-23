@@ -6,7 +6,6 @@ import {
 } from './reference-colors.ts';
 import { imageAnchorToMesh } from './image-to-mesh.ts';
 import {
-  ColorSemanticDetector,
   type SemanticDetector,
 } from './image-semantics.ts';
 import {
@@ -18,9 +17,10 @@ import type { V3 } from './assembly-catalog.ts';
 import {
   retrieveComponentForInstance,
 } from './component-library.ts';
-import { instanceId, repeatedGroups } from './scene-elements.ts';
-import { applyFocalPriority } from './focal-priority.ts';
+import { repeatedGroups } from './scene-elements.ts';
 import { routeRepresentation } from './representation-router.ts';
+import { analyzeScene } from './scene/scene-analysis.ts';
+import { LegacySceneDetector } from './scene/detectors/legacy-detector.ts';
 
 export const AUTO_REPLACEMENT_THRESHOLD = 0.7;
 export function automaticReplacementScore(region: ComponentRegion) {
@@ -78,10 +78,14 @@ export async function detectRefinements(
   mesh: TriangleMesh,
   image: Raster,
   resolution: number,
-  detector: SemanticDetector = new ColorSemanticDetector(),
+  detector?: SemanticDetector,
   camera?: ReferenceCamera,
 ): Promise<ComponentRegion[]> {
-  const detections = await detector.detect(image);
+  const analysis = await analyzeScene(
+    image,
+    new LegacySceneDetector(detector),
+  );
+  const detections = analysis.elements;
   if (!detections.length) return [];
   const alignment = referenceAlignment(mesh, image, camera),
     frame = meshFrame(mesh, resolution);
@@ -91,14 +95,18 @@ export async function detectRefinements(
       mesh,
       alignment,
       [image.width, image.height],
-      detection.anchorUV,
+      detection.anchorUV!,
     );
     if (!hit) continue;
     const anchor = hit.point.map(
       (v, i) => (v - frame.min[i]) / frame.span[i],
     ) as V3;
     if (anchor.some((v) => !Number.isFinite(v) || v < 0 || v > 1)) continue;
-    const size = COMPONENT_SIZES[detection.kind];
+    const kind = detection.category;
+    if (kind !== 'tree' && kind !== 'brazier' && kind !== 'statue') continue;
+    const size = COMPONENT_SIZES[kind];
+    const bbox = detection.imageBox!;
+    const anchorConfidence = detection.anchorConfidence ?? 0;
     // A mounting base needs an upward surface, not the front of a wall.
     const bottom = alignment.view.point(...hit.point);
     const top = alignment.view.point(
@@ -112,16 +120,16 @@ export async function detectRefinements(
         (alignment.bottom - alignment.top)) /
       (image.height - 1);
     const heightFit =
-      Math.min(projectedHeight, detection.bbox.height) /
-      Math.max(projectedHeight, detection.bbox.height, 1e-9);
+      Math.min(projectedHeight, bbox.height) /
+      Math.max(projectedHeight, bbox.height, 1e-9);
     // A colour patch often raycasts to the visible front of a small object,
     // whose normal is vertical even though its base is hidden. Let the
     // proposal reach the transactional installer; the installer remains the
     // hard gate and rolls back any object that cannot actually be seated.
     const geometryFit = Math.min(
       1,
-      Math.max(Math.max(0, hit.normal[1]), detection.anchorConfidence * 0.9),
-      Math.max(heightFit, detection.anchorConfidence),
+      Math.max(Math.max(0, hit.normal[1]), anchorConfidence * 0.9),
+      Math.max(heightFit, anchorConfidence),
     );
     // Installation is provisional here. The transactional assembler must still
     // validate the complete surroundings before any actual replacement commits.
@@ -131,25 +139,15 @@ export async function detectRefinements(
       hit.raycastConfidence,
       geometryFit,
       0,
-      detection.anchorConfidence,
+      anchorConfidence,
     );
-    const baseSceneElement = {
-      id: instanceId(detection.kind, detection.bbox),
-      category: detection.kind,
-      confidence: detection.confidence,
-      imageBox: detection.bbox,
-      anchorUV: detection.anchorUV,
+    const sceneElement = {
+      ...detection,
+      category: kind,
+      imageBox: bbox,
       worldAnchor: anchor,
       scaleHint: size,
-      evidence: detection.evidence,
-      imageMask: detection.mask,
-      imageMaskSize: detection.maskSize,
-      anchorKind:
-        detection.kind === 'tree' || detection.kind === 'brazier'
-          ? 'ground'
-          : undefined,
-    } as const;
-    const sceneElement = applyFocalPriority(baseSceneElement);
+    };
     const matches = retrieveComponentForInstance(sceneElement);
     const match = matches[0];
     const decision = routeRepresentation(
@@ -157,8 +155,8 @@ export async function detectRefinements(
       matches,
     );
     regions.push({
-      id: `image-${detection.kind}-${index}`,
-      kind: detection.kind,
+      id: `image-${kind}-${index}`,
+      kind,
       source: 'color',
       sceneElement,
       templateId: decision.templateId,
@@ -175,7 +173,7 @@ export async function detectRefinements(
       replacementConfidence: score,
       confirmed: false,
       evidence: [
-        ...detection.evidence,
+        ...(detection.evidence || []),
         `表达方式：${decision.reason}`,
         `相机轮廓对齐评分 ${alignment.confidence.toFixed(2)}`,
       ],
@@ -187,7 +185,7 @@ export async function detectRefinements(
         hit.raycastConfidence,
         geometryFit,
         1,
-        detection.anchorConfidence,
+        anchorConfidence,
       ),
     });
   }

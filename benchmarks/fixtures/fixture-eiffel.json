@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "id": "fixture-eiffel",
+  "referenceImage": {
+    "path": "work/local-3d/jobs/6cee5c00b1d9f0ffc122ffba/input.png",
+    "sha256": "9520520f661844de1f2cf27c414fe8a6d318daec02a86c78da62a8118482aebb",
+    "width": 819,
+    "height": 1024
+  },
+  "reconstructionMesh": {
+    "path": "work/local-3d/jobs/6cee5c00b1d9f0ffc122ffba/model.glb",
+    "sha256": "ede3e1d8e810ec7d7323e9a67617542ffd1f7db37678290747779efd1015657a",
+    "triangles": 94460
+  },
+  "resolution": 28,
+  "baseline": {
+    "conversionStatus": "failed",
+    "error": "积木结构未通过连接检查，请降低尺寸后重试。",
+    "brickCount": 0,
+    "supportCount": 0,
+    "sceneElements": [
+      { "id": "tree-1", "category": "tree", "groupId": "group-tree-1", "importance": "secondary", "mustRepresent": false },
+      { "id": "tree-2", "category": "tree", "groupId": "group-tree-1", "importance": "secondary", "mustRepresent": false },
+      { "id": "tree-3", "category": "tree", "groupId": "group-tree-1", "importance": "secondary", "mustRepresent": false }
+    ],
+    "finalComponents": []
+  }
+}

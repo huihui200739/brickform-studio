@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "id": "fixture-temple",
+  "referenceImage": {
+    "path": "outputs/local-3d/temple-raster.json",
+    "sha256": "57ce5433e91691194fe6ccdedd2a519e866e0d560fdcdb0b241fb5aaa4c301b1",
+    "width": 256,
+    "height": 320
+  },
+  "reconstructionMesh": {
+    "path": "outputs/local-3d/temple-mesh.json",
+    "sha256": "52760b150e2435de26fd07e3b26e4e7087b5bde5e6e3a4251a59d17e4ce8fba0",
+    "triangles": 163004
+  },
+  "resolution": 36,
+  "baseline": {
+    "modelPath": "outputs/components/position-locked.json",
+    "brickCount": 5308,
+    "supportCount": 277,
+    "sceneElements": [
+      { "id": "statue", "category": "statue", "importance": "primary", "mustRepresent": true },
+      { "id": "tree", "category": "tree", "importance": "secondary", "mustRepresent": false },
+      { "id": "left", "category": "brazier", "importance": "secondary", "mustRepresent": false },
+      { "id": "right", "category": "brazier", "importance": "secondary", "mustRepresent": false }
+    ],
+    "finalComponents": [
+      { "id": "component-statue", "category": "statue", "templateId": "statue-standing", "parts": 13 },
+      { "id": "component-tree", "category": "tree", "templateId": "tree-basic", "parts": 9 },
+      { "id": "component-left", "category": "brazier", "templateId": "brazier-basic", "parts": 5 },
+      { "id": "component-right", "category": "brazier", "templateId": "brazier-basic", "parts": 5 }
+    ]
+  }
+}
