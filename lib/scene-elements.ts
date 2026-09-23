@@ -15,6 +15,13 @@ export type SceneCategory =
   | 'furniture'
   | 'decor'
   | 'unknown';
+export type RepresentationKind =
+  | 'component'
+  | 'semantic-template'
+  | 'parametric-structure'
+  | 'procedural-structure'
+  | 'relief'
+  | 'voxel';
 export type SceneElementInstance = {
   id: string;
   category: SceneCategory;
@@ -31,7 +38,9 @@ export type SceneElementInstance = {
   imageMaskSize?: [number, number];
   anchorKind?: 'ground' | 'wall' | 'surface' | 'free';
   groupId?: string;
-  chosenRepresentation?: 'component' | 'template' | 'voxel';
+  importance?: 'primary' | 'secondary' | 'background';
+  importanceScore?: number;
+  chosenRepresentation?: RepresentationKind;
   chosenTemplateId?: string;
   outcome?: 'pending' | 'committed' | 'preserved';
   reason?: string;

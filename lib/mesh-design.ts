@@ -603,7 +603,7 @@ export function meshToDesignAuto(
         if (id === eligible[i].templateId) continue;
         const template = componentTemplate(id);
         if (!template || template.category !== eligible[i].kind) continue;
-        variants.push({...eligible[i], templateId:id, representation:template.representation,
+        variants.push({...eligible[i], templateId:id, representation:template.representation === 'component' ? 'component' : 'semantic-template',
           width:template.bboxStuds.width,depth:template.bboxStuds.depth,height:template.bboxStuds.height});
       }
       // Try each expression at the original anchor before spending budget on
@@ -663,7 +663,7 @@ export function meshToDesignAuto(
   }
   model.sceneElements = regions.filter(r=>r.sceneElement).map(r=>{
     const committed=applied.find(a=>a.id===r.id);
-    return {...r.sceneElement!,chosenRepresentation:committed?(committed.representation==='component'?'component':'template'):'voxel',
+    return {...r.sceneElement!,chosenRepresentation:committed?.representation ?? r.representation ?? 'voxel',
       chosenTemplateId:committed?.templateId,outcome:committed?'committed':'preserved',
       reason:reports.find(p=>p.id===r.id)?.message};
   });

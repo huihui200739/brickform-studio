@@ -16,10 +16,11 @@ import {
 } from './semantic-components.ts';
 import type { V3 } from './assembly-catalog.ts';
 import {
-  fallbackRepresentation,
   retrieveComponent,
 } from './component-library.ts';
 import { instanceId, repeatedGroups } from './scene-elements.ts';
+import { applyFocalPriority } from './focal-priority.ts';
+import { routeRepresentation } from './representation-router.ts';
 
 export const AUTO_REPLACEMENT_THRESHOLD = 0.7;
 export function automaticReplacementScore(region: ComponentRegion) {
@@ -86,9 +87,6 @@ export async function detectRefinements(
     frame = meshFrame(mesh, resolution);
   const regions: ComponentRegion[] = [];
   for (const [index, detection] of detections.entries()) {
-    // No automatic statue replacement until a reliable statue detector and
-    // regression corpus exist. Manual overrides are handled separately.
-    if (detection.kind === 'statue') continue;
     const hit = imageAnchorToMesh(
       mesh,
       alignment,
@@ -135,7 +133,7 @@ export async function detectRefinements(
       0,
       detection.anchorConfidence,
     );
-    const sceneElement = {
+    const baseSceneElement = {
       id: instanceId(detection.kind, detection.bbox),
       category: detection.kind,
       confidence: detection.confidence,
@@ -144,19 +142,27 @@ export async function detectRefinements(
       worldAnchor: anchor,
       scaleHint: size,
       evidence: detection.evidence,
+      imageMask: detection.mask,
+      imageMaskSize: detection.maskSize,
       anchorKind:
         detection.kind === 'tree' || detection.kind === 'brazier'
           ? 'ground'
           : undefined,
     } as const;
+    const sceneElement = applyFocalPriority(baseSceneElement);
     const match = retrieveComponent(sceneElement);
+    const decision = routeRepresentation(
+      sceneElement,
+      match ? [match] : [],
+    );
     regions.push({
       id: `image-${detection.kind}-${index}`,
       kind: detection.kind,
       source: 'color',
       sceneElement,
-      templateId: match?.template.id,
-      representation: fallbackRepresentation(sceneElement, match),
+      templateId: decision.templateId,
+      representation: decision.kind,
+      templateCandidates: decision.candidates,
       autoRefinement: true,
       anchor,
       referenceAnchor: [...anchor],
@@ -169,6 +175,7 @@ export async function detectRefinements(
       confirmed: false,
       evidence: [
         ...detection.evidence,
+        `表达方式：${decision.reason}`,
         `相机轮廓对齐评分 ${alignment.confidence.toFixed(2)}`,
       ],
       // Final installation contributes at most .15; all other gates must pass.

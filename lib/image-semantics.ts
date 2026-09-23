@@ -6,6 +6,7 @@ export type ImageSemanticDetection = {
   kind: ComponentKind;
   bbox: { x: number; y: number; width: number; height: number };
   mask?: Uint8Array;
+  maskSize?: [number, number];
   anchorUV: [number, number];
   confidence: number;
   evidence: string[];
@@ -210,6 +211,8 @@ export class ColorSemanticDetector implements SemanticDetector {
         detections.splice(j--, 1);
       }
     }
+    const statue = detectEnclosedSubject(image);
+    if (statue) detections.push(statue);
     return detections
       .sort(
         (a, b) =>
@@ -219,4 +222,55 @@ export class ColorSemanticDetector implements SemanticDetector {
       )
       .slice(0, 64);
   }
+}
+
+/** Finds a foreground silhouette only when it is enclosed by a darker recess.
+ * This deliberately uses image evidence and a relative search, so it does not
+ * assume a temple coordinate or create a subject in open tower/sky scenes. */
+function detectEnclosedSubject(image: Raster): ImageSemanticDetection | undefined {
+  const { width: w, height: h, data } = image;
+  const lum = (x: number, y: number) => {
+    const i = (y * w + x) * 4;
+    return (data[i] * 3 + data[i + 1] * 4 + data[i + 2]) / 8;
+  };
+  let global = 0;
+  for (let y = 0; y < h; y += 4) for (let x = 0; x < w; x += 4) global += lum(x, y);
+  global /= Math.max(1, Math.ceil(w / 4) * Math.ceil(h / 4));
+  let best: ImageSemanticDetection | undefined;
+  for (let gy = 0.12; gy <= 0.48; gy += 0.04)
+    for (let gx = 0.22; gx <= 0.62; gx += 0.04) {
+      const x0 = Math.floor(gx * w), y0 = Math.floor(gy * h);
+      const rw = Math.max(8, Math.floor(w * 0.16)), rh = Math.max(12, Math.floor(h * 0.25));
+      const x1 = Math.min(w - 2, x0 + rw), y1 = Math.min(h - 2, y0 + rh);
+      let inside = 0, border = 0, nInside = 0, nBorder = 0;
+      for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+        const v = lum(x, y);
+        if (x - x0 < 2 || y - y0 < 2 || x1 - x < 3 || y1 - y < 3) { border += v; nBorder++; }
+        else { inside += v; nInside++; }
+      }
+      const dark = inside / Math.max(1, nInside), rim = border / Math.max(1, nBorder);
+      if (dark > global * 0.82 || rim < dark * 1.12) continue;
+      const mask = new Uint8Array((x1 - x0) * (y1 - y0));
+      let count = 0, minX = x1, minY = y1, maxX = x0, maxY = y0;
+      for (let y = y0 + 2; y < y1 - 2; y++) for (let x = x0 + 2; x < x1 - 2; x++) {
+        if (lum(x, y) < dark + Math.max(12, (rim - dark) * 0.28)) continue;
+        const k = (y - y0) * (x1 - x0) + (x - x0); mask[k] = 1; count++;
+        minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      }
+      const area = (maxX - minX + 1) * (maxY - minY + 1);
+      if (count < w * h * 0.0008 || area < w * h * 0.003 || maxY - minY < h * 0.05) continue;
+      const confidence = Math.min(0.86, 0.52 + (rim - dark) / 180 + Math.min(0.2, count / Math.max(1, area) * 0.2));
+      const candidate: ImageSemanticDetection = {
+        kind: 'statue',
+        bbox: { x: minX / (w - 1), y: minY / (h - 1), width: (maxX - minX) / (w - 1), height: (maxY - minY) / (h - 1) },
+        mask,
+        maskSize: [x1 - x0, y1 - y0],
+        anchorUV: [(minX + maxX) / 2 / (w - 1), maxY / (h - 1)],
+        confidence,
+        anchorConfidence: Math.min(0.82, confidence),
+        evidence: ['暗色凹陷包围的前景轮廓', '轮廓与壁龛背景存在明暗分离'],
+      };
+      if (!best || candidate.confidence > best.confidence) best = candidate;
+    }
+  return best;
 }
