@@ -38,6 +38,8 @@ export type Model = {
   componentPlacement?: PlacementReport[];
   sceneElements?: import('./scene-elements.ts').SceneElementInstance[];
   repeatedGroups?: import('./scene-elements.ts').RepeatedElementGroup[];
+  structureCategory?: import('./structure-classifier.ts').StructureCategory;
+  structureConfidence?: number;
   name: string;
   bricks: Brick[];
   width: number;

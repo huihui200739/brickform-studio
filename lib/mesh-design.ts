@@ -29,6 +29,7 @@ import {
 import { groupImageAssembly } from './image-design.ts';
 import type { TriangleMesh } from './mesh-types.ts';
 import { requiresFocalPreservation } from './focal-preservation.ts';
+import { classifyStructure } from './structure-classifier.ts';
 
 // Conversion is split in two stages: the triangle volume is cast once, and each
 // component-placement attempt re-reads that volume. Autoplacement can therefore
@@ -502,12 +503,16 @@ export function meshToDesign(
       r.placementStatus !== 'rejected' &&
       (r.source === 'manual' || r.confirmed === true || !r.source),
   );
-  return assembleVolume(
+  const model = assembleVolume(
     mesh,
     buildMeshVolume(mesh, resolution),
     resolution,
     eligible,
   );
+  const structure = classifyStructure(mesh);
+  model.structureCategory = structure.category;
+  model.structureConfidence = structure.confidence;
+  return model;
 }
 export type AutoComponentResult = {
   model: Model;
@@ -640,6 +645,9 @@ export function meshToDesignAuto(
     }
   }
   if (!model) model = assembleVolume(mesh, volume, resolution, []);
+  const structure = classifyStructure(mesh);
+  model.structureCategory = structure.category;
+  model.structureConfidence = structure.confidence;
   // A primary subject is never allowed to disappear merely because its first
   // representation failed. Try the compact focal template at the same anchor
   // before falling back to the untouched voxel model.
