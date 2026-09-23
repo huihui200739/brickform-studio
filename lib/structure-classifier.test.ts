@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { classifyStructure } from './structure-classifier.ts';
+import { routeStructureRepresentation } from './representation/representation-router.ts';
 
 test('sparse tall geometry is classified as a lattice tower', () => {
   const p: number[] = [];
@@ -9,5 +10,5 @@ test('sparse tall geometry is classified as a lattice tower', () => {
   const result = classifyStructure({ positions: new Float32Array(p), colors: new Uint8Array(), name: 'test' });
   assert.equal(result.category, 'lattice-tower');
   assert.ok(result.confidence > 0);
+  assert.equal(routeStructureRepresentation(result.category, result.confidence).kind, 'procedural-structure');
 });
-

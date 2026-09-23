@@ -33,7 +33,10 @@ import { requiresFocalPreservation } from './focal-preservation.ts';
 import { classifyStructure } from './structure-classifier.ts';
 import { generateLatticeTowerScaffold } from './procedural-structures.ts';
 import { aestheticScore } from './aesthetic-packing.ts';
+import { optimizeAestheticPacking } from './aesthetic-packing.ts';
 import { applyRepresentationTransaction } from './composition/transaction.ts';
+import { enforceGroupConsistency } from './element-grouping.ts';
+import { routeStructureRepresentation } from './representation/representation-router.ts';
 import {
   createModelView,
   createReferenceView,
@@ -66,6 +69,106 @@ export type PreservedRegion = {
   preserveCavity: boolean;
   preserveDepthSeparation: boolean;
 };
+
+export function proceduralTowerCells(width: number, height: number, depth: number) {
+  const cells = new Map<string, { color: number; support: boolean }>();
+  // A complete third layer bonds the two base courses. The tower remains open
+  // above this platform, while every perimeter base piece belongs to one graph.
+  for (let x = 0; x < width; x++)
+    for (let z = 0; z < depth; z++)
+      cells.set(`${x},2,${z}`, { color: 7, support: false });
+  for (let x = 0; x < width; x++)
+    for (let z = 0; z < depth; z++)
+      cells.set(`${x},3,${z}`, { color: 7, support: false });
+  const put = (x: number, y: number, z: number) => {
+    if (x < 1 || x >= width - 1 || z < 1 || z >= depth - 1 || y < 2 || y >= height - 1) return;
+    cells.set(`${x},${y},${z}`, { color: 7, support: false });
+  };
+  const top = Math.max(5, height - 5);
+  const stride = Math.max(4, Math.floor(height / 10));
+  for (let y = 2; y < top; y++) {
+    const t = (y - 2) / Math.max(1, top - 2);
+    const xs = [
+      Math.round(1 + (width - 3) * 0.18 * (1 - t) + (width / 2 - 1) * t),
+      Math.round(1 + (width - 3) * 0.82 * (1 - t) + (width / 2 - 1) * t),
+    ];
+    const zs = [
+      Math.round(1 + (depth - 3) * 0.18 * (1 - t) + (depth / 2 - 1) * t),
+      Math.round(1 + (depth - 3) * 0.82 * (1 - t) + (depth / 2 - 1) * t),
+    ];
+    for (const x of xs) for (const z of zs) put(x, y, z);
+    if ((y - 2) % stride === 0 || y === top - 1) {
+      for (let x = xs[0]; x <= xs[1]; x++) {
+        put(x, y, zs[0]);
+        put(x, y, zs[1]);
+      }
+      for (let z = zs[0]; z <= zs[1]; z++) {
+        put(xs[0], y, z);
+        put(xs[1], y, z);
+      }
+    }
+  }
+  const platform = Math.max(3, Math.floor(height * 0.48));
+  for (let x = 2; x < width - 2; x++) {
+    put(x, platform, Math.max(1, Math.floor(depth * 0.2)));
+    put(x, platform, Math.max(1, depth - 2 - Math.floor(depth * 0.2)));
+  }
+  for (let y = top; y < height - 1; y++) put(Math.floor(width / 2), y, Math.floor(depth / 2));
+  return cells;
+}
+
+function assembleProceduralStructure(
+  mesh: TriangleMesh,
+  resolution: number,
+  structure: ReturnType<typeof classifyStructure>,
+): Model {
+  const volume = buildMeshVolume(mesh, resolution);
+  const width = volume.w + 2;
+  const height = volume.h + 2;
+  const depth = volume.d + 2;
+  const raw = finishModel(
+    proceduralTowerCells(width, height, depth),
+    width,
+    height,
+    depth,
+    'image',
+    mesh.name,
+    resolution,
+    volume.dominant,
+  );
+  // The generic base packer intentionally uses a one-stud perimeter row. Its
+  // far edge has no cross-row plate and is therefore a disconnected cosmetic
+  // strip on an otherwise open tower; omit that strip before validation.
+  raw.bricks = raw.bricks
+    .filter((brick) => brick.z + brick.d <= depth - 1)
+    .map((brick, index) => ({ ...brick, id: index + 1 }));
+  raw.supportCount = raw.bricks.filter((brick) => brick.support).length;
+  raw.levels = [...new Set(raw.bricks.map((brick) => brick.y))].sort((a, b) => a - b);
+  optimizeAestheticPacking(raw, 256);
+  const model = groupImageAssembly(raw);
+  model.structureCategory = structure.category;
+  model.structureConfidence = structure.confidence;
+  model.meshDesign = {
+    method: 'mesh-volume',
+    referenceColors: !!mesh.coloring,
+    triangles: mesh.positions.length / 9,
+    resolution,
+    openRowFraction: volume.openRows / Math.max(1, volume.intersected),
+  };
+  const structurePlan = routeStructureRepresentation(structure.category, structure.confidence);
+  model.representationPlans = [{
+    elementId: 'primary-structure',
+    kind: structurePlan.kind,
+    confidence: structurePlan.confidence,
+    reason: [...structure.evidence, ...structurePlan.reason, '结构路由使用开放式塔身、平台与尖塔模板'],
+  }];
+  model.assembly!.reference = `结构分类为 ${structure.category}，使用程序化开放塔身表达；保留四腿、平台、收腰和尖塔轮廓。`;
+  model.aesthetic = aestheticScore(model);
+  const check = validateModel(model);
+  if (check.collisions || check.unsupported || check.invalidParts || !check.connected)
+    throw Error(`程序化结构未通过连接检查，请降低尺寸后重试（碰撞 ${check.collisions}，缺支撑 ${check.unsupported}，断开 ${check.connected ? 0 : 1}）。`);
+  return model;
+}
 
 export type VisibilityContext = {
   image?: Raster;
@@ -588,6 +691,7 @@ function assembleVolume(
   raw.levels = [...new Set(raw.bricks.map((b) => b.y))].sort((a, b) => a - b);
   if (raw.bricks.length > 14000)
     throw Error('此尺寸超过 14000 块零件，请降低积木尺寸后再转换。');
+  const packing = optimizeAestheticPacking(raw, 192);
   const model = groupImageAssembly(raw);
   model.meshDesign = {
     method: 'mesh-volume',
@@ -598,6 +702,8 @@ function assembleVolume(
     openRowFraction: openRows / Math.max(1, intersected),
   };
   model.assembly!.reference = `按三维网格体积生成；保留网格中的前后布局和孔洞。新增辅助支撑 ${model.supportCount} 块，已计入清单。网格可能含 AI 推测，连接检查不代表外观还原或实物稳定性已验证。`;
+  if (packing.removed)
+    model.assembly!.reference += ` 美学后处理移除冗余隐藏支撑 ${packing.removed} 块，保留连接与连通性。`;
   if (mesh.statueFallback?.cells.length)
     model.assembly!.reference +=
       ' 已根据参考图提取的轮廓注入普通积木浮雕，未使用人物特殊零件；轮廓与位置仍需外观核对。';
@@ -640,6 +746,7 @@ export function meshToDesign(
   visibility?: VisibilityContext,
 ): Model {
   regions = regions.map(ensureSceneElement);
+  enforceGroupConsistency(regions);
   if (regions.some((r) => r.autoRefinement))
     return meshToDesignAuto(mesh, resolution, regions, 48, visibility).model;
   const eligible = regions.filter(
@@ -647,13 +754,15 @@ export function meshToDesign(
       r.placementStatus !== 'rejected' &&
       (r.source === 'manual' || r.confirmed === true || !r.source),
   );
+  const structure = classifyStructure(mesh);
+  if (!eligible.length && (structure.category === 'lattice-tower' || structure.category === 'tower') && structure.confidence >= 0.62)
+    return assembleProceduralStructure(mesh, resolution, structure);
   const model = assembleVolume(
     mesh,
     buildMeshVolume(mesh, resolution),
     resolution,
     eligible,
   );
-  const structure = classifyStructure(mesh);
   model.structureCategory = structure.category;
   model.structureConfidence = structure.confidence;
   const view = visibilityView(mesh, model, resolution, visibility);
@@ -692,6 +801,7 @@ export function meshToDesignAuto(
 ): AutoComponentResult {
   if (regions.length > 64) throw Error('一次最多替换 64 个组件。');
   regions = regions.map(ensureSceneElement);
+  enforceGroupConsistency(regions);
   // Manual overrides and sufficiently confident automatic proposals can enter
   // a trial. Automatic confirmation happens only after the trial commits.
   const eligible = regions.filter(
@@ -705,6 +815,9 @@ export function meshToDesignAuto(
           automaticReplacementScore(r) >= AUTO_REPLACEMENT_THRESHOLD)),
   );
   const unconfirmed = regions.filter((r) => !eligible.includes(r));
+  const classified = classifyStructure(mesh);
+  if (!regions.length && (classified.category === 'lattice-tower' || classified.category === 'tower') && classified.confidence >= 0.62)
+    return { model: assembleProceduralStructure(mesh, resolution, classified), applied: [], dropped: [], reports: [], attempts: 0 };
   const volume = buildMeshVolume(mesh, resolution),
     grid: V3 = [volume.w, volume.h, volume.d];
   const limit = Math.max(

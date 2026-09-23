@@ -4,6 +4,7 @@ import type {
   RepresentationRoutingContext,
 } from './representation-types.ts';
 import type { SceneElementInstance } from '../scene/scene-types.ts';
+import type { StructureCategory } from '../structure-classifier.ts';
 
 /**
  * Routes an instance to an expression. Routing produces a plan only; it does
@@ -76,6 +77,30 @@ export class DefaultRepresentationRouter implements RepresentationRouter {
 }
 
 export const defaultRepresentationRouter = new DefaultRepresentationRouter();
+
+/** Route scene-level landmarks before generic voxel packing is considered. */
+export function routeStructureRepresentation(
+  category: StructureCategory,
+  confidence: number,
+) {
+  if ((category === 'lattice-tower' || category === 'tower') && confidence >= 0.62)
+    return {
+      kind: 'procedural-structure' as const,
+      confidence,
+      reason: ['open landmark structure uses procedural tower template'],
+    };
+  if (category === 'arch-structure' || category === 'stepped-monument')
+    return {
+      kind: 'parametric-structure' as const,
+      confidence,
+      reason: ['repeated architectural profile uses parametric structure'],
+    };
+  return {
+    kind: 'generic-geometry' as const,
+    confidence,
+    reason: ['structure remains on the validated voxel route'],
+  };
+}
 
 export function routeSceneElement(
   instance: SceneElementInstance,
