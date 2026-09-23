@@ -33,6 +33,18 @@ export function simplifiedTree(): Brick[] {
     part('3022', 5, 0, 8, 0),
   ];
 }
+
+/** A compact standing focal subject used when the photographed relief cannot
+ * be installed as a continuous silhouette. It is deliberately generic, but
+ * keeps a readable head, torso and shoulders in the original anchor. */
+export function simplifiedStatue(): Brick[] {
+  return [
+    part('3020', 7, 0, 1, 0),
+    part('3003', 11, 0, 3, 0),
+    part('3005', 11, 0, 5, 0),
+    part('3023', 11, -0.5, 6, 0),
+  ];
+}
 export function reliefStatue(instance?: SceneElementInstance): Brick[] {
   if (!instance?.imageMask || !instance.imageMaskSize)
     throw Error('浮雕模板缺少实例轮廓');

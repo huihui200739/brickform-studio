@@ -40,6 +40,7 @@ export type SceneElementInstance = {
   groupId?: string;
   importance?: 'primary' | 'secondary' | 'background';
   importanceScore?: number;
+  mustRepresent?: boolean;
   chosenRepresentation?: RepresentationKind;
   chosenTemplateId?: string;
   outcome?: 'pending' | 'committed' | 'preserved';
@@ -53,6 +54,8 @@ export type RepeatedElementGroup = {
   members: string[];
   layoutHint?: 'line' | 'ring' | 'symmetric' | 'scattered';
   templatePreference?: string[];
+  templateChoices?: string[];
+  styleLocked?: boolean;
 };
 /** IDs depend on geometry, never confidence sorting or the number of instances. */
 export function instanceId(
@@ -78,6 +81,7 @@ export function repeatedGroups(
       members: members.map((i) => i.id),
       layoutHint:
         Math.max(...ys) - Math.min(...ys) < 0.06 ? 'line' : 'scattered',
+      styleLocked: category === 'tree' || category === 'plant',
     });
     for (const member of members) member.groupId = id;
   }

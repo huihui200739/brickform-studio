@@ -1,6 +1,6 @@
 import type { Brick } from './brick-engine.ts';
 import { componentBricks } from './component-parts.ts';
-import { simplifiedTree, reliefStatue } from './semantic-templates.ts';
+import { simplifiedTree, reliefStatue, simplifiedStatue } from './semantic-templates.ts';
 import type { SceneElementInstance, SceneCategory } from './scene-elements.ts';
 export type {
   SceneCategory,
@@ -86,12 +86,25 @@ export const COMPONENT_LIBRARY: LegoComponentTemplate[] = [
     requiresMask: true,
     fallback: 'relief',
   },
+  {
+    id: 'statue-simplified',
+    name: '简化主视觉雕像',
+    category: 'statue',
+    tags: ['focal', 'blockout'],
+    bboxStuds: { width: 4, depth: 2, height: 8 },
+    anchor: { kind: 'surface', localPoint: [0, 0, 0] },
+    colors: [7, 11],
+    representation: 'template',
+    build: simplifiedStatue,
+    fallback: 'voxel',
+  },
 ];
 export function componentTemplate(id: string) {
   return COMPONENT_LIBRARY.find((t) => t.id === id);
 }
 export {
   retrieveComponent,
+  retrieveComponentForInstance,
   fallbackRepresentation,
 } from './component-retrieval.ts';
 export type { ComponentMatch } from './component-retrieval.ts';

@@ -16,7 +16,7 @@ import {
 } from './semantic-components.ts';
 import type { V3 } from './assembly-catalog.ts';
 import {
-  retrieveComponent,
+  retrieveComponentForInstance,
 } from './component-library.ts';
 import { instanceId, repeatedGroups } from './scene-elements.ts';
 import { applyFocalPriority } from './focal-priority.ts';
@@ -150,10 +150,11 @@ export async function detectRefinements(
           : undefined,
     } as const;
     const sceneElement = applyFocalPriority(baseSceneElement);
-    const match = retrieveComponent(sceneElement);
+    const matches = retrieveComponentForInstance(sceneElement);
+    const match = matches[0];
     const decision = routeRepresentation(
       sceneElement,
-      match ? [match] : [],
+      matches,
     );
     regions.push({
       id: `image-${detection.kind}-${index}`,
@@ -198,6 +199,28 @@ export async function detectRefinements(
       r.sceneElement &&
       groups.find((g) => g.members.includes(r.sceneElement!.id));
     if (group) r.sceneElement!.groupId = group.id;
+  }
+  // A repeated tree group shares a style. Keep the best executable choice for
+  // the group, while allowing an outlier to fall back only when its
+  // transaction cannot fit at its own anchor.
+  for (const group of groups.filter((g) => g.styleLocked)) {
+    const members = regions.filter((r) => r.sceneElement && group.members.includes(r.sceneElement.id));
+    const counts = new Map<string, number>();
+    for (const member of members) if (member.templateId)
+      counts.set(member.templateId, (counts.get(member.templateId) || 0) + 1);
+    const preferred = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0];
+    if (!preferred) continue;
+    group.templateChoices = [preferred, ...members.flatMap((r) => r.templateCandidates || [])]
+      .filter((id, i, all) => all.indexOf(id) === i);
+    group.templatePreference = group.templateChoices;
+    for (const member of members) {
+      member.templateCandidates = group.templateChoices;
+      if (member.templateId !== preferred) {
+        member.templateId = preferred;
+        const template = group.templateChoices[0];
+        member.representation = template === 'tree-basic' ? 'component' : 'semantic-template';
+      }
+    }
   }
   return regions
     .sort(

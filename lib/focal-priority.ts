@@ -21,10 +21,14 @@ export function focalPriority(
     score = Math.max(score, 0.55 * confidence + 0.2);
   const importance =
     score >= 0.68 ? 'primary' : score >= 0.32 ? 'secondary' : 'background';
-  return { importance, importanceScore: Math.max(0, Math.min(1, score)) } as const;
+  return {
+    importance,
+    importanceScore: Math.max(0, Math.min(1, score)),
+    mustRepresent: category === 'statue' ||
+      (importance === 'primary' && confidence >= 0.55),
+  } as const;
 }
 
 export function applyFocalPriority<T extends SceneElementInstance>(instance: T): T {
   return Object.assign(instance, focalPriority(instance));
 }
-

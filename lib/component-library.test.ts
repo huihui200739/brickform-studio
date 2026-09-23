@@ -22,7 +22,7 @@ test('component retrieval selects registered templates instead of object-specifi
 test('low confidence elements use the generic fallback ladder', () => {
   const statue: SceneElement = { id: 's', category: 'statue', confidence: 0.2 };
   const match = retrieveComponent(statue);
-  assert.equal(match?.template.id, 'statue-relief');
+  assert.equal(match?.template.id, 'statue-simplified');
   // A relief template is only executable when the detector supplied a mask;
   // without one the safe fallback is the original voxel geometry.
   assert.equal(fallbackRepresentation(statue, { ...match!, score: 0.4 }), 'voxel');
@@ -41,4 +41,5 @@ test('same-category detections remain independent instances and form a repeat gr
   assert.equal(group.length, 1);
   assert.deepEqual(group[0].members, trees.map((t) => t.id).sort());
   assert.ok(trees.every((t) => t.groupId === group[0].id));
+  assert.equal(group[0].styleLocked, true);
 });

@@ -28,6 +28,7 @@ import {
 } from './brick-engine.ts';
 import { groupImageAssembly } from './image-design.ts';
 import type { TriangleMesh } from './mesh-types.ts';
+import { requiresFocalPreservation } from './focal-preservation.ts';
 
 // Conversion is split in two stages: the triangle volume is cast once, and each
 // component-placement attempt re-reads that volume. Autoplacement can therefore
@@ -531,7 +532,7 @@ export function meshToDesignAuto(
         (!r.autoRefinement && (r.confirmed === true || !r.source)) ||
         (r.autoRefinement === true &&
           r.source === 'color' &&
-          (r.kind !== 'statue' || r.templateId === 'statue-relief') &&
+          (r.kind !== 'statue' || r.templateId === 'statue-relief' || r.templateId === 'statue-simplified') &&
           automaticReplacementScore(r) >= AUTO_REPLACEMENT_THRESHOLD)),
   );
   const unconfirmed = regions.filter((r) => !eligible.includes(r));
@@ -639,6 +640,27 @@ export function meshToDesignAuto(
     }
   }
   if (!model) model = assembleVolume(mesh, volume, resolution, []);
+  // A primary subject is never allowed to disappear merely because its first
+  // representation failed. Try the compact focal template at the same anchor
+  // before falling back to the untouched voxel model.
+  for (const failed of [...dropped]) {
+    if (!requiresFocalPreservation(failed.sceneElement) || failed.kind !== 'statue') continue;
+    const fallback = componentTemplate('statue-simplified');
+    if (!fallback || attempts >= limit) continue;
+    const candidate: ComponentRegion = {
+      ...failed,
+      templateId: fallback.id,
+      representation: 'semantic-template',
+      width: fallback.bboxStuds.width,
+      depth: fallback.bboxStuds.depth,
+      height: fallback.bboxStuds.height,
+    };
+    const result = attempt([...applied, candidate]);
+    if (!result) continue;
+    model = result;
+    applied.push(candidate);
+    dropped.splice(dropped.indexOf(failed), 1);
+  }
   for (const r of regions)
     reports.push(
       reportPlacement(

@@ -14,8 +14,8 @@ test('primary statue keeps a visible fallback representation', () => {
   const priority = focalPriority(instance);
   assert.equal(priority.importance, 'primary');
   const decision = routeRepresentation(instance, retrieveComponentForInstance(instance));
-  assert.equal(decision.kind, 'voxel');
-  assert.match(decision.reason, /保留主体/);
+  assert.equal(decision.kind, 'semantic-template');
+  assert.equal(decision.templateId, 'statue-simplified');
 });
 
 test('a confident tree routes to a real component per instance', () => {
@@ -30,4 +30,3 @@ test('a confident tree routes to a real component per instance', () => {
   assert.equal(routeRepresentation(instance, matches).kind, 'component');
   assert.ok(routeRepresentation(instance, matches).templateId);
 });
-
