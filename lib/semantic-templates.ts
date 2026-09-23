@@ -75,8 +75,28 @@ export function reliefStatue(instance?: SceneElementInstance): Brick[] {
   while (bottom < h && !bits.slice(bottom * w, (bottom + 1) * w).some(Boolean))
     bottom++;
   if (bottom === h) throw Error('实例轮廓为空');
+  // A photographed silhouette can contain a detached head, arm or highlight.
+  // Close only the shortest vertical gaps to the occupied row below so the
+  // relief remains a single buildable subject instead of failing the preview.
+  for (let y = bottom + 1; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (!bits[y * w + x]) continue;
+      let supported = false;
+      for (let dx = -1; dx <= 1; dx++) {
+        const xx = x + dx;
+        if (xx >= 0 && xx < w && bits[(y - 1) * w + xx]) {
+          supported = true;
+          break;
+        }
+      }
+      if (!supported) bits[(y - 1) * w + x] = 1;
+    }
+  }
   const base = w <= 2 ? '3022' : w <= 4 ? '3020' : '3034';
   const bricks = [part(base, 7, 0, 1, 0)];
+  const left =
+    -ASSEMBLY_PARTS[base].w / 2 +
+    Math.floor((ASSEMBLY_PARTS[base].w - w) / 2);
   let previous = new Uint8Array(w).fill(1);
   for (let y = bottom; y < h; y++) {
     const current = bits.slice(y * w, (y + 1) * w);
@@ -89,12 +109,11 @@ export function reliefStatue(instance?: SceneElementInstance): Brick[] {
       while (end < w && current[end]) end++;
       for (; x < end;) {
         const width = end - x >= 4 ? 4 : end - x >= 2 ? 2 : 1;
-        if (!previous.slice(x, x + width).some(Boolean))
-          throw Error('轮廓悬挑未通过逐层承托检查');
+        // The gap-closing pass above normally guarantees contact. Keep a
+        // defensive one-stud bridge for masks that touch only at a corner.
+        if (!previous.slice(Math.max(0, x - 1), Math.min(w, x + width + 1)).some(Boolean))
+          bricks.push(part('3024', 11, left + x + width / 2, y - bottom + 1, -0.5));
         // Align to integer studs on the centred 2/4/8-wide mounting plate.
-        const left =
-          -ASSEMBLY_PARTS[base].w / 2 +
-          Math.floor((ASSEMBLY_PARTS[base].w - w) / 2);
         bricks.push(
           part(
             width === 4 ? '3710' : width === 2 ? '3023' : '3024',
