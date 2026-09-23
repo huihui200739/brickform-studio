@@ -1,6 +1,6 @@
 import type { Brick } from './brick-engine.ts';
 import { componentBricks } from './component-parts.ts';
-import { simplifiedTree, reliefStatue, simplifiedStatue, simplifiedStandingStatue } from './semantic-templates.ts';
+import { simplifiedTree, reliefStatue, simplifiedStatue, simplifiedStandingStatue, forcedVoxelSilhouette } from './semantic-templates.ts';
 import type { SceneElementInstance, SceneCategory } from './scene-elements.ts';
 export type {
   SceneCategory,
@@ -96,6 +96,18 @@ export const COMPONENT_LIBRARY: LegoComponentTemplate[] = [
     colors: [7, 11],
     representation: 'template',
     build: simplifiedStandingStatue,
+    fallback: 'voxel',
+  },
+  {
+    id: 'statue-forced-voxel-silhouette',
+    name: '强制体素轮廓',
+    category: 'statue',
+    tags: ['focal', 'silhouette', 'last-resort'],
+    bboxStuds: { width: 6, depth: 2, height: 14 },
+    anchor: { kind: 'surface', localPoint: [0, 0, 0] },
+    colors: [11],
+    representation: 'template',
+    build: forcedVoxelSilhouette,
     fallback: 'voxel',
   },
   {

@@ -108,6 +108,9 @@ export type Model = {
     };
   };
 };
+export function isSemanticReservedCell(model: Model, x: number, y: number, z: number) {
+  return model.semanticReservedCells?.includes(`${x},${y},${z}`) ?? false;
+}
 export type Raster = { width: number; height: number; data: ArrayLike<number> };
 export type Options = {
   resolution: number;

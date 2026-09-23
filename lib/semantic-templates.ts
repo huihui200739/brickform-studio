@@ -63,6 +63,42 @@ export function simplifiedStandingStatue(): Brick[] {
     part('3023', 11, 0.5, 7, 0),
   ];
 }
+
+/** Last-resort, one-stud-deep silhouette made only from ordinary 1 x 1 plates.
+ * Its size follows the detected subject rather than a fixed catalog figure. */
+export function forcedVoxelSilhouette(instance?: SceneElementInstance): Brick[] {
+  const width = Math.min(8, Math.max(2, Math.round(instance?.scaleHint?.width || 4)));
+  const height = Math.min(32, Math.max(6, Math.round(instance?.scaleHint?.height || 12)));
+  const mask = instance?.imageMask;
+  const size = instance?.imageMaskSize;
+  const bricks: Brick[] = [part(width >= 5 ? '3034' : '3020', 7, 0, 1, 0)];
+  const occupied = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      if (mask && size && size[0] > 0 && size[1] > 0 && mask.length === size[0] * size[1]) {
+        const px = Math.min(size[0] - 1, Math.floor(((x + 0.5) / width) * size[0]));
+        const py = Math.min(size[1] - 1, Math.floor(((height - y - 0.5) / height) * size[1]));
+        occupied[y * width + x] = mask[py * size[0] + px] ? 1 : 0;
+      } else {
+        const centre = Math.abs(x + 0.5 - width / 2);
+        const head = y >= height * 0.75;
+        const shoulders = y >= height * 0.55 && y < height * 0.75;
+        occupied[y * width + x] = centre <= (head ? width * 0.2 : shoulders ? width * 0.5 : width * 0.32) ? 1 : 0;
+      }
+    }
+  // Fill vertical gaps so every visible plate is supported from the base.
+  for (let x = 0; x < width; x++) {
+    let top = -1;
+    for (let y = 0; y < height; y++) if (occupied[y * width + x]) top = y;
+    for (let y = 0; y <= top; y++) occupied[y * width + x] = 1;
+  }
+  if (!occupied.some(Boolean)) throw Error('主元素轮廓为空');
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++)
+      if (occupied[y * width + x])
+        bricks.push(part('3024', 11, x + 0.5 - width / 2, y + 2, 0));
+  return bricks;
+}
 export function reliefStatue(instance?: SceneElementInstance): Brick[] {
   if (!instance?.imageMask || !instance.imageMaskSize)
     throw Error('浮雕模板缺少实例轮廓');

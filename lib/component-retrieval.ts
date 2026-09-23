@@ -90,7 +90,7 @@ export function retrieveComponent(
   if (
     instance.category === 'statue' &&
     instance.confidence < 0.95 &&
-    matches[0]?.template.id === 'statue-simple-standing'
+    matches.some((match) => match.template.id === 'statue-simplified')
   )
     return matches.find((match) => match.template.id === 'statue-simplified') || matches[0];
   return matches[0];

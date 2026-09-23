@@ -159,29 +159,29 @@ function reserveCommittedGeometry(model: Model) {
 
 function focalFallbackCandidates(region: ComponentRegion): ComponentRegion[] {
   if (region.kind !== 'statue') return [];
-  const ids = ['statue-simplified', 'statue-relief', 'statue-simple-standing'];
+  const ids = [
+    'statue-simplified',
+    'statue-relief',
+    'statue-simple-standing',
+    'statue-forced-voxel-silhouette',
+  ];
   const candidates: ComponentRegion[] = ids.flatMap((id) => {
     const template = componentTemplate(id);
     if (!template) return [];
     return [{
       ...region,
       templateId: id,
-      representation: id === 'statue-relief' ? 'relief' as const : 'semantic-template' as const,
+      representation:
+        id === 'statue-relief'
+          ? 'relief' as const
+          : id === 'statue-forced-voxel-silhouette'
+            ? 'voxel' as const
+            : 'semantic-template' as const,
       width: template.bboxStuds.width,
       depth: template.bboxStuds.depth,
       height: template.bboxStuds.height,
     }];
   });
-  const forced = componentTemplate('statue-simple-standing');
-  if (forced)
-    candidates.push({
-      ...region,
-      templateId: forced.id,
-      representation: 'voxel',
-      width: forced.bboxStuds.width,
-      depth: Math.min(2, forced.bboxStuds.depth),
-      height: forced.bboxStuds.height,
-    });
   return candidates;
 }
 
