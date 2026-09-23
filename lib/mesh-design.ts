@@ -371,7 +371,7 @@ function assembleVolume(
         w + 2,
         h + 2,
         d + 2,
-        (x, y, z) => cells.has(`${x},${y},${z}`),
+        (x, y, z) => y < 2 || cells.has(`${x},${y},${z}`),
         dominant,
       );
     })()],
