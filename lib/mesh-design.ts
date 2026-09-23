@@ -37,6 +37,7 @@ import { optimizeAestheticPacking } from './aesthetic-packing.ts';
 import { applyRepresentationTransaction } from './composition/transaction.ts';
 import { enforceGroupConsistency } from './element-grouping.ts';
 import { routeStructureRepresentation } from './representation/representation-router.ts';
+import { applyAnchorResult, solveSurfaceAnchor } from './surface-anchor-solver.ts';
 import {
   createModelView,
   createReferenceView,
@@ -174,6 +175,39 @@ export type VisibilityContext = {
   image?: Raster;
   camera?: ReferenceCamera;
 };
+
+function calibrateRegionAnchors(
+  mesh: TriangleMesh,
+  resolution: number,
+  regions: ComponentRegion[],
+  baseline: Model,
+  visibility?: VisibilityContext,
+) {
+  if (!visibility?.image) return regions;
+  return regions.map((region) => {
+    if (!region.sceneElement) return region;
+    const result = solveSurfaceAnchor(
+      region.sceneElement,
+      mesh,
+      visibility.image!,
+      baseline,
+      resolution,
+      visibility.camera,
+    );
+    return applyAnchorResult(region, result);
+  });
+}
+
+function anchorDebug(region: ComponentRegion) {
+  const anchor = region.anchorResult;
+  if (!anchor) return `${region.id} calibration=unavailable`;
+  const normal = anchor.surface.normal.map((value) => value.toFixed(2)).join(',');
+  const world = [anchor.worldAnchor.x, anchor.worldAnchor.y, anchor.worldAnchor.z]
+    .map((value) => value.toFixed(2)).join(',');
+  return `${region.kind.toUpperCase()} image=(${anchor.imageAnchor.x.toFixed(3)},${anchor.imageAnchor.y.toFixed(3)}) ` +
+    `surface=${anchor.surfaceKind || 'unknown'} normal=(${normal}) world=(${world}) ` +
+    `attached=${anchor.attached} visible=${region.representationResult?.visibleFromReference ?? false}`;
+}
 
 function ensureSceneElement(region: ComponentRegion): ComponentRegion {
   if (region.sceneElement) return region;
@@ -746,12 +780,23 @@ export function meshToDesign(
   visibility?: VisibilityContext,
 ): Model {
   regions = regions.map(ensureSceneElement);
-  enforceGroupConsistency(regions);
   if (regions.some((r) => r.autoRefinement))
     return meshToDesignAuto(mesh, resolution, regions, 48, visibility).model;
+  const volume = buildMeshVolume(mesh, resolution);
+  if (visibility?.image && regions.length) {
+    try {
+      const baseline = assembleVolume(mesh, volume, resolution, []);
+      regions = calibrateRegionAnchors(mesh, resolution, regions, baseline, visibility);
+    } catch {
+      // Keep manual conversion available when the source mesh itself cannot
+      // produce an anchor surface; the anchor result will explain the failure.
+    }
+  }
+  enforceGroupConsistency(regions);
   const eligible = regions.filter(
     (r) =>
       r.placementStatus !== 'rejected' &&
+      (!r.anchorResult || r.anchorResult.attached) &&
       (r.source === 'manual' || r.confirmed === true || !r.source),
   );
   const structure = classifyStructure(mesh);
@@ -759,7 +804,7 @@ export function meshToDesign(
     return assembleProceduralStructure(mesh, resolution, structure);
   const model = assembleVolume(
     mesh,
-    buildMeshVolume(mesh, resolution),
+    volume,
     resolution,
     eligible,
   );
@@ -783,6 +828,9 @@ export function meshToDesign(
     confidence: element.confidence,
     reason: ['legacy composition audited after commit'],
   }));
+  if (model.assembly && regions.some((region) => region.anchorResult))
+    model.assembly.reference +=
+      ' 语义锚点校准：' + regions.filter((region) => region.anchorResult).map(anchorDebug).join('；');
   return model;
 }
 export type AutoComponentResult = {
@@ -801,12 +849,23 @@ export function meshToDesignAuto(
 ): AutoComponentResult {
   if (regions.length > 64) throw Error('一次最多替换 64 个组件。');
   regions = regions.map(ensureSceneElement);
+  const volume = buildMeshVolume(mesh, resolution);
+  if (visibility?.image && regions.length) {
+    try {
+      const baseline = assembleVolume(mesh, volume, resolution, []);
+      regions = calibrateRegionAnchors(mesh, resolution, regions, baseline, visibility);
+    } catch {
+      // A failed baseline surface is reported by the later placement result;
+      // it must not silently invent a new anchor.
+    }
+  }
   enforceGroupConsistency(regions);
   // Manual overrides and sufficiently confident automatic proposals can enter
   // a trial. Automatic confirmation happens only after the trial commits.
   const eligible = regions.filter(
     (r) =>
       r.placementStatus !== 'rejected' &&
+      (!r.anchorResult || r.anchorResult.attached) &&
       (r.source === 'manual' ||
         (!r.autoRefinement && (r.confirmed === true || !r.source)) ||
         (r.autoRefinement === true &&
@@ -818,8 +877,7 @@ export function meshToDesignAuto(
   const classified = classifyStructure(mesh);
   if (!regions.length && (classified.category === 'lattice-tower' || classified.category === 'tower') && classified.confidence >= 0.62)
     return { model: assembleProceduralStructure(mesh, resolution, classified), applied: [], dropped: [], reports: [], attempts: 0 };
-  const volume = buildMeshVolume(mesh, resolution),
-    grid: V3 = [volume.w, volume.h, volume.d];
+  const grid: V3 = [volume.w, volume.h, volume.d];
   const limit = Math.max(
     0,
     Math.min(96, Number.isFinite(budget) ? Math.floor(budget) : 48),
@@ -843,7 +901,12 @@ export function meshToDesignAuto(
         trial.regions.push(...plan);
         trialModel = assembleVolume(mesh, volume, resolution, trial.regions);
       },
-      validate: () => ({ acceptable: trialModel !== null }),
+      validate: () => ({
+        acceptable: trialModel !== null && list.every((region) => !region.anchorResult || region.anchorResult.attached),
+        reasons: list
+          .filter((region) => region.anchorResult && !region.anchorResult.attached)
+          .flatMap((region) => region.anchorResult!.failureReasons),
+      }),
     });
     return transaction.committed ? trialModel : null;
   };
@@ -1032,6 +1095,9 @@ export function meshToDesignAuto(
           `fallbackLevel=${result.fallbackLevel}`,
         )
         .join('；');
+  if (model.assembly && regions.some((region) => region.anchorResult))
+    model.assembly.reference +=
+      ' 语义锚点校准：' + regions.filter((region) => region.anchorResult).map(anchorDebug).join('；');
   model.aesthetic = aestheticScore(model);
   model.componentPlacement = reports;
   if (reports.length && model.assembly)

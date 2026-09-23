@@ -145,7 +145,8 @@ export async function detectRefinements(
       ...detection,
       category: kind,
       imageBox: bbox,
-      worldAnchor: anchor,
+      // The ray hit is only a provisional mesh sample. Surface calibration
+      // writes worldAnchor after it finds an attachable generated brick.
       scaleHint: size,
     };
     const matches = retrieveComponentForInstance(sceneElement);

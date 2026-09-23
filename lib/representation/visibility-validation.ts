@@ -197,9 +197,24 @@ export function validateElementVisibility(
     }
   result.projectedCoverage = total ? visible / total : 0;
   result.occlusionRatio = total ? 1 - visible / total : 1;
+  const targetDepth = projected.reduce((sum, item) => sum + item.depth, 0) / Math.max(1, projected.length);
+  const nearestOccluderDepth = finalModel.bricks
+    .filter((brick) => !target.has(brick.id))
+    .map((brick) => ({ brick, projection: projectBrick(brick, referenceView) }))
+    .filter(({ projection }) =>
+      projection.x1 >= x0 * WIDTH && projection.x0 <= x1 * WIDTH &&
+      projection.y1 >= y0 * HEIGHT && projection.y0 <= y1 * HEIGHT &&
+      projection.depth > targetDepth + 1e-4,
+    )
+    .map(({ projection }) => projection.depth)
+    .sort((a, b) => a - b)[0];
+  const depthPassed = !(result.occlusionRatio > 0.75 && nearestOccluderDepth !== undefined);
+  result.depthCheck = { targetDepth, nearestOccluderDepth, passed: depthPassed };
+  if (!depthPassed)
+    result.failureReasons.push('element depth is behind an overlapping wall or support');
   const threshold = element.mustRepresent || element.importance === 'primary'
     ? PRIMARY_MIN_COVERAGE : 0.05;
-  result.visibleFromReference = total > 0 && result.projectedCoverage >= threshold;
+  result.visibleFromReference = total > 0 && result.projectedCoverage >= threshold && depthPassed;
   if (!result.visibleFromReference)
     result.failureReasons.push(`reference-view coverage ${result.projectedCoverage.toFixed(3)} below ${threshold}`);
   result.committed = result.brickCount > 0 && result.visibleFromReference;

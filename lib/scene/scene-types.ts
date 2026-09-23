@@ -2,6 +2,7 @@
  * The scene layer is the contract between image analysis and model planning.
  * It deliberately contains no mesh mutation or brick placement operations.
  */
+import type { AnchorResult } from '../anchor-result.ts';
 export type ElementCategory =
   | 'tree'
   | 'plant'
@@ -62,6 +63,7 @@ export type SceneElementInstance = {
   anchorConfidence?: number;
   evidence?: string[];
   shapeEmbedding?: number[];
+  anchorResult?: AnchorResult;
 
   // Planning outcome is written after routing/transaction, never by detection.
   chosenRepresentation?: RepresentationKind;
@@ -111,6 +113,11 @@ export type RepresentationResult = {
   visibleFromReference: boolean;
   projectedCoverage?: number;
   occlusionRatio?: number;
+  depthCheck?: {
+    targetDepth: number;
+    nearestOccluderDepth?: number;
+    passed: boolean;
+  };
   projectedBox?: ImageBox;
   fallbackLevel: number;
   failureReasons: string[];
