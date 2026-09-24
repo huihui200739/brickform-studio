@@ -6,7 +6,7 @@ import { imageAnchorToMesh } from './image-to-mesh.ts';
 import { meshFrame, type ComponentRegion } from './semantic-components.ts';
 import type { SceneElementInstance } from './scene/scene-types.ts';
 import type { V3 } from './assembly-catalog.ts';
-import type { AnchorResult } from './anchor-result.ts';
+import type { AnchorResult, PlacementMode } from './anchor-result.ts';
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
@@ -66,6 +66,29 @@ function groundTop(model: Model, point: V3) {
   return best;
 }
 
+function nearestPlatform(model: Model, point: V3) {
+  return model.bricks
+    .filter((brick) => !brick.section?.startsWith('component-'))
+    .map((brick) => {
+      const top = brick.y + brick.h;
+      const x = clamp(point[0], brick.x, brick.x + brick.w);
+      const z = clamp(point[2], brick.z, brick.z + brick.d);
+      return {
+        brick,
+        top,
+        distance: Math.hypot(point[0] - x, point[2] - z) + Math.abs(point[1] - top) * 0.15,
+      };
+    })
+    .filter((candidate) => candidate.top <= point[1] + 3)
+    .sort((a, b) => a.distance - b.distance)[0];
+}
+
+function placementModeFor(element: SceneElementInstance, kind: AnchorResult['surfaceKind']): PlacementMode {
+  if (element.category === 'brazier') return 'wall-mounted';
+  if (element.category === 'statue') return kind === 'unknown' ? 'cavity-contained' : 'pedestal-mounted';
+  return kind === 'wall' ? 'wall-mounted' : 'cavity-contained';
+}
+
 /**
  * Calibrate an image anchor against both the source mesh and the generated
  * brick structure. The returned worldAnchor is in brick-grid coordinates;
@@ -88,6 +111,8 @@ export function solveSurfaceAnchor(
     depthConfidence: 0,
     attached: false,
     failureReasons: [],
+    placementMode: placementModeFor(element, 'unknown'),
+    placementScore: 0,
   };
   try {
     const alignment = referenceAlignment(mesh, image, camera);
@@ -102,10 +127,39 @@ export function solveSurfaceAnchor(
     const normal = hit.normal as [number, number, number];
     const kind: AnchorResult['surfaceKind'] = Math.abs(normal[1]) > 0.55 ? 'ground' : Math.abs(normal[0]) + Math.abs(normal[2]) > 0.55 ? 'wall' : 'unknown';
     const candidates = surfaceCandidates(model, point, normal, kind);
-    const support = candidates.slice(0, kind === 'wall' ? 3 : 2).map((candidate) => candidate.brick.id);
+    let support = candidates.slice(0, kind === 'wall' ? 3 : 2).map((candidate) => candidate.brick.id);
+    let resolvedKind: AnchorResult['surfaceKind'] = kind;
+    let resolvedNormal: [number, number, number] = normal;
+    let fallbackReason: string | undefined;
     let attachedPoint = candidates[0]?.nearest.closest || point;
     let y = attachedPoint[1];
-    if (element.category === 'statue' && kind === 'wall') {
+    if (!candidates.length && element.category === 'statue') {
+      // Statues are primary semantic content. If the ray lands in a recess
+      // with no directly attachable brick, keep the semantic volume and seat
+      // it on the nearest generated platform when one exists.
+      const platform = nearestPlatform(model, point);
+      if (platform) {
+        resolvedKind = 'platform';
+        resolvedNormal = [0, 1, 0];
+        support = [platform.brick.id];
+        attachedPoint = [point[0], platform.top, point[2]];
+        y = platform.top;
+        fallbackReason = 'surface unavailable; using nearest platform';
+      } else {
+        // The cavity centre retains the image-derived x/z and gives the
+        // representation a deterministic volume even without support bricks.
+        resolvedKind = 'unknown';
+        resolvedNormal = [0, 1, 0];
+        attachedPoint = [
+          clamp(point[0], 2, Math.max(2, model.width - 2)),
+          clamp(point[1], 2, Math.max(2, model.height - 1)),
+          clamp(point[2], 2, Math.max(2, model.depth - 2)),
+        ];
+        y = attachedPoint[1];
+        fallbackReason = 'surface unavailable; preserving semantic volume at cavity center';
+      }
+    }
+    if (element.category === 'statue' && resolvedKind === 'wall') {
       // A statue is seated on the nearest cavity floor/platform, then moved
       // toward the viewer so its body does not become part of the wall.
       y = groundTop(model, point);
@@ -114,18 +168,21 @@ export function solveSurfaceAnchor(
       y = groundTop(model, point);
       attachedPoint = [point[0], y, point[2]];
     }
-    const offset = element.category === 'brazier' && kind === 'wall' ? 1 : element.category === 'statue' && kind === 'wall' ? 0.75 : 0;
-    const world: V3 = [attachedPoint[0] + normal[0] * offset, y + (kind === 'ground' ? 0 : normal[1] * offset), attachedPoint[2] + normal[2] * offset];
+    const offset = element.category === 'brazier' && resolvedKind === 'wall' ? 1 : element.category === 'statue' && resolvedKind === 'wall' ? 0.75 : 0;
+    const world: V3 = [attachedPoint[0] + resolvedNormal[0] * offset, y + (resolvedKind === 'ground' ? 0 : resolvedNormal[1] * offset), attachedPoint[2] + resolvedNormal[2] * offset];
     const normalizedAnchor = toNormalizedAnchor([model.width, model.height, model.depth], world);
     result.worldAnchor = { x: world[0], y: world[1], z: world[2] };
     result.normalizedAnchor = normalizedAnchor;
-    result.surface = { detected: candidates.length > 0, normal, supportBrickIds: support };
-    result.surfaceKind = kind;
-    result.depthConfidence = Math.min(1, hit.raycastConfidence * (alignment.confidence || 0.5) * (candidates.length ? 1 : 0.4));
-    result.attached = candidates.length > 0 && support.length > 0;
+    result.surface = { detected: candidates.length > 0 || fallbackReason?.includes('nearest platform') === true, normal: resolvedNormal, supportBrickIds: support };
+    result.surfaceKind = resolvedKind;
+    result.placementMode = placementModeFor(element, resolvedKind);
+    result.depthConfidence = Math.min(1, hit.raycastConfidence * (alignment.confidence || 0.5) * (candidates.length || support.length ? 1 : 0.4));
+    result.attached = support.length > 0 && (candidates.length > 0 || fallbackReason?.includes('nearest platform') === true);
+    if (fallbackReason) result.failureReasons.push(fallbackReason);
     if (!result.surface.detected) result.failureReasons.push('no nearby generated brick surface matched the ray hit');
     if (!result.attached) result.failureReasons.push('surface has no attachable support bricks');
     if (result.depthConfidence < 0.35) result.failureReasons.push('surface depth confidence is low');
+    result.placementScore = Math.min(1, result.depthConfidence * 0.65 + (result.attached ? 0.35 : 0.08));
   } catch (error) {
     result.failureReasons.push(error instanceof Error ? error.message : 'surface anchor calibration failed');
   }
@@ -133,16 +190,34 @@ export function solveSurfaceAnchor(
 }
 
 export function applyAnchorResult(region: ComponentRegion, result: AnchorResult) {
-  if (!result.normalizedAnchor) return region;
+  const placementMode = result.placementMode ||
+    (region.kind === 'brazier' ? 'wall-mounted' : region.kind === 'statue' ? 'cavity-contained' : 'cavity-contained');
+  if (!result.normalizedAnchor)
+    return {
+      ...region,
+      anchorResult: result,
+      placementMode,
+      placementScore: result.placementScore,
+      sceneElement: region.sceneElement ? {
+        ...region.sceneElement,
+        anchorResult: result,
+        placementMode,
+        placementScore: result.placementScore,
+      } : region.sceneElement,
+    };
   return {
     ...region,
     anchor: [...result.normalizedAnchor] as V3,
     referenceAnchor: [...result.normalizedAnchor] as V3,
     anchorResult: result,
+    placementMode,
+    placementScore: result.placementScore,
     sceneElement: region.sceneElement ? {
       ...region.sceneElement,
       worldAnchor: [...result.normalizedAnchor] as V3,
       anchorResult: result,
+      placementMode,
+      placementScore: result.placementScore,
     } : region.sceneElement,
   };
 }

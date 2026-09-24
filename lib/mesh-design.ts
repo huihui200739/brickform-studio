@@ -210,7 +210,19 @@ function anchorDebug(region: ComponentRegion) {
 }
 
 function ensureSceneElement(region: ComponentRegion): ComponentRegion {
-  if (region.sceneElement) return region;
+  if (region.sceneElement) {
+    if (region.placementMode || region.sceneElement.placementMode) return region;
+    const placementMode = region.kind === 'brazier'
+      ? 'wall-mounted' as const
+      : region.kind === 'statue'
+        ? 'pedestal-mounted' as const
+        : 'cavity-contained' as const;
+    return {
+      ...region,
+      placementMode,
+      sceneElement: { ...region.sceneElement, placementMode },
+    };
+  }
   const category = region.kind;
   const sceneElement: SceneElementInstance = {
     id: region.id,
@@ -229,8 +241,30 @@ function ensureSceneElement(region: ComponentRegion): ComponentRegion {
     detectionSource: region.source === 'color' ? 'color' : 'heuristic',
     anchorKind: category === 'statue' ? 'surface' : 'ground',
     evidence: ['legacy region promoted to a scene instance'],
+    placementMode: category === 'brazier'
+      ? 'wall-mounted'
+      : category === 'statue'
+        ? 'pedestal-mounted'
+        : 'cavity-contained',
   };
-  return { ...region, sceneElement };
+  return { ...region, sceneElement, placementMode: sceneElement.placementMode };
+}
+
+function anchorPlacementScore(region: ComponentRegion) {
+  return region.placementScore ?? region.anchorResult?.placementScore ??
+    (region.anchorResult?.attached ? 1 : 0.35);
+}
+
+function requiresHardWallAttachment(region: ComponentRegion) {
+  return region.kind === 'brazier' || region.placementMode === 'wall-mounted';
+}
+
+function attachmentFailures(regions: ComponentRegion[]) {
+  return regions.filter((region) =>
+    requiresHardWallAttachment(region) &&
+    region.anchorResult &&
+    !region.anchorResult.attached,
+  );
 }
 
 function visibilityView(
@@ -796,7 +830,6 @@ export function meshToDesign(
   const eligible = regions.filter(
     (r) =>
       r.placementStatus !== 'rejected' &&
-      (!r.anchorResult || r.anchorResult.attached) &&
       (r.source === 'manual' || r.confirmed === true || !r.source),
   );
   const structure = classifyStructure(mesh);
@@ -865,14 +898,13 @@ export function meshToDesignAuto(
   const eligible = regions.filter(
     (r) =>
       r.placementStatus !== 'rejected' &&
-      (!r.anchorResult || r.anchorResult.attached) &&
       (r.source === 'manual' ||
         (!r.autoRefinement && (r.confirmed === true || !r.source)) ||
         (r.autoRefinement === true &&
           r.source === 'color' &&
           (r.kind !== 'statue' || r.templateId === 'statue-relief' || r.templateId === 'statue-simplified') &&
           automaticReplacementScore(r) >= AUTO_REPLACEMENT_THRESHOLD)),
-  );
+  ).sort((a, b) => anchorPlacementScore(b) - anchorPlacementScore(a));
   const unconfirmed = regions.filter((r) => !eligible.includes(r));
   const classified = classifyStructure(mesh);
   if (!regions.length && (classified.category === 'lattice-tower' || classified.category === 'tower') && classified.confidence >= 0.62)
@@ -902,9 +934,8 @@ export function meshToDesignAuto(
         trialModel = assembleVolume(mesh, volume, resolution, trial.regions);
       },
       validate: () => ({
-        acceptable: trialModel !== null && list.every((region) => !region.anchorResult || region.anchorResult.attached),
-        reasons: list
-          .filter((region) => region.anchorResult && !region.anchorResult.attached)
+        acceptable: trialModel !== null && attachmentFailures(list).length === 0,
+        reasons: attachmentFailures(list)
           .flatMap((region) => region.anchorResult!.failureReasons),
       }),
     });

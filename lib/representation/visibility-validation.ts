@@ -209,12 +209,15 @@ export function validateElementVisibility(
     .map(({ projection }) => projection.depth)
     .sort((a, b) => a - b)[0];
   const depthPassed = !(result.occlusionRatio > 0.75 && nearestOccluderDepth !== undefined);
-  result.depthCheck = { targetDepth, nearestOccluderDepth, passed: depthPassed };
+  const primaryDepthWarning = Boolean(!depthPassed && (element.importance === 'primary' || element.mustRepresent));
   if (!depthPassed)
-    result.failureReasons.push('element depth is behind an overlapping wall or support');
+    result.failureReasons.push(
+      `${primaryDepthWarning ? 'warning: ' : ''}element depth is behind an overlapping wall or support`,
+    );
   const threshold = element.mustRepresent || element.importance === 'primary'
     ? PRIMARY_MIN_COVERAGE : 0.05;
-  result.visibleFromReference = total > 0 && result.projectedCoverage >= threshold && depthPassed;
+  result.depthCheck = { targetDepth, nearestOccluderDepth, passed: depthPassed, warning: primaryDepthWarning };
+  result.visibleFromReference = total > 0 && result.projectedCoverage >= threshold && (depthPassed || primaryDepthWarning);
   if (!result.visibleFromReference)
     result.failureReasons.push(`reference-view coverage ${result.projectedCoverage.toFixed(3)} below ${threshold}`);
   result.committed = result.brickCount > 0 && result.visibleFromReference;

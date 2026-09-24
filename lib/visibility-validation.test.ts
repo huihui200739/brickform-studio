@@ -58,6 +58,8 @@ test('a representation hidden behind a wall fails visibility validation', () => 
   const checked = validateElementVisibility(element, result, view, m);
   assert.equal(checked.visibleFromReference, false);
   assert.ok((checked.occlusionRatio || 0) > 0.9);
+  assert.equal(checked.depthCheck?.warning, true);
+  assert.ok(checked.failureReasons.some((reason) => reason.startsWith('warning:')));
 });
 
 test('a visible simplified standing statue passes and exposes real brick ids', () => {

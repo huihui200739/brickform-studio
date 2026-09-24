@@ -148,6 +148,11 @@ export async function detectRefinements(
       // The ray hit is only a provisional mesh sample. Surface calibration
       // writes worldAnchor after it finds an attachable generated brick.
       scaleHint: size,
+      placementMode: kind === 'brazier'
+        ? 'wall-mounted' as const
+        : kind === 'statue'
+          ? 'pedestal-mounted' as const
+          : 'cavity-contained' as const,
     };
     const matches = retrieveComponentForInstance(sceneElement);
     const match = matches[0];
@@ -178,8 +183,11 @@ export async function detectRefinements(
         `表达方式：${decision.reason}`,
         `相机轮廓对齐评分 ${alignment.confidence.toFixed(2)}`,
       ],
-      // Final installation contributes at most .15; all other gates must pass.
+      // Installation confidence is provisional here; the calibrated anchor is
+      // a placement score, while the transactional assembler applies only the
+      // category-specific wall attachment constraint.
       placementStatus: 'candidate',
+      placementMode: sceneElement.placementMode,
       autoScoreWithInstallation: replacementConfidence(
         detection.confidence,
         alignment.confidence,

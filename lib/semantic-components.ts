@@ -21,7 +21,7 @@ import {
 } from './component-library.ts';
 import type { RepresentationKind } from './scene-elements.ts';
 import type { RepresentationResult } from './scene/scene-types.ts';
-import type { AnchorResult } from './anchor-result.ts';
+import type { AnchorResult, PlacementMode } from './anchor-result.ts';
 export { componentBricks } from './component-parts.ts';
 import { componentBricks } from './component-parts.ts';
 export type ComponentKind = 'tree' | 'brazier' | 'statue';
@@ -62,6 +62,8 @@ export type ComponentRegion = {
   sceneElement?: SceneElement;
   representationResult?: RepresentationResult;
   anchorResult?: AnchorResult;
+  placementMode?: PlacementMode;
+  placementScore?: number;
   templateId?: string;
   representation?: RepresentationKind;
   templateCandidates?: string[];
