@@ -62,7 +62,10 @@ export function retrieveComponentForInstance(
       if (
         instance.category === 'statue' &&
         template.representation === 'component' &&
-        instance.confidence < 0.95
+        instance.confidence < 0.95 &&
+        !(instance.mustRepresent &&
+          (instance.anchorConfidence ?? 0) >= 0.8 &&
+          instance.confidence >= 0.8 && instance.imageMask?.some(Boolean))
       )
         score = 0;
       return {

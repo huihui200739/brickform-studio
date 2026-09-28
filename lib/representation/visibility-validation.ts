@@ -134,7 +134,7 @@ function projectBrick(brick: Brick, view: ReferenceView): Projection {
 function overlaps(a: ImageBox, b: ImageBox) {
   const w = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
   const h = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
-  return (w * h) / Math.max(1e-9, a.width * a.height);
+  return (w * h) / Math.max(1e-9, Math.min(a.width * a.height, b.width * b.height));
 }
 
 /** Validates geometry, reference placement, and actual front-most pixels. */
@@ -165,6 +165,9 @@ export function validateElementVisibility(
   const y0 = Math.min(...projected.map((p) => p.y0)) / HEIGHT;
   const y1 = Math.max(...projected.map((p) => p.y1)) / HEIGHT;
   result.projectedBox = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+  // Detectors may see only a flame or canopy while the catalog component
+  // includes its base. Compare coverage of the smaller box, still requiring
+  // genuine overlap (proximity alone cannot pass visibility).
   if (element.imageBox && overlaps(result.projectedBox, element.imageBox) < 0.2) {
     result.failureReasons.push('projected geometry misses reference image box');
     return result;

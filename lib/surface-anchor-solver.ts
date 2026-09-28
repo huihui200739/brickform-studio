@@ -83,6 +83,29 @@ function nearestPlatform(model: Model, point: V3) {
     .sort((a, b) => a.distance - b.distance)[0];
 }
 
+function cavityPlatform(model: Model, point: V3, normal: V3) {
+  // A ray hits the front of a pedestal. Its mounting plane is behind that
+  // face, above the hit. Search locally; an off-centre statue stays off-centre.
+  const x = Math.round(point[0] - normal[0]);
+  const z = Math.round(point[2] - normal[2]);
+  const candidates = model.bricks.filter((brick) =>
+    !brick.support && !brick.section?.startsWith('component-') &&
+    brick.x < x + 1 && brick.x + brick.w > x - 1 &&
+    brick.z < z + 1 && brick.z + brick.d > z - 1 &&
+    brick.y + brick.h >= point[1] - 1 && brick.y + brick.h <= point[1] + 6,
+  );
+  const tops = [...new Set(candidates.map((brick) => brick.y + brick.h))].sort((a, b) => a - b);
+  for (const top of tops) {
+    const surface = candidates.filter((brick) => brick.y + brick.h === top);
+    const covered = (xx: number, zz: number) => surface.some((brick) =>
+      xx >= brick.x && xx < brick.x + brick.w && zz >= brick.z && zz < brick.z + brick.d,
+    );
+    if (![x - 1, x].every((xx) => [z - 1, z].every((zz) => covered(xx, zz)))) continue;
+    return { point: [x, top + 1, z] as V3, support: surface.map((brick) => brick.id) };
+  }
+  return undefined;
+}
+
 function placementModeFor(element: SceneElementInstance, kind: AnchorResult['surfaceKind']): PlacementMode {
   if (element.category === 'brazier') return 'wall-mounted';
   if (element.category === 'statue') return kind === 'unknown' ? 'cavity-contained' : 'pedestal-mounted';
@@ -122,8 +145,9 @@ export function solveSurfaceAnchor(
       return result;
     }
     const frame = meshFrame(mesh, resolution);
-    const normalized = hit.point.map((value, axis) => clamp((value - frame.min[axis]) / Math.max(frame.span[axis], 1e-9), 0, 1)) as V3;
-    const point: V3 = [normalized[0] * model.width + 1, normalized[1] * model.height + 2, normalized[2] * model.depth + 1];
+    const point = hit.point.map((value, axis) =>
+      (value - frame.min[axis]) * frame.scale / (axis === 1 ? 0.4 : 1) + (axis === 1 ? 2 : 1),
+    ) as V3;
     const normal = hit.normal as [number, number, number];
     const kind: AnchorResult['surfaceKind'] = Math.abs(normal[1]) > 0.55 ? 'ground' : Math.abs(normal[0]) + Math.abs(normal[2]) > 0.55 ? 'wall' : 'unknown';
     const candidates = surfaceCandidates(model, point, normal, kind);
@@ -160,17 +184,30 @@ export function solveSurfaceAnchor(
       }
     }
     if (element.category === 'statue' && resolvedKind === 'wall') {
-      // A statue is seated on the nearest cavity floor/platform, then moved
-      // toward the viewer so its body does not become part of the wall.
-      y = groundTop(model, point);
-      attachedPoint = [point[0], y, point[2]];
+      const platform = cavityPlatform(model, point, normal);
+      if (platform) {
+        // Keep the figure in the niche, but one stud in front of the wall
+        // plane so the body is not occluded by the rear masonry.
+        attachedPoint = [
+          platform.point[0] + normal[0],
+          platform.point[1],
+          platform.point[2] + normal[2],
+        ];
+        y = attachedPoint[1];
+        support = platform.support;
+        resolvedKind = 'platform';
+        resolvedNormal = [0, 1, 0];
+      } else {
+        y = groundTop(model, point);
+        attachedPoint = [point[0], y, point[2]];
+      }
     } else if (kind === 'ground') {
       y = groundTop(model, point);
       attachedPoint = [point[0], y, point[2]];
     }
     const offset = element.category === 'brazier' && resolvedKind === 'wall' ? 1 : element.category === 'statue' && resolvedKind === 'wall' ? 0.75 : 0;
     const world: V3 = [attachedPoint[0] + resolvedNormal[0] * offset, y + (resolvedKind === 'ground' ? 0 : resolvedNormal[1] * offset), attachedPoint[2] + resolvedNormal[2] * offset];
-    const normalizedAnchor = toNormalizedAnchor([model.width, model.height, model.depth], world);
+    const normalizedAnchor = toNormalizedAnchor(frame.grid, world);
     result.worldAnchor = { x: world[0], y: world[1], z: world[2] };
     result.normalizedAnchor = normalizedAnchor;
     result.surface = { detected: candidates.length > 0 || fallbackReason?.includes('nearest platform') === true, normal: resolvedNormal, supportBrickIds: support };

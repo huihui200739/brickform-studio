@@ -16,6 +16,7 @@ import {
 import type { V3 } from './assembly-catalog.ts';
 import {
   retrieveComponentForInstance,
+  componentTemplate,
 } from './component-library.ts';
 import { enforceGroupConsistency } from './element-grouping.ts';
 import { routeRepresentation } from './representation-router.ts';
@@ -173,6 +174,11 @@ export async function detectRefinements(
       referenceAnchor: [...anchor],
       imageUV: detection.anchorUV,
       ...size,
+      // Clear the catalog flame assembly's real envelope. The old 4 x 4
+      // search box cut into adjacent walls above the 2 x 2 mounting plate.
+      ...(kind === 'brazier' && decision.templateId
+        ? componentTemplate(decision.templateId)?.bboxStuds
+        : {}),
       rotation: 0,
       placed: true,
       confidence: detection.confidence,

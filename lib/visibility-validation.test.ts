@@ -60,6 +60,26 @@ test('a representation hidden behind a wall fails visibility validation', () => 
   assert.ok((checked.occlusionRatio || 0) > 0.9);
   assert.equal(checked.depthCheck?.warning, true);
   assert.ok(checked.failureReasons.some((reason) => reason.startsWith('warning:')));
+  assert.equal(checked.committed, false, 'coverage still fails when the whole primary is hidden');
+});
+
+test('a small detected flame box can validate against its larger catalog assembly', () => {
+  const flameElement = {
+    ...element,
+    id: 'brazier-1',
+    category: 'brazier' as const,
+    importance: 'secondary' as const,
+    mustRepresent: false,
+    imageBox: { x: 0.09, y: 0.02, width: 0.02, height: 0.04 },
+  };
+  const m = model([
+    { id: 3, part: '3022', x: 1, y: 0, z: 0, w: 2, d: 2, h: 1, color: 7, section: 'component-brazier-1' },
+    { id: 4, part: '87580', x: 1, y: 1, z: 0, w: 2, d: 2, h: 1.5, color: 1, section: 'component-brazier-1' },
+  ]);
+  const result = makeRepresentationResult(flameElement, 'component', 'component', m, 'component-brazier-1', 0);
+  const checked = validateElementVisibility(flameElement, result, view, m);
+  assert.equal(checked.visibleFromReference, true);
+  assert.equal(checked.committed, true);
 });
 
 test('a visible simplified standing statue passes and exposes real brick ids', () => {

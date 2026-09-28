@@ -233,44 +233,80 @@ function detectEnclosedSubject(image: Raster): ImageSemanticDetection | undefine
     const i = (y * w + x) * 4;
     return (data[i] * 3 + data[i + 1] * 4 + data[i + 2]) / 8;
   };
-  let global = 0;
-  for (let y = 0; y < h; y += 4) for (let x = 0; x < w; x += 4) global += lum(x, y);
-  global /= Math.max(1, Math.ceil(w / 4) * Math.ceil(h / 4));
+  let global = 0, samples = 0;
+  for (let y = 0; y < h; y += 4)
+    for (let x = 0; x < w; x += 4) {
+      if (data[(y * w + x) * 4 + 3] <= 100) continue;
+      global += lum(x, y);
+      samples++;
+    }
+  global /= Math.max(1, samples);
+  const dark = new Uint8Array(w * h);
+  for (let i = 0; i < dark.length; i++) {
+    const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
+    // Alpha-zero RGB and saturated foliage cannot provide cavity evidence.
+    if (data[i * 4 + 3] > 100 && lum(i % w, Math.floor(i / w)) < global * 0.55 &&
+      Math.max(r, g, b) - Math.min(r, g, b) < 55) dark[i] = 1;
+  }
+  function components(mask: Uint8Array) {
+    const visited = new Uint8Array(mask.length);
+    const result: number[][] = [];
+    for (let start = 0; start < mask.length; start++) {
+      if (!mask[start] || visited[start]) continue;
+      const queue = [start];
+      visited[start] = 1;
+      for (let at = 0; at < queue.length; at++) {
+        const i = queue[at], x = i % w, y = Math.floor(i / w);
+        for (const [xx, yy] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]) {
+          const next = yy * w + xx;
+          if (xx < 0 || yy < 0 || xx >= w || yy >= h || !mask[next] || visited[next]) continue;
+          visited[next] = 1;
+          queue.push(next);
+        }
+      }
+      result.push(queue);
+    }
+    return result;
+  }
   let best: ImageSemanticDetection | undefined;
-  for (let gy = 0.12; gy <= 0.48; gy += 0.04)
-    for (let gx = 0.22; gx <= 0.62; gx += 0.04) {
-      const x0 = Math.floor(gx * w), y0 = Math.floor(gy * h);
-      const rw = Math.max(8, Math.floor(w * 0.16)), rh = Math.max(12, Math.floor(h * 0.25));
-      const x1 = Math.min(w - 2, x0 + rw), y1 = Math.min(h - 2, y0 + rh);
-      let inside = 0, border = 0, nInside = 0, nBorder = 0;
-      for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
-        const v = lum(x, y);
-        if (x - x0 < 2 || y - y0 < 2 || x1 - x < 3 || y1 - y < 3) { border += v; nBorder++; }
-        else { inside += v; nInside++; }
+  let bestArea = 0;
+  for (const cavity of components(dark)) {
+    if (cavity.length < w * h * 0.002) continue;
+    const rows = new Map<number, [number, number]>();
+    for (const i of cavity) {
+      const x = i % w, y = Math.floor(i / w), row = rows.get(y) || [w, -1];
+      rows.set(y, [Math.min(row[0], x), Math.max(row[1], x)]);
+    }
+    const foreground = new Uint8Array(w * h);
+    // Keep only bright pixels enclosed by the SAME dark region on both sides.
+    // This excludes the wall frame that a sliding contrast window captured.
+    for (const [y, [left, right]] of rows)
+      for (let x = left + 2; x < right - 1; x++)
+        if (data[(y * w + x) * 4 + 3] > 100 && lum(x, y) > global * 0.68)
+          foreground[y * w + x] = 1;
+    for (const subject of components(foreground)) {
+      if (subject.length < w * h * 0.001 || subject.length <= bestArea) continue;
+      let minX = w, maxX = 0, minY = h, maxY = 0;
+      for (const i of subject) {
+        minX = Math.min(minX, i % w); maxX = Math.max(maxX, i % w);
+        minY = Math.min(minY, Math.floor(i / w)); maxY = Math.max(maxY, Math.floor(i / w));
       }
-      const dark = inside / Math.max(1, nInside), rim = border / Math.max(1, nBorder);
-      if (dark > global * 0.82 || rim < dark * 1.12) continue;
-      const mask = new Uint8Array((x1 - x0) * (y1 - y0));
-      let count = 0, minX = x1, minY = y1, maxX = x0, maxY = y0;
-      for (let y = y0 + 2; y < y1 - 2; y++) for (let x = x0 + 2; x < x1 - 2; x++) {
-        if (lum(x, y) < dark + Math.max(12, (rim - dark) * 0.28)) continue;
-        const k = (y - y0) * (x1 - x0) + (x - x0); mask[k] = 1; count++;
-        minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
-      }
-      const area = (maxX - minX + 1) * (maxY - minY + 1);
-      if (count < w * h * 0.0008 || area < w * h * 0.003 || maxY - minY < h * 0.05) continue;
-      const confidence = Math.min(0.86, 0.52 + (rim - dark) / 180 + Math.min(0.2, count / Math.max(1, area) * 0.2));
-      const candidate: ImageSemanticDetection = {
+      const width = maxX - minX + 1, height = maxY - minY + 1;
+      if (height < h * 0.08 || height < width * 1.2 || width < w * 0.025 || subject.length < width * height * 0.2) continue;
+      const mask = new Uint8Array(width * height);
+      for (const i of subject) mask[(Math.floor(i / w) - minY) * width + i % w - minX] = 1;
+      bestArea = subject.length;
+      best = {
         kind: 'statue',
         bbox: { x: minX / (w - 1), y: minY / (h - 1), width: (maxX - minX) / (w - 1), height: (maxY - minY) / (h - 1) },
         mask,
-        maskSize: [x1 - x0, y1 - y0],
+        maskSize: [width, height],
         anchorUV: [(minX + maxX) / 2 / (w - 1), maxY / (h - 1)],
-        confidence,
-        anchorConfidence: Math.min(0.82, confidence),
-        evidence: ['暗色凹陷包围的前景轮廓', '轮廓与壁龛背景存在明暗分离'],
+        confidence: 0.86,
+        anchorConfidence: 0.82,
+        evidence: ['暗色凹陷包围的独立直立轮廓', '轮廓两侧均有壁龛背景，已排除窗口边框'],
       };
-      if (!best || candidate.confidence > best.confidence) best = candidate;
     }
+  }
   return best;
 }

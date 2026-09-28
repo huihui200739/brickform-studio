@@ -35,6 +35,8 @@ import { generateLatticeTowerScaffold } from './procedural-structures.ts';
 import { aestheticScore } from './aesthetic-packing.ts';
 import { optimizeAestheticPacking } from './aesthetic-packing.ts';
 import { applyRepresentationTransaction } from './composition/transaction.ts';
+import { removeSemanticCutRemnants } from './semantic-cut-cleanup.ts';
+import { connectedBelow } from './build-instructions.ts';
 import { enforceGroupConsistency } from './element-grouping.ts';
 import { routeStructureRepresentation } from './representation/representation-router.ts';
 import { applyAnchorResult, solveSurfaceAnchor } from './surface-anchor-solver.ts';
@@ -207,6 +209,27 @@ function anchorDebug(region: ComponentRegion) {
   return `${region.kind.toUpperCase()} image=(${anchor.imageAnchor.x.toFixed(3)},${anchor.imageAnchor.y.toFixed(3)}) ` +
     `surface=${anchor.surfaceKind || 'unknown'} normal=(${normal}) world=(${world}) ` +
     `attached=${anchor.attached} visible=${region.representationResult?.visibleFromReference ?? false}`;
+}
+
+function finalizeAnchor(model: Model, region: ComponentRegion, grid: V3) {
+  if (!region.anchorResult) return;
+  const section = `component-${region.id}`;
+  const base = model.bricks.find(brick => brick.section === section);
+  const support = base ? connectedBelow(model, base)
+    .filter(brick => brick.section !== section).map(brick => brick.id) : [];
+  const [x, y, z] = mountingPoint(region, grid);
+  region.anchorResult = {
+    ...region.anchorResult,
+    worldAnchor: { x, y, z },
+    normalizedAnchor: [...region.anchor],
+    surface: { ...region.anchorResult.surface, supportBrickIds: support },
+    attached: support.length > 0,
+  };
+  if (region.sceneElement) region.sceneElement = {
+    ...region.sceneElement,
+    worldAnchor: [...region.anchor],
+    anchorResult: region.anchorResult,
+  };
 }
 
 function ensureSceneElement(region: ComponentRegion): ComponentRegion {
@@ -770,6 +793,8 @@ function assembleVolume(
     openRowFraction: openRows / Math.max(1, intersected),
   };
   model.assembly!.reference = `按三维网格体积生成；保留网格中的前后布局和孔洞。新增辅助支撑 ${model.supportCount} 块，已计入清单。网格可能含 AI 推测，连接检查不代表外观还原或实物稳定性已验证。`;
+  removeSemanticCutRemnants(model, placements.filter((_, i) => regions[i].kind === 'statue'));
+
   if (packing.removed)
     model.assembly!.reference += ` 美学后处理移除冗余隐藏支撑 ${packing.removed} 块，保留连接与连通性。`;
   if (mesh.statueFallback?.cells.length)
@@ -794,6 +819,7 @@ function assembleVolume(
     );
   addComponents(model, regions, [w, h, d], removedCells);
   const check = validateModel(model);
+
   if (
     check.collisions ||
     check.unsupported ||
@@ -845,6 +871,7 @@ export function meshToDesign(
   model.structureConfidence = structure.confidence;
   const view = visibilityView(mesh, model, resolution, visibility);
   const applied = eligible.filter((r) => r.sceneElement);
+  for (const region of applied) finalizeAnchor(model, region, [volume.w, volume.h, volume.d]);
   model.representationResults = applied.map((r) => auditRepresentation(model, r, view, 0));
   reserveCommittedGeometry(model);
   model.sceneElements = applied.map((r) => ({
@@ -902,7 +929,12 @@ export function meshToDesignAuto(
         (!r.autoRefinement && (r.confirmed === true || !r.source)) ||
         (r.autoRefinement === true &&
           r.source === 'color' &&
-          (r.kind !== 'statue' || r.templateId === 'statue-relief' || r.templateId === 'statue-simplified') &&
+          (r.kind !== 'statue' ||
+            r.templateId === 'statue-relief' ||
+            r.templateId === 'statue-simplified' ||
+            (r.templateId === 'statue-standing' &&
+              r.sceneElement?.mustRepresent === true &&
+              (r.sceneElement.anchorConfidence ?? 0) >= 0.8)) &&
           automaticReplacementScore(r) >= AUTO_REPLACEMENT_THRESHOLD)),
   ).sort((a, b) => anchorPlacementScore(b) - anchorPlacementScore(a));
   const unconfirmed = regions.filter((r) => !eligible.includes(r));
@@ -1090,12 +1122,14 @@ export function meshToDesignAuto(
     model.semanticDesign.dropped = dropped.map((r) => r.id);
   }
   const finalView = visibilityView(mesh, model, resolution, visibility);
-  for (const appliedRegion of applied)
-    if (!appliedRegion.representationResult || !appliedRegion.representationResult.committed)
-      auditRepresentation(model, appliedRegion, finalView, appliedRegion.representationResult?.fallbackLevel || 0);
+  for (const appliedRegion of applied) {
+    finalizeAnchor(model, appliedRegion, grid);
+    // Later replacements can renumber bricks. Always audit the final model.
+    auditRepresentation(model, appliedRegion, finalView, appliedRegion.representationResult?.fallbackLevel || 0);
+  }
   model.sceneElements = regions.filter(r=>r.sceneElement).map(r=>{
     const committed=applied.find(a=>a.id===r.id);
-    return {...r.sceneElement!,chosenRepresentation:committed?.representation ?? r.representation ?? 'voxel',
+    return {...(committed?.sceneElement || r.sceneElement!),chosenRepresentation:committed?.representation ?? r.representation ?? 'voxel',
       chosenTemplateId:committed?.templateId,outcome:committed?'committed':'preserved',
       representationResult:committed?.representationResult,
       reason:reports.find(p=>p.id===r.id)?.message};
@@ -1128,7 +1162,7 @@ export function meshToDesignAuto(
         .join('；');
   if (model.assembly && regions.some((region) => region.anchorResult))
     model.assembly.reference +=
-      ' 语义锚点校准：' + regions.filter((region) => region.anchorResult).map(anchorDebug).join('；');
+      ' 语义锚点校准：' + regions.map(region => applied.find(item => item.id === region.id) || region).filter((region) => region.anchorResult).map(anchorDebug).join('；');
   model.aesthetic = aestheticScore(model);
   model.componentPlacement = reports;
   if (reports.length && model.assembly)

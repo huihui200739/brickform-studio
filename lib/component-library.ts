@@ -54,7 +54,7 @@ export const COMPONENT_LIBRARY: LegoComponentTemplate[] = [
     name: '火盆',
     category: 'brazier',
     tags: ['flame'],
-    bboxStuds: { width: 4, depth: 4, height: 18 },
+    bboxStuds: { width: 2, depth: 2, height: 13 },
     anchor: { kind: 'surface', localPoint: [0, 0, 0] },
     colors: [1, 7],
     representation: 'component',
