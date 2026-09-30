@@ -59,6 +59,7 @@ export type Model = {
   reservedVolumes?: import('./scene/scene-types.ts').BBox3d[];
   designGeometry?: import('./design-geometry.ts').DesignGeometry;
   platformDesign?: import('./platform-design.ts').PlatformDesign;
+  materialDesign?: import('./reference-materials.ts').ReferenceMaterialDesign;
   clearanceVolumes?: import('./scene/scene-types.ts').BBox3d[];
   repeatedGroups?: import('./scene-elements.ts').RepeatedElementGroup[];
   structureCategory?: import('./structure-classifier.ts').StructureCategory;

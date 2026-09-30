@@ -11,6 +11,7 @@ export type TriangleMesh = {
   name: string;
   // One flags byte per triangle; unobserved triangles carry no flags.
   features?: Uint8Array;
+  materialDesign?: import('./reference-materials.ts').ReferenceMaterialDesign;
   coloring?: {
     method: 'reference-projection';
     yaw: number;

@@ -1,0 +1,728 @@
+{
+  "date": "2026-10-01",
+  "conversionFingerprint": "972a408c2eab8089e13cf4d803a805d764e278271731c8cbf9997d9d4749c396",
+  "scope": "Six public engine sample renders and two user Temple fixtures at three sizes. Replayed cached native meshes and actual learned observations; no new native inference or physical build.",
+  "method": "Continuous local chromaticity/lightness regions; visible projected pixels vote once, independent of triangle count. Abrupt colour boundaries are kept. Unknown surfaces still use inferred height bands.",
+  "cases": [
+    {
+      "id": "house",
+      "resolution": 28,
+      "modelSha256": "9849ac95cfb049a06f28f70aa47d22ab6f67168548ad7c084c3b9d192c0f8189",
+      "baseline": {
+        "conversionFingerprint": "d2857b7913bd90eccc265e7e3292f11ecc36eb60844e8e199b9b9aee3476237d",
+        "bricks": 3011,
+        "supports": 185,
+        "colors": {
+          "0": 40,
+          "1": 236,
+          "2": 17,
+          "3": 30,
+          "4": 1720,
+          "5": 345,
+          "6": 10,
+          "7": 9,
+          "8": 186,
+          "9": 246,
+          "10": 13,
+          "11": 68,
+          "12": 91
+        }
+      },
+      "bricks": 3023,
+      "supports": 208,
+      "colors": {
+        "0": 266,
+        "1": 212,
+        "2": 12,
+        "3": 34,
+        "4": 1734,
+        "5": 338,
+        "6": 15,
+        "7": 13,
+        "8": 182,
+        "9": 30,
+        "10": 9,
+        "11": 102,
+        "12": 76
+      },
+      "material": {
+        "method": "reference-gradient-regions",
+        "sourceForegroundPixels": 37189,
+        "regionCount": 5556,
+        "inferredIlluminationRegions": 161,
+        "normalizedPixels": 3811,
+        "projection": {
+          "voteUnit": "visible-reference-pixel",
+          "projectedPixels": 18441,
+          "observedFaces": 44330,
+          "inferredFaces": 110390,
+          "materialPixels": [
+            842,
+            4168,
+            378,
+            811,
+            4304,
+            1403,
+            748,
+            283,
+            1801,
+            587,
+            423,
+            1071,
+            1611,
+            11
+          ]
+        },
+        "warnings": [
+          "Continuous shading is a design inference: soft paint gradients, reflections and ambiguous boundaries cannot be proved to be one material from a single image. Unseen surfaces are separately inferred."
+        ]
+      },
+      "structuralAuditPassed": true,
+      "appearance": "Draft; separately inspected using real catalog geometry. Not a material-accuracy or official-kit quality pass."
+    },
+    {
+      "id": "locomotive",
+      "resolution": 28,
+      "modelSha256": "b33de8884bdbf8264e516c622e19edc4bdaa797d3001108657e8523b355255fc",
+      "baseline": {
+        "conversionFingerprint": "d2857b7913bd90eccc265e7e3292f11ecc36eb60844e8e199b9b9aee3476237d",
+        "bricks": 2676,
+        "supports": 234,
+        "colors": {
+          "1": 84,
+          "2": 38,
+          "6": 71,
+          "7": 130,
+          "8": 6,
+          "9": 2308,
+          "10": 39
+        }
+      },
+      "bricks": 2606,
+      "supports": 235,
+      "colors": {
+        "1": 79,
+        "2": 37,
+        "6": 83,
+        "7": 83,
+        "8": 6,
+        "9": 2287,
+        "10": 31
+      },
+      "material": {
+        "method": "reference-gradient-regions",
+        "sourceForegroundPixels": 34658,
+        "regionCount": 5324,
+        "inferredIlluminationRegions": 108,
+        "normalizedPixels": 2168,
+        "projection": {
+          "voteUnit": "visible-reference-pixel",
+          "projectedPixels": 18536,
+          "observedFaces": 39539,
+          "inferredFaces": 104093,
+          "materialPixels": [
+            1,
+            1658,
+            1116,
+            0,
+            0,
+            0,
+            2408,
+            2038,
+            108,
+            9910,
+            1292,
+            1,
+            4,
+            0
+          ]
+        },
+        "warnings": [
+          "Continuous shading is a design inference: soft paint gradients, reflections and ambiguous boundaries cannot be proved to be one material from a single image. Unseen surfaces are separately inferred."
+        ]
+      },
+      "structuralAuditPassed": true,
+      "appearance": "Draft; separately inspected using real catalog geometry. Not a material-accuracy or official-kit quality pass."
+    },
+    {
+      "id": "horse",
+      "resolution": 28,
+      "modelSha256": "c2625e667f9286c84f6c87180ebef44196bd565a4f335d03eb5cd943aa77b71b",
+      "baseline": {
+        "conversionFingerprint": "d2857b7913bd90eccc265e7e3292f11ecc36eb60844e8e199b9b9aee3476237d",
+        "bricks": 1660,
+        "supports": 264,
+        "colors": {
+          "1": 6,
+          "2": 245,
+          "6": 24,
+          "7": 225,
+          "8": 4,
+          "9": 1130,
+          "10": 23,
+          "11": 1,
+          "12": 2
+        }
+      },
+      "bricks": 1630,
+      "supports": 240,
+      "colors": {
+        "1": 6,
+        "2": 393,
+        "6": 26,
+        "7": 228,
+        "8": 2,
+        "9": 961,
+        "10": 7,
+        "11": 4,
+        "12": 3
+      },
+      "material": {
+        "method": "reference-gradient-regions",
+        "sourceForegroundPixels": 27492,
+        "regionCount": 6313,
+        "inferredIlluminationRegions": 131,
+        "normalizedPixels": 3797,
+        "projection": {
+          "voteUnit": "visible-reference-pixel",
+          "projectedPixels": 13496,
+          "observedFaces": 25636,
+          "inferredFaces": 36676,
+          "materialPixels": [
+            0,
+            138,
+            5132,
+            1,
+            0,
+            0,
+            747,
+            1883,
+            99,
+            4812,
+            506,
+            29,
+            149,
+            0
+          ]
+        },
+        "warnings": [
+          "Continuous shading is a design inference: soft paint gradients, reflections and ambiguous boundaries cannot be proved to be one material from a single image. Unseen surfaces are separately inferred."
+        ]
+      },
+      "structuralAuditPassed": true,
+      "appearance": "Draft; separately inspected using real catalog geometry. Not a material-accuracy or official-kit quality pass."
+    },
+    {
+      "id": "sculpture-head",
+      "resolution": 28,
+      "modelSha256": "097f4c171a5640a60baffbe0db05129c1a2668cebf791370902731433c006dae",
+      "baseline": {
+        "conversionFingerprint": "d2857b7913bd90eccc265e7e3292f11ecc36eb60844e8e199b9b9aee3476237d",
+        "bricks": 5165,
+        "supports": 676,
+        "colors": {
+          "0": 4178,
+          "8": 133,
+          "10": 155,
+          "11": 539,
+          "12": 160
+        }
+      },
+      "bricks": 4932,
+      "supports": 694,
+      "colors": {
+        "0": 4755,
+        "1": 14,
+        "8": 63,
+        "10": 40,
+        "11": 16,
+        "12": 44
+      },
+      "material": {
+        "method": "reference-gradient-regions",
+        "sourceForegroundPixels": 40936,
+        "regionCount": 4283,
+        "inferredIlluminationRegions": 135,
+        "normalizedPixels": 18625,
+        "projection": {
+          "voteUnit": "visible-reference-pixel",
+          "projectedPixels": 24412,
+          "observedFaces": 43547,
+          "inferredFaces": 95717,
+          "materialPixels": [
+            17920,
+            508,
+            0,
+            0,
+            0,
+            0,
+            0,
+            18,
+            2268,
+            0,
+            1247,
+            1307,
+            1144,
+            0
+          ]
+        },
+        "warnings": [
+          "Continuous shading is a design inference: soft paint gradients, reflections and ambiguous boundaries cannot be proved to be one material from a single image. Unseen surfaces are separately inferred."
+        ]
+      },
+      "structuralAuditPassed": true,
+      "appearance": "Draft; separately inspected using real catalog geometry. Not a material-accuracy or official-kit quality pass."
+    },
+    {
+      "id": "wizard-hat",
+      "resolution": 28,
+      "modelSha256": "5f25c9143c2efbfbe4d7c95c1d34c0b7ba35c765517d1d4693e2e533828a4e40",
+      "baseline": {
+        "conversionFingerprint": "d2857b7913bd90eccc265e7e3292f11ecc36eb60844e8e199b9b9aee3476237d",
+        "bricks": 2677,
+        "supports": 424,
+        "colors": {
+          "1": 2171,
+          "3": 19,
+          "4": 278,
+          "5": 15,
+          "6": 6,
+          "7": 4,
+          "8": 1,
+          "9": 29,
+          "10": 15,
+          "11": 73,
+          "12": 58,
+          "13": 8
+        }
+      },
+      "bricks": 2755,
+      "supports": 569,
+      "colors": {
+        "1": 169,
+        "3": 22,
+        "4": 702,
+        "5": 14,
+        "6": 8,
+        "7": 3,
+        "8": 1,
+        "9": 23,
+        "10": 15,
+        "11": 9,
+        "12": 1781,
+        "13": 8
+      },
+      "material": {
+        "method": "reference-gradient-regions",
+        "sourceForegroundPixels": 28748,
+        "regionCount": 4119,
+        "inferredIlluminationRegions": 58,
+        "normalizedPixels": 14800,
+        "projection": {
+          "voteUnit": "visible-reference-pixel",
+          "projectedPixels": 14493,
+          "observedFaces": 40185,
+          "inferredFaces": 110983,
+          "materialPixels": [
+            0,
+            1996,
+            0,
+            387,
+            3629,
+            417,
+            272,
+            180,
+            163,
+            625,
+            647,
+            136,
+            5971,
+            70
+          ]
+        },
+        "warnings": [
+          "Continuous shading is a design inference: soft paint gradients, reflections and ambiguous boundaries cannot be proved to be one material from a single image. Unseen surfaces are separately inferred."
+        ]
+      },
+      "structuralAuditPassed": true,
+      "appearance": "Draft; separately inspected using real catalog geometry. Not a material-accuracy or official-kit quality pass."
+    },
+    {
+      "id": "costumed-figure",
+      "resolution": 28,
+      "modelSha256": "727029aa9b7e5e9ad811f826442c2138ad90ba30cc76d539ed384a51f7145ad8",
+      "baseline": {
+        "conversionFingerprint": "d2857b7913bd90eccc265e7e3292f11ecc36eb60844e8e199b9b9aee3476237d",
+        "bricks": 2924,
+        "supports": 213,
+        "colors": {
+          "0": 273,
+          "2": 82,
+          "3": 35,
+          "7": 2477,
+          "12": 57
+        }
+      },
+      "bricks": 2862,
+      "supports": 212,
+      "colors": {
+        "0": 272,
+        "1": 58,
+        "2": 41,
+        "3": 39,
+        "7": 2450,
+        "9": 1,
+        "12": 1
+      },
+      "material": {
+        "method": "reference-gradient-regions",
+        "sourceForegroundPixels": 31162,
+        "regionCount": 2027,
+        "inferredIlluminationRegions": 17,
+        "normalizedPixels": 151,
+        "projection": {
+          "voteUnit": "visible-reference-pixel",
+          "projectedPixels": 22066,
+          "observedFaces": 41699,
+          "inferredFaces": 57113,
+          "materialPixels": [
+            4649,
+            2043,
+            982,
+            1448,
+            0,
+            0,
+            0,
+            12101,
+            214,
+            161,
+            75,
+            204,
+            189,
+            0
+          ]
+        },
+        "warnings": [
+          "Continuous shading is a design inference: soft paint gradients, reflections and ambiguous boundaries cannot be proved to be one material from a single image. Unseen surfaces are separately inferred."
+        ]
+      },
+      "structuralAuditPassed": true,
+      "appearance": "Draft; separately inspected using real catalog geometry. Not a material-accuracy or official-kit quality pass."
+    },
+    {
+      "id": "temple-original",
+      "resolution": 28,
+      "modelSha256": "d26a0a1ca5bb8654738a11037101d18a5676ac1f9a5e2d5784c370b2ebedd5cc",
+      "bricks": 2600,
+      "supports": 45,
+      "colors": {
+        "1": 31,
+        "5": 4,
+        "6": 2,
+        "7": 1972,
+        "8": 347,
+        "9": 129,
+        "10": 85,
+        "11": 12,
+        "12": 18
+      },
+      "material": {
+        "method": "reference-gradient-regions",
+        "sourceForegroundPixels": 44124,
+        "regionCount": 3126,
+        "inferredIlluminationRegions": 110,
+        "normalizedPixels": 3565,
+        "projection": {
+          "voteUnit": "visible-reference-pixel",
+          "projectedPixels": 26111,
+          "observedFaces": 62686,
+          "inferredFaces": 100318,
+          "materialPixels": [
+            8,
+            830,
+            17,
+            0,
+            0,
+            0,
+            49,
+            13310,
+            5190,
+            3126,
+            2705,
+            0,
+            876,
+            0
+          ]
+        },
+        "warnings": [
+          "Continuous shading is a design inference: soft paint gradients, reflections and ambiguous boundaries cannot be proved to be one material from a single image. Unseen surfaces are separately inferred."
+        ]
+      },
+      "structuralAuditPassed": true,
+      "appearance": "Draft; separately inspected using real catalog geometry. Not a material-accuracy or official-kit quality pass."
+    },
+    {
+      "id": "temple-original",
+      "resolution": 36,
+      "modelSha256": "f3f102f2c69090d8bd8d29014f347b776de929603b6d79b430be3e0c8552f4b8",
+      "bricks": 4603,
+      "supports": 117,
+      "colors": {
+        "1": 26,
+        "5": 4,
+        "6": 2,
+        "7": 3625,
+        "8": 569,
+        "9": 213,
+        "10": 128,
+        "11": 12,
+        "12": 24
+      },
+      "material": {
+        "method": "reference-gradient-regions",
+        "sourceForegroundPixels": 44124,
+        "regionCount": 3126,
+        "inferredIlluminationRegions": 110,
+        "normalizedPixels": 3565,
+        "projection": {
+          "voteUnit": "visible-reference-pixel",
+          "projectedPixels": 26111,
+          "observedFaces": 62686,
+          "inferredFaces": 100318,
+          "materialPixels": [
+            8,
+            830,
+            17,
+            0,
+            0,
+            0,
+            49,
+            13310,
+            5190,
+            3126,
+            2705,
+            0,
+            876,
+            0
+          ]
+        },
+        "warnings": [
+          "Continuous shading is a design inference: soft paint gradients, reflections and ambiguous boundaries cannot be proved to be one material from a single image. Unseen surfaces are separately inferred."
+        ]
+      },
+      "structuralAuditPassed": true,
+      "appearance": "Draft; separately inspected using real catalog geometry. Not a material-accuracy or official-kit quality pass."
+    },
+    {
+      "id": "temple-original",
+      "resolution": 48,
+      "modelSha256": "96979d8883cd38c8b2be9274574d7f9ed27446eccdff4fdabb1bed833f3e9ff7",
+      "bricks": 9146,
+      "supports": 233,
+      "colors": {
+        "0": 1,
+        "1": 51,
+        "5": 4,
+        "6": 2,
+        "7": 7332,
+        "8": 1084,
+        "9": 367,
+        "10": 252,
+        "11": 12,
+        "12": 41
+      },
+      "material": {
+        "method": "reference-gradient-regions",
+        "sourceForegroundPixels": 44124,
+        "regionCount": 3126,
+        "inferredIlluminationRegions": 110,
+        "normalizedPixels": 3565,
+        "projection": {
+          "voteUnit": "visible-reference-pixel",
+          "projectedPixels": 26111,
+          "observedFaces": 62686,
+          "inferredFaces": 100318,
+          "materialPixels": [
+            8,
+            830,
+            17,
+            0,
+            0,
+            0,
+            49,
+            13310,
+            5190,
+            3126,
+            2705,
+            0,
+            876,
+            0
+          ]
+        },
+        "warnings": [
+          "Continuous shading is a design inference: soft paint gradients, reflections and ambiguous boundaries cannot be proved to be one material from a single image. Unseen surfaces are separately inferred."
+        ]
+      },
+      "structuralAuditPassed": true,
+      "appearance": "Draft; separately inspected using real catalog geometry. Not a material-accuracy or official-kit quality pass."
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 28,
+      "modelSha256": "c3aa7a0aa758a17e865fa7ec4a82f3996924ce60ecef47ab9bede849c220b5a5",
+      "bricks": 2342,
+      "supports": 15,
+      "colors": {
+        "1": 8,
+        "5": 4,
+        "6": 2,
+        "7": 2120,
+        "8": 79,
+        "9": 51,
+        "10": 38,
+        "11": 25,
+        "12": 15
+      },
+      "material": {
+        "method": "reference-gradient-regions",
+        "sourceForegroundPixels": 59945,
+        "regionCount": 3322,
+        "inferredIlluminationRegions": 189,
+        "normalizedPixels": 9956,
+        "projection": {
+          "voteUnit": "visible-reference-pixel",
+          "projectedPixels": 25453,
+          "observedFaces": 49547,
+          "inferredFaces": 115649,
+          "materialPixels": [
+            4,
+            114,
+            27,
+            0,
+            0,
+            0,
+            75,
+            15346,
+            3823,
+            2060,
+            2385,
+            120,
+            1499,
+            0
+          ]
+        },
+        "warnings": [
+          "Continuous shading is a design inference: soft paint gradients, reflections and ambiguous boundaries cannot be proved to be one material from a single image. Unseen surfaces are separately inferred."
+        ]
+      },
+      "structuralAuditPassed": true,
+      "appearance": "Draft; separately inspected using real catalog geometry. Not a material-accuracy or official-kit quality pass."
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 36,
+      "modelSha256": "f5294a5896954f2352fdb3af753e055971eba48b4016fecb9a588e3e76137012",
+      "bricks": 4079,
+      "supports": 86,
+      "colors": {
+        "1": 9,
+        "5": 4,
+        "6": 2,
+        "7": 3720,
+        "8": 147,
+        "9": 97,
+        "10": 48,
+        "11": 30,
+        "12": 22
+      },
+      "material": {
+        "method": "reference-gradient-regions",
+        "sourceForegroundPixels": 59945,
+        "regionCount": 3322,
+        "inferredIlluminationRegions": 189,
+        "normalizedPixels": 9956,
+        "projection": {
+          "voteUnit": "visible-reference-pixel",
+          "projectedPixels": 25453,
+          "observedFaces": 49547,
+          "inferredFaces": 115649,
+          "materialPixels": [
+            4,
+            114,
+            27,
+            0,
+            0,
+            0,
+            75,
+            15346,
+            3823,
+            2060,
+            2385,
+            120,
+            1499,
+            0
+          ]
+        },
+        "warnings": [
+          "Continuous shading is a design inference: soft paint gradients, reflections and ambiguous boundaries cannot be proved to be one material from a single image. Unseen surfaces are separately inferred."
+        ]
+      },
+      "structuralAuditPassed": true,
+      "appearance": "Draft; separately inspected using real catalog geometry. Not a material-accuracy or official-kit quality pass."
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 48,
+      "modelSha256": "898c2975d8488f4045121b44ebffcd05337395a62ac901af043c81e6b7894cfa",
+      "bricks": 7946,
+      "supports": 65,
+      "colors": {
+        "0": 1,
+        "1": 11,
+        "5": 4,
+        "6": 2,
+        "7": 7276,
+        "8": 318,
+        "9": 165,
+        "10": 90,
+        "11": 41,
+        "12": 38
+      },
+      "material": {
+        "method": "reference-gradient-regions",
+        "sourceForegroundPixels": 59945,
+        "regionCount": 3322,
+        "inferredIlluminationRegions": 189,
+        "normalizedPixels": 9956,
+        "projection": {
+          "voteUnit": "visible-reference-pixel",
+          "projectedPixels": 25453,
+          "observedFaces": 49547,
+          "inferredFaces": 115649,
+          "materialPixels": [
+            4,
+            114,
+            27,
+            0,
+            0,
+            0,
+            75,
+            15346,
+            3823,
+            2060,
+            2385,
+            120,
+            1499,
+            0
+          ]
+        },
+        "warnings": [
+          "Continuous shading is a design inference: soft paint gradients, reflections and ambiguous boundaries cannot be proved to be one material from a single image. Unseen surfaces are separately inferred."
+        ]
+      },
+      "structuralAuditPassed": true,
+      "appearance": "Draft; separately inspected using real catalog geometry. Not a material-accuracy or official-kit quality pass."
+    }
+  ],
+  "limits": "Region coherence is an illumination hypothesis, not intrinsic material recognition. Hard shadows, soft painted gradients and reflections remain ambiguous. Palette/part counts and structural gates do not establish appearance, purchasability, strength or physical buildability. Cached public engine examples are not independent real photographs."
+}

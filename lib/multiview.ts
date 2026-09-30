@@ -1,13 +1,16 @@
 import {
   finishModel,
-  nearestColor,
   PALETTE,
   validateModel,
   type Model,
   type Raster,
 } from './brick-engine.ts';
 import { groupImageAssembly } from './image-design.ts';
-import { referenceMask, materialColourMap } from './reference-colors.ts';
+import { referenceMask } from './reference-colors.ts';
+import {
+  referenceMaterials,
+  type ReferenceMaterialDesign,
+} from './reference-materials.ts';
 import type { TriangleMesh } from './mesh-types.ts';
 
 // Silhouette carving. Every voxel must fall inside the outline of every view it
@@ -179,6 +182,7 @@ const size = (s: Silhouette) => ({
   y: s.bottom - s.top + 1,
 });
 export type MultiViewVolume = {
+  materialDesign?: ReferenceMaterialDesign;
   width: number;
   height: number;
   depth: number;
@@ -224,6 +228,12 @@ export function buildMultiViewVolume(
     );
   const shaped = views.map((view) => outline(view)),
     byAxis = new Map(shaped.map((s) => [s.axis, s] as const));
+  const materials = new Map(
+    shaped.map((s) => [
+      s.axis,
+      referenceMaterials(s.image, s.mask, settings.softenShadows !== false),
+    ]),
+  );
   // One shared scale. Height is the unit; the front view gives width, the side
   // view depth, and the plan view reconciles the two.
   const front = byAxis.get('front'),
@@ -282,15 +292,7 @@ export function buildMultiViewVolume(
           py = Math.min(s.height - 1, Math.max(0, cy + dy)),
           p = py * s.width + px;
         if (!s.core[p]) continue;
-        const i = p * 4;
-        votes[
-          nearestColor(
-            s.image.data[i],
-            s.image.data[i + 1],
-            s.image.data[i + 2],
-            true,
-          )
-        ]++;
+        votes[materials.get(s.axis)!.palette[p]]++;
       }
     let best = -1;
     for (let i = 0; i < votes.length; i++)
@@ -325,7 +327,7 @@ export function buildMultiViewVolume(
   // repeatedly onto inner walls and rear faces.
   const colours = new Uint8Array(w * h * d).fill(255),
     faceColours = new Uint8Array(w * h * d * 3).fill(255),
-    counts = new Uint32Array(PALETTE.length);
+    counts = new Float64Array(PALETTE.length);
   const frontHits = new Int32Array(w * h).fill(-1),
     sideHits = new Int32Array(d * h).fill(-1),
     topHits = new Int32Array(w * d).fill(-1);
@@ -357,7 +359,7 @@ export function buildMultiViewVolume(
           if (colour < 0) continue;
           faceColours[index * 3 + face] = colour;
           votes[colour]++;
-          counts[colour]++;
+          counts[colour] += axis === 'top' ? 1 : 0.4;
         }
         let best = -1;
         for (let i = 0; i < votes.length; i++)
@@ -370,12 +372,28 @@ export function buildMultiViewVolume(
   );
   if (!solid.some(Boolean))
     throw Error('三个轮廓相交后没有体积，请检查主体分离和视图方向。');
-  const remap = materialColourMap(dominant, settings.softenShadows !== false);
   for (let i = 0; i < colours.length; i++)
-    colours[i] = colours[i] === 255 ? dominant : remap[colours[i]];
-  for (let i = 0; i < faceColours.length; i++)
-    if (faceColours[i] !== 255) faceColours[i] = remap[faceColours[i]];
+    if (colours[i] === 255) colours[i] = dominant;
+  const materialDesign: ReferenceMaterialDesign = {
+    method: 'reference-gradient-regions',
+    regions: [],
+    normalizedPixels: 0,
+    warnings: [],
+  };
+  for (const [axis, material] of materials) {
+    const offset = materialDesign.regions.length;
+    for (const r of material.design.regions)
+      materialDesign.regions.push({
+        ...r,
+        id: r.id + offset,
+        view: axis,
+      });
+    materialDesign.normalizedPixels += material.design.normalizedPixels;
+    materialDesign.warnings.push(...material.design.warnings);
+  }
+  materialDesign.warnings = [...new Set(materialDesign.warnings)];
   return {
+    materialDesign,
     width: w,
     height: h,
     depth: d,
@@ -484,6 +502,7 @@ export function multiViewMesh(
       }
   return {
     name,
+    materialDesign: volume.materialDesign,
     positions: new Float32Array(positions),
     colors: new Uint8Array(colors),
   };
@@ -656,6 +675,7 @@ export function multiViewToModel(
   if (raw.bricks.length > 14000)
     throw Error('此尺寸超过 14000 块零件，请降低积木尺寸后再转换。');
   const model = groupImageAssembly(raw);
+  model.materialDesign = volume.materialDesign;
   model.viewsDesign = {
     method: 'silhouette-carving',
     views,

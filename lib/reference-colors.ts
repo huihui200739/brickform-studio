@@ -1,5 +1,7 @@
 import { PALETTE, type Raster } from './brick-engine.ts';
 import { MESH_FEATURE, type TriangleMesh } from './mesh-types.ts';
+import { rgb } from './material-color-space.ts';
+import { referenceMaterials } from './reference-materials.ts';
 
 const SIZE = 96;
 // Olive foliage is warm and desaturated: its green channel barely beats red but
@@ -10,39 +12,6 @@ function isFoliage(r: number, g: number, b: number) {
   const value = Math.max(r, g, b);
   return r - g <= 10 && g - b >= 12 && value >= 30 && value <= 210;
 }
-function lab(r: number, g: number, b: number) {
-  const f = (v: number) => {
-    v /= 255;
-    return v > 0.04045 ? ((v + 0.055) / 1.055) ** 2.4 : v / 12.92;
-  };
-  const x = f(r),
-    y = f(g),
-    z = f(b);
-  const t = (v: number) => (v > 0.008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116);
-  const a = t((0.4124 * x + 0.3576 * y + 0.1805 * z) / 0.95047),
-    c = t(0.2126 * x + 0.7152 * y + 0.0722 * z),
-    d = t((0.0193 * x + 0.1192 * y + 0.9505 * z) / 1.08883);
-  return [116 * c - 16, 500 * (a - c), 200 * (c - d)];
-}
-const rgb = PALETTE.map((c) =>
-  [1, 3, 5].map((i) => parseInt(c.hex.slice(i, i + 2), 16)),
-);
-const colors = rgb.map((c) => lab(c[0], c[1], c[2]));
-function match(r: number, g: number, b: number) {
-  const p = lab(r, g, b);
-  let index = 0,
-    best = Infinity;
-  colors.forEach((c, i) => {
-    const dist =
-      0.5 * (c[0] - p[0]) ** 2 + (c[1] - p[1]) ** 2 + (c[2] - p[2]) ** 2;
-    if (dist < best) {
-      best = dist;
-      index = i;
-    }
-  });
-  return index;
-}
-
 // Foreground transparency is preferred; opaque references use a conservative
 // edge-connected background flood, never a luminance-derived depth map.
 export function referenceMask(image: Raster) {
@@ -272,49 +241,6 @@ export function estimateReferenceCamera(
 ): ReferenceCamera {
   return referenceAlignment(mesh, image).camera;
 }
-// Shared, optional illumination reduction for reference projections. The map
-// operates on material hue; it does not alter silhouettes or create geometry.
-export function materialColourMap(dominant: number, softenShadows = true) {
-  const base = colors[dominant];
-  return colors.map((c, index) => {
-    const chroma = Math.hypot(c[1], c[2]),
-      baseChroma = Math.hypot(base[1], base[2]);
-    const hueSimilarity =
-      (c[1] * base[1] + c[2] * base[2]) / Math.max(1, chroma * baseChroma);
-    // A near-black neutral in a photograph is a shadow, not a black part: with
-    // shadow reduction on it becomes the darkest grey instead of a hole. This
-    // only applies while the model's own material is light.
-    if (softenShadows && base[0] >= 65 && c[0] < 30 && chroma < 12) {
-      const lifted = [c[0] + (base[0] - c[0]) * 0.45, c[1], c[2]];
-      let best = index,
-        distance = Infinity;
-      colors.forEach((candidate, i) => {
-        const d = candidate.reduce(
-          (sum, v, a) => sum + (v - lifted[a]) ** 2,
-          0,
-        );
-        if (d < distance) {
-          distance = d;
-          best = i;
-        }
-      });
-      return best;
-    }
-    if (
-      !softenShadows ||
-      base[0] < 65 ||
-      c[0] > base[0] - 18 ||
-      hueSimilarity < 0.91
-    )
-      return index;
-    // A darker colour in the main material's own hue family is shading, a
-    // brick joint or a soft shadow rather than a different part. Stepping it
-    // down one shade still leaves whole walls looking like another material,
-    // so it is folded back into the dominant material instead.
-    return dominant;
-  });
-}
-
 export function colorFromReference(
   mesh: TriangleMesh,
   image: Raster,
@@ -323,9 +249,11 @@ export function colorFromReference(
 ): TriangleMesh {
   const { camera, view, mask, left, right, top, bottom, lo, hi, extent } =
     referenceAlignment(mesh, image, override);
+  const materials = referenceMaterials(image, mask, softenShadows);
   const p = mesh.positions;
   const N = 192,
     depth = new Float32Array(N * N).fill(-Infinity),
+    surfaceHeight = new Float32Array(N * N),
     coords = new Float32Array(p.length);
   for (let i = 0; i < p.length; i += 3) {
     const v = view.point(p[i], p[i + 1], p[i + 2]);
@@ -354,12 +282,16 @@ export function colorFromReference(
         if (a < 0 || b < 0 || a + b > 1) continue;
         const z =
           a * coords[i + 2] + b * coords[i + 5] + (1 - a - b) * coords[i + 8];
-        depth[y * N + x] = Math.max(depth[y * N + x], z);
+        if (z > depth[y * N + x]) {
+          depth[y * N + x] = z;
+          surfaceHeight[y * N + x] =
+            a * p[i + 1] + b * p[i + 4] + (1 - a - b) * p[i + 7];
+        }
       }
   }
   const faceColors = new Int16Array(p.length / 9).fill(-1),
     features = new Uint8Array(p.length / 9),
-    counts = new Uint32Array(PALETTE.length);
+    counts = new Float64Array(PALETTE.length);
   let observed = 0;
   for (let i = 0; i < p.length; i += 9) {
     const x = (coords[i] + coords[i + 3] + coords[i + 6]) / 3,
@@ -392,7 +324,7 @@ export function colorFromReference(
           const r = image.data[k * 4],
             g = image.data[k * 4 + 1],
             b = image.data[k * 4 + 2];
-          colorVotes[match(r, g, b)]++;
+          colorVotes[materials.palette[k]]++;
           sampled++;
           if (isFoliage(r, g, b)) foliage++;
         }
@@ -406,24 +338,51 @@ export function colorFromReference(
     // the size of a couple of pixels still counts.
     if (foliage >= 2 && foliage * 2 >= sampled)
       features[i / 9] |= MESH_FEATURE.foliage;
-    counts[c]++;
     observed++;
   }
   if (observed < Math.min(10, Math.max(1, faceColors.length * 0.1)))
     throw Error('参考图与网格未能对齐，请调整配色视角或更换图片。');
-  // Reduce illumination-induced color changes within the dominant material's
-  // hue family. Red/green accents and neutral dark openings remain separate.
-  // This is optional because a photograph cannot distinguish paint from shadow.
-  const dominant = counts.indexOf(Math.max(...counts));
-  const remap = materialColourMap(dominant, softenShadows);
-  // Unseen surfaces have no trustworthy texture. Use broad material bands
-  // rather than copying a nearby dark doorway through to the back wall. A dark
-  // neutral colour is an opening or a shadow, not a material: it only votes for
-  // the back wall when the model's own dominant material is dark.
+  // Vote once per visible projected pixel. Dense tessellation and tiny relief
+  // triangles must not dominate the inferred material of unseen surfaces.
   const bands = Array.from(
     { length: 16 },
-    () => new Uint32Array(PALETTE.length),
+    () => new Float64Array(PALETTE.length),
   );
+  let projectedPixels = 0;
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++) {
+      const k = y * N + x;
+      if (!Number.isFinite(depth[k])) continue;
+      const px = Math.round(left + ((x + 0.5) / (N - 1)) * (right - left));
+      const py = Math.round(top + ((y + 0.5) / (N - 1)) * (bottom - top));
+      if (
+        px < 0 ||
+        px >= image.width ||
+        py < 0 ||
+        py >= image.height ||
+        !mask[py * image.width + px]
+      )
+        continue;
+      const color = materials.palette[py * image.width + px];
+      counts[color]++;
+      const band = Math.min(
+        15,
+        Math.max(
+          0,
+          Math.floor(((surfaceHeight[k] - lo[1]) / (hi[1] - lo[1])) * 16),
+        ),
+      );
+      bands[band][color]++;
+      projectedPixels++;
+    }
+  const dominant = counts.indexOf(Math.max(...counts));
+  // Regional illumination inference has already been applied above. A global
+  // palette remap would erase separate dark paint/metal regions.
+  // Unseen surfaces have no trustworthy texture. Use broad material bands
+  // rather than copying a nearby dark doorway through to the back wall. Dark
+  // neutrals remain on observed faces, but are excluded from unseen bands when
+  // the dominant material is light. This is a conservative back-colour guess,
+  // not evidence that every dark region is a doorway or shadow.
   const bandAt = (i: number) =>
     Math.min(
       15,
@@ -442,9 +401,10 @@ export function colorFromReference(
     return max < 120 && (max === 0 || (max - min) / max < 0.15);
   };
   const keepOpenings = opening(dominant);
-  for (let t = 0; t < faceColors.length; t++)
-    if (faceColors[t] >= 0 && (keepOpenings || !opening(faceColors[t])))
-      bands[bandAt(t * 9)][faceColors[t]]++;
+  if (!keepOpenings)
+    for (const band of bands)
+      for (let color = 0; color < band.length; color++)
+        if (opening(color)) band[color] = 0;
   const bandColors = bands.map((v) =>
     v.some(Boolean) ? v.indexOf(Math.max(...v)) : dominant,
   );
@@ -452,12 +412,22 @@ export function colorFromReference(
   for (let t = 0; t < faceColors.length; t++) {
     const i = t * 9,
       c = faceColors[t] >= 0 ? faceColors[t] : bandColors[bandAt(i)];
-    out.set(rgb[remap[Math.max(0, c)]], t * 3);
+    out.set(rgb[Math.max(0, c)], t * 3);
   }
   return {
     ...mesh,
     colors: out,
     features,
+    materialDesign: {
+      ...materials.design,
+      projection: {
+        voteUnit: 'visible-reference-pixel',
+        projectedPixels,
+        observedFaces: observed,
+        inferredFaces: faceColors.length - observed,
+        materialPixels: Array.from(counts),
+      },
+    },
     coloring: {
       method: 'reference-projection',
       ...camera,

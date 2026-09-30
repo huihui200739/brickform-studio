@@ -855,7 +855,7 @@ export default function ReconstructionPanel({
     const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
     const colors = new Uint8Array(draft.colors.length);
     for (let i = 0; i < colors.length; i += 3) colors.set(rgb, i);
-    setDraft({ ...draft, colors, coloring: undefined });
+    setDraft({ ...draft, colors, coloring: undefined, materialDesign: undefined });
   }
   if (!active) return null;
   const modeSwitch = (
@@ -1479,7 +1479,7 @@ export default function ReconstructionPanel({
               />
               减少阴影杂色{' '}
               <span>
-                修改后点击“按参考图恢复配色”；保留不同色相的装饰颜色。
+                修改后点击“按参考图恢复配色”；估计连续光照区域，保留明显色界。柔和的彩绘渐变仍可能误判。
               </span>
             </label>
             <label className="reconstruction-color">

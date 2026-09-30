@@ -451,7 +451,7 @@ void test('contradictory same-size silhouettes cannot release a truncated model'
   assert.throws(() => multiViewToModel(volume), /未通过一致性检查/);
 });
 
-void test('optional material shading reduction keeps accents while suppressing warm wall shadows', () => {
+void test('regional material inference preserves both red accents and separate warm dark stripes', () => {
   const shaded = picture(40, 40, (x, y) => {
     if (x < 4 || x >= 36 || y < 4 || y >= 36) return null;
     if (x >= 14 && x < 20) return [53, 33, 0];
@@ -470,8 +470,10 @@ void test('optional material shading reduction keeps accents while suppressing w
   assert.ok(on.colours.includes(2), 'red accent survives');
   assert.equal(
     on.colours.includes(10),
-    false,
-    'dark warm seam is not a second wall material',
+    true,
+    'an abrupt dark stripe cannot be proved to be a shadow instead of paint',
   );
   assert.ok(off.colours.includes(10), 'raw material option remains available');
+  assert.ok(on.materialDesign?.regions.some((r) => r.view === 'front'));
+  assert.ok(on.materialDesign?.warnings.length);
 });

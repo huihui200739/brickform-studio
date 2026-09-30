@@ -1103,6 +1103,7 @@ function assembleVolume(
     ...openings,
   ]);
   const model = groupImageAssembly(prepared);
+  if (mesh.materialDesign) model.materialDesign = mesh.materialDesign;
   model.clearanceVolumes = openings;
   if (platform) model.platformDesign = platform;
   if (designGeometry.planes.length) model.designGeometry = designGeometry;

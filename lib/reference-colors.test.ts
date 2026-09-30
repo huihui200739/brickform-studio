@@ -58,7 +58,11 @@ void test('a dark opening that dominates its height band still leaves the unseen
         (y * 40 + x) * 4,
       );
   const result = colorFromReference(
-    { name: 'opening', positions, colors: new Uint8Array(positions.length / 3) },
+    {
+      name: 'opening',
+      positions,
+      colors: new Uint8Array(positions.length / 3),
+    },
     { width: 40, height: 40, data },
     { yaw: 0, pitch: 0, perspective: 0 },
   );
@@ -80,13 +84,12 @@ void test('a dark opening that dominates its height band still leaves the unseen
   g.dispose();
 });
 
-void test('shading in the main material folds back into it instead of becoming a second material', () => {
+void test('an abrupt warm dark stripe is preserved because paint and a hard shadow are ambiguous', () => {
   const g = new BoxGeometry(2, 2, 2, 8, 8, 8).toNonIndexed();
   const positions = new Float32Array(g.attributes.position.array),
     data = new Uint8ClampedArray(40 * 40 * 4);
-  // A shaded stripe that is a darker version of the sand material, not a
-  // different part: the photograph cannot separate paint from shadow. It stays
-  // a minority so sand remains the model's main material.
+  // Identical pixels could be dark brown paint or a hard shadow. A global hue
+  // remap used to erase the stripe without evidence; the boundary must remain.
   for (let y = 2; y < 38; y++)
     for (let x = 2; x < 38; x++)
       data.set(
@@ -118,8 +121,8 @@ void test('shading in the main material folds back into it instead of becoming a
     };
   assert.deepEqual(
     present(on),
-    new Set(['215,186,140']),
-    'shadow reduction leaves a single sand material',
+    new Set(['215,186,140', '53,33,0']),
+    'regional inference must not erase a separate dark material',
   );
   assert.ok(
     present(off).size > 1,
@@ -179,8 +182,8 @@ void test('empty references fail instead of applying background colors', () => {
   assert.throws(() => referenceMask({ width: 2, height: 2, data: [] }), /无效/);
 });
 
-// Black is lifted to the darkest grey when shadow reduction is on, so an
-// observed opening is dark rather than literally black.
+// Abrupt dark regions retain black or dark grey; they are never globally
+// lifted merely because another region is a light material.
 const isDarkBrick = (value: number) => value === 36 || value === 100;
 void test('a dark window in the reference does not become a fake window on the unseen rear wall', () => {
   const g = new BoxGeometry(2, 2, 2, 10, 10, 10).toNonIndexed();
@@ -211,4 +214,70 @@ void test('a dark window in the reference does not become a fake window on the u
   assert.ok(frontDark > 0);
   assert.equal(backDark, 0);
   g.dispose();
+});
+
+void test('unseen material votes are invariant to dense tessellation of a smaller painted region', () => {
+  const raster = {
+    width: 100,
+    height: 100,
+    data: new Uint8Array(100 * 100 * 4),
+  };
+  for (let y = 4; y < 96; y++)
+    for (let x = 4; x < 96; x++)
+      raster.data.set(
+        x < 41 ? [0, 85, 191, 255] : [201, 26, 9, 255],
+        (y * 100 + x) * 4,
+      );
+  const mesh = (divisions: number) => {
+    const positions: number[] = [];
+    const plane = (
+      left: number,
+      right: number,
+      z: number,
+      subdivisions: number,
+    ) => {
+      for (let y = 0; y < subdivisions; y++)
+        for (let x = 0; x < subdivisions; x++) {
+          const a = left + ((right - left) * x) / subdivisions,
+            b = left + ((right - left) * (x + 1)) / subdivisions;
+          const c = -1 + (2 * y) / subdivisions,
+            d = -1 + (2 * (y + 1)) / subdivisions;
+          positions.push(a, c, z, b, c, z, b, d, z, a, c, z, b, d, z, a, d, z);
+        }
+    };
+    plane(-1, -0.2, 1, divisions);
+    plane(-0.2, 1, 1, 1);
+    plane(-1, 1, -1, 1);
+    return {
+      name: 'painted-area',
+      positions: new Float32Array(positions),
+      colors: new Uint8Array(positions.length / 3),
+    };
+  };
+  const backColors = (result: ReturnType<typeof colorFromReference>) => {
+    const colors = new Set<string>();
+    for (let i = 0; i < result.positions.length; i += 9)
+      if (result.positions[i + 2] === -1)
+        colors.add(Array.from(result.colors.slice(i / 3, i / 3 + 3)).join(','));
+    return colors;
+  };
+  const coarse = colorFromReference(
+    mesh(1),
+    raster,
+    { yaw: 0, pitch: 0, perspective: 0 },
+    false,
+  );
+  const dense = colorFromReference(
+    mesh(20),
+    raster,
+    { yaw: 0, pitch: 0, perspective: 0 },
+    false,
+  );
+  assert.deepEqual(backColors(coarse), new Set(['201,26,9']));
+  assert.deepEqual(backColors(dense), backColors(coarse));
+  assert.deepEqual(
+    dense.materialDesign!.projection!.materialPixels,
+    coarse.materialDesign!.projection!.materialPixels,
+  );
+  assert.ok(dense.materialDesign!.projection!.inferredFaces > 0);
 });
