@@ -3,6 +3,7 @@ import {
   type LegoComponentTemplate,
 } from './component-library.ts';
 import type { SceneElementInstance } from './scene-elements.ts';
+import { hasVerifiedIdentity } from './scene/detectors/vision-detector.ts';
 export type ComponentMatch = {
   template: LegoComponentTemplate;
   score: number;
@@ -46,8 +47,12 @@ export function retrieveComponentForInstance(
           ['ground', 'surface'].includes(template.anchor.kind))
           ? 1
           : 0;
+      // Identity is an admission gate. For admitted learned instances the
+      // catalog fit is based on geometry/ports, not a made-up probability
+      // conversion of the detector's text matching score.
+      const verified = hasVerifiedIdentity(instance);
       let score =
-        0.4 * instance.confidence +
+        0.4 * (verified ? size : instance.confidence) +
         0.35 * size +
         0.1 * colors +
         0.1 * anchor +
@@ -63,9 +68,13 @@ export function retrieveComponentForInstance(
         instance.category === 'statue' &&
         template.representation === 'component' &&
         instance.confidence < 0.95 &&
-        !(instance.mustRepresent &&
+        !(verified && instance.nicheBox && instance.imageMask?.some(Boolean)) &&
+        !(
+          instance.mustRepresent &&
           (instance.anchorConfidence ?? 0) >= 0.8 &&
-          instance.confidence >= 0.8 && instance.imageMask?.some(Boolean))
+          instance.confidence >= 0.8 &&
+          instance.imageMask?.some(Boolean)
+        )
       )
         score = 0;
       return {
@@ -95,7 +104,10 @@ export function retrieveComponent(
     instance.confidence < 0.95 &&
     matches.some((match) => match.template.id === 'statue-simplified')
   )
-    return matches.find((match) => match.template.id === 'statue-simplified') || matches[0];
+    return (
+      matches.find((match) => match.template.id === 'statue-simplified') ||
+      matches[0]
+    );
   return matches[0];
 }
 export function fallbackRepresentation(

@@ -93,6 +93,7 @@ self.onmessage = async (
     // `mesh.statueFallback` data).  This keeps unrelated references such as
     // towers from acquiring a fake statue.
     let refined = regions.filter((r) => !r.autoRefinement);
+    let semanticWarning: string | undefined;
     if (event.data.autoSemanticRefinement !== false && raster) {
       try {
         const found = await detectRefinements(
@@ -103,14 +104,15 @@ self.onmessage = async (
           event.data.camera || mesh.coloring,
         );
         refined = mergeRefinementRegions(regions, found);
-      } catch {
+      } catch (error) {
+        semanticWarning = error instanceof Error ? error.message : '对象识别失败，已保留原网格。';
         // Semantic alignment is optional. A detector failure must never remove
         // geometry or prevent ordinary mesh-to-brick conversion.
         refined = regions.filter((r) => !r.autoRefinement);
       }
     }
     if (event.data.action === 'components') {
-      self.postMessage({ regions: refined, reports: [], dropped: [] });
+      self.postMessage({ regions: refined, reports: [], dropped: [], semanticWarning });
       return;
     }
     // Component placement never blocks the finished product: anything that
@@ -130,6 +132,7 @@ self.onmessage = async (
         };
     self.postMessage({
       model: auto.model,
+      semanticWarning,
       applied: auto.applied.length,
       regions: [
         ...auto.applied,

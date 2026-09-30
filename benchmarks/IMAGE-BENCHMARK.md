@@ -8,7 +8,8 @@ not a held-out photograph dataset or official LEGO model ground truth.
 
 ## Run
 
-Requires the already documented local Hunyuan3D installation, Node and Python
+Requires the already documented local Hunyuan3D installation, the local identity
+runtime (`sh scripts/setup-local-semantics.sh`), Node and Python
 with Pillow. The downloader only obtains the six pinned images. Inference uses
 the existing local weights; it does not call a paid API.
 
@@ -56,3 +57,15 @@ The baseline records actual generated mesh hashes. A different native runtime
 or weight version can change its output; compare fingerprints before interpreting
 differences. Outputs are local caches, not clean-clone unit fixtures. Do not
 describe this benchmark as a physical build or an official LEGO quality rating.
+
+The October 1 implementation uses real Grounding DINO + SlimSAM observations,
+with input/weight/runner fingerprints and a separate conversion fingerprint.
+`image-semantic-2026-10-01.json` records zero forbidden installations on all six
+inputs; the old September 30 baseline remains a historical failure record.
+Unknown/unsupported identities retain source geometry, including ambiguous
+sculptures that must not become a humanoid catalog figure. Positive temple
+fixtures also require the statue and both attached braziers, so disabling all
+automatic components cannot satisfy those checks.
+
+Cached learned observations can be replayed with `--scene-dir=<directory>`;
+the runner checks their input and engine hashes instead of trusting a filename.

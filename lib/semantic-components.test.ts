@@ -20,21 +20,42 @@ import { componentTemplate } from './component-library.ts';
 const kinds: ComponentKind[] = ['tree', 'brazier', 'statue'];
 test('statue clearance uses the rounded real catalog height, including its accessories', () => {
   for (const rotation of [0, 1, 2, 3]) {
-    const bricks = positionedComponent('statue', [0, 0, 0], rotation, { width: 20, depth: 20 }, 'statue-standing');
-    const top = Math.max(...bricks.map(b => b.y + b.h));
+    const bricks = positionedComponent(
+      'statue',
+      [0, 0, 0],
+      rotation,
+      { width: 20, depth: 20 },
+      'statue-standing',
+    );
+    const top = Math.max(...bricks.map((b) => b.y + b.h));
     assert.equal(COMPONENT_SIZES.statue.height, Math.ceil(top));
-    assert.equal(componentTemplate('statue-standing')!.bboxStuds.height, Math.ceil(top));
-    assert.ok(bricks.some(b => b.part === '4497'), 'the spear belongs to the measured envelope');
+    assert.equal(
+      componentTemplate('statue-standing')!.bboxStuds.height,
+      Math.ceil(top),
+    );
+    assert.ok(
+      bricks.some((b) => b.part === '4497'),
+      'the spear belongs to the measured envelope',
+    );
   }
 });
 test('catalog statue presents its shield toward each reference-camera direction', () => {
   for (const yaw of [0, 90, 180, 270, -90, 15]) {
-    const parts = positionedComponent('statue', [0, 0, 0], referenceFacingRotation(yaw), { width: 20, depth: 20 });
-    const torso = parts.find(b => b.part === '973')!.pose!.position;
-    const shield = parts.find(b => b.part === '3846')!.pose!.position;
-    const angle = yaw * Math.PI / 180;
-    assert.ok((shield[0] - torso[0]) * Math.sin(angle) +
-      (shield[2] - torso[2]) * Math.cos(angle) > 0, 'the shield is on the visible front');
+    const parts = positionedComponent(
+      'statue',
+      [0, 0, 0],
+      referenceFacingRotation(yaw),
+      { width: 20, depth: 20 },
+    );
+    const torso = parts.find((b) => b.part === '973')!.pose!.position;
+    const shield = parts.find((b) => b.part === '3846')!.pose!.position;
+    const angle = (yaw * Math.PI) / 180;
+    assert.ok(
+      (shield[0] - torso[0]) * Math.sin(angle) +
+        (shield[2] - torso[2]) * Math.cos(angle) >
+        0,
+      'the shield is on the visible front',
+    );
   }
 });
 function fixture() {
@@ -220,32 +241,102 @@ void test('removing a statue preserves a real full-width bridge above the openin
 
 for (const kind of ['tree', 'brazier'] as const) {
   void test(`${kind}: reliable automatic proposal commits bricks, BOM and instructions without a user confirmation`, () => {
-    const mesh=fixture();
-    const input={...region(kind),source:'color' as const,autoRefinement:true,confirmed:false,replacementConfidence:0.9};
-    const result=meshToDesignAuto(mesh,28,[input]);
-    assert.equal(result.applied.length,1);
-    assert.equal(result.applied[0].confirmed,true);
-    assert.equal(result.applied[0].autoConfirmed,true);
-    assert.equal(result.applied[0].source,'color');
-    assert.equal(result.reports[0].status,'auto-applied');
-    const section=`component-${input.id}`;
-    const parts=result.model.bricks.filter((b)=>b.section===section);
-    assert.equal(parts.length,componentBricks(kind).length);
-    assert.ok(result.model.assembly!.sections.some((s)=>s.id===section));
-    assert.equal(result.model.assembly!.steps.filter((s)=>s.section===section).length,parts.length);
-    for(const b of parts) {
-      assert.ok(inventory(result.model.bricks).some((p)=>p.part===b.part&&p.color===b.color));
+    const mesh = fixture();
+    const input = {
+      ...region(kind),
+      source: 'vision' as const,
+      autoRefinement: true,
+      confirmed: false,
+      replacementConfidence: 0.9,
+      sceneElement: {
+        id: `test-${kind}`,
+        category: kind,
+        confidence: 0.44,
+        detectionSource: 'vision' as const,
+        imageMask: new Uint8Array([1]),
+        identity: {
+          status: 'verified' as const,
+          score: 0.44,
+          threshold: 0.3,
+          label: kind,
+          model: 'test/known-fixture',
+          revision: 'b'.repeat(40),
+        },
+      },
+    };
+    const result = meshToDesignAuto(mesh, 28, [input]);
+    assert.equal(result.applied.length, 1);
+    assert.equal(result.applied[0].confirmed, true);
+    assert.equal(result.applied[0].autoConfirmed, true);
+    assert.equal(result.applied[0].source, 'vision');
+    assert.equal(result.reports[0].status, 'auto-applied');
+    const section = `component-${input.id}`;
+    const parts = result.model.bricks.filter((b) => b.section === section);
+    assert.equal(parts.length, componentBricks(kind).length);
+    assert.ok(result.model.assembly!.sections.some((s) => s.id === section));
+    assert.equal(
+      result.model.assembly!.steps.filter((s) => s.section === section).length,
+      parts.length,
+    );
+    for (const b of parts) {
+      assert.ok(
+        inventory(result.model.bricks).some(
+          (p) => p.part === b.part && p.color === b.color,
+        ),
+      );
       assert.ok(toLDraw(result.model).includes(`${b.part}.dat`));
     }
-    assert.equal(input.confirmed,false);
-    const baseline=meshToDesign(mesh,28);
-    const low=meshToDesignAuto(mesh,28,[{...input,replacementConfidence:0.4}]);
-    assert.equal(low.reports[0].status,'preserved');
-    assert.deepEqual(low.model.bricks,baseline.bricks);
-    const failed=meshToDesignAuto(mesh,28,[{...input,width:100}]);
-    assert.ok(failed.attempts>0);
-    assert.equal(failed.applied.length,0);
-    assert.equal(failed.reports[0].status,'preserved');
-    assert.deepEqual(failed.model.bricks,baseline.bricks);
+    assert.equal(input.confirmed, false);
+    const baseline = meshToDesign(mesh, 28);
+    const unverified = meshToDesignAuto(mesh, 28, [
+      { ...input, source: 'color', sceneElement: undefined },
+    ]);
+    assert.equal(
+      unverified.applied.length,
+      0,
+      'perfect mounting cannot certify color-only object identity',
+    );
+    assert.deepEqual(unverified.model.bricks, baseline.bricks);
+    const low = meshToDesignAuto(mesh, 28, [
+      { ...input, replacementConfidence: 0.4 },
+    ]);
+    assert.equal(low.reports[0].status, 'preserved');
+    assert.deepEqual(low.model.bricks, baseline.bricks);
+    const failed = meshToDesignAuto(mesh, 28, [{ ...input, width: 100 }]);
+    assert.ok(failed.attempts > 0);
+    assert.equal(failed.applied.length, 0);
+    assert.equal(failed.reports[0].status, 'preserved');
+    assert.deepEqual(failed.model.bricks, baseline.bricks);
   });
 }
+
+test('mustRepresent cannot bypass missing identity through a focal fallback', () => {
+  const mesh = fixture();
+  const proposal: ComponentRegion = {
+    ...region('statue'),
+    source: 'vision',
+    autoRefinement: true,
+    autoScoreWithInstallation: 1,
+    sceneElement: {
+      id: 'ambiguous-sculpture',
+      category: 'statue',
+      confidence: 0.99,
+      detectionSource: 'vision',
+      mustRepresent: true,
+      imageMask: new Uint8Array([1]),
+      identity: {
+        status: 'unverified',
+        score: 0.99,
+        threshold: 0.3,
+        label: 'human statue',
+        model: 'test/known-fixture',
+        revision: 'b'.repeat(40),
+      },
+    },
+  };
+  const baseline = meshToDesign(mesh, 28);
+  const result = meshToDesignAuto(mesh, 28, [proposal]);
+  assert.equal(result.applied.length, 0);
+  assert.equal(result.attempts, 0);
+  assert.deepEqual(result.model.bricks, baseline.bricks);
+});

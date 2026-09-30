@@ -52,7 +52,7 @@ export type ComponentRegion = {
     | 'confirmed'
     | 'rejected';
   /** Detection provenance. Automatic detections remain candidates until confirmed. */
-  source?: 'color' | 'guess' | 'manual';
+  source?: 'vision' | 'color' | 'guess' | 'manual';
   confidence?: number;
   imageUV?: [number, number];
   replacementConfidence?: number;
@@ -89,7 +89,7 @@ export const COMPONENT_SIZES = {
 // LDraw figures face local -Z. Quantize the reference camera to a legal
 // quarter turn so an automatic figure presents its face to the reference.
 export function referenceFacingRotation(yaw: number) {
-  return ((2 + Math.round(yaw / 90)) % 4 + 4) % 4;
+  return (((2 + Math.round(yaw / 90)) % 4) + 4) % 4;
 }
 export function meshFrame(mesh: TriangleMesh, resolution: number) {
   const min: V3 = [Infinity, Infinity, Infinity],
@@ -187,7 +187,8 @@ export function positionedComponent(
 ): Brick[] {
   const m = rotate(rotation);
   const template = templateId ? componentTemplate(templateId) : undefined;
-  if (templateId && (!template || template.category !== kind)) throw Error('实例模板不可用');
+  if (templateId && (!template || template.category !== kind))
+    throw Error('实例模板不可用');
   const parts = template ? template.build(instance) : componentBricks(kind);
   return parts.map((b) => {
     const pose = {
@@ -228,7 +229,9 @@ export function addComponents(
   for (const r of regions) {
     const { x, y, z } = regionPlacement(r, grid),
       section = `component-${r.id}`,
-      label = (r.templateId && componentTemplate(r.templateId)?.name) || COMPONENT_LABELS[r.kind];
+      label =
+        (r.templateId && componentTemplate(r.templateId)?.name) ||
+        COMPONENT_LABELS[r.kind];
     const parts = positionedComponent(
       r.kind,
       [(x - model.width / 2) * 20, -y * 8, (z - model.depth / 2) * 20],

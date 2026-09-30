@@ -61,6 +61,16 @@ export type SceneElementInstance = {
   importanceScore?: number;
   mustRepresent?: boolean;
   detectionSource?: DetectionSource;
+  /** Identity evidence is independent of raycasts, placement and anchor scores. */
+  identity?: {
+    status: 'verified' | 'unverified';
+    score: number;
+    threshold: number;
+    label: string;
+    model: string;
+    revision: string;
+    maskScore?: number;
+  };
   anchorKind?: 'ground' | 'wall' | 'surface' | 'free';
   anchorConfidence?: number;
   evidence?: string[];

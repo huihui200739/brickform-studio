@@ -123,7 +123,8 @@ export default function ReconstructionPanel({
   const [multiDiagnostics, setMultiDiagnostics] =
     useState<MultiDiagnostics | null>(null);
   const [neuralDraft, setNeuralDraft] = useState<TriangleMesh | null>(null);
-  const multiVerified = multiDiagnostics?.fusionVersion === 2 && multiDiagnostics.conversionAllowed;
+  const multiVerified =
+    multiDiagnostics?.fusionVersion === 2 && multiDiagnostics.conversionAllowed;
   const [multiJob, setMultiJob] = useState<Job | null>(null);
   const [configured, setConfigured] = useState<boolean | null>(null),
     [provider, setProvider] = useState(''),
@@ -226,7 +227,8 @@ export default function ReconstructionPanel({
             setMultiDiagnostics(status.multiDiagnostics || null);
             setMultiJob(null);
             setPhase(
-              status.multiDiagnostics?.fusionVersion === 2 && status.multiDiagnostics.conversionAllowed
+              status.multiDiagnostics?.fusionVersion === 2 &&
+                status.multiDiagnostics.conversionAllowed
                 ? '三张图已联合生成三维草稿。请旋转检查壁龛、台阶、侧面和背面，再转换成积木。'
                 : '三维草稿已生成，但估计的相机或深度不一致，积木转换已暂停。',
             );
@@ -519,7 +521,7 @@ export default function ReconstructionPanel({
   async function autoDetect(mesh: TriangleMesh) {
     const generation = ++autoGeneration.current;
     setAutoBusy(true);
-    setComponentNote('正在从原图定位树与火焰；不确定时保留原几何。');
+    setComponentNote('正在识别原图中的对象和轮廓，再独立检查安装位置。');
     try {
       const data = await runWorkerMessage({
         action: 'components',
@@ -538,7 +540,9 @@ export default function ReconstructionPanel({
       setSelected('');
       setPicking(false);
       setComponentNote(
-        `图片检测 ${found.length} 个区域；可靠替换自动提交，其余保留原几何，无需确认。`,
+        data.semanticWarning
+          ? String(data.semanticWarning)
+          : `图片检测 ${found.length} 个对象；身份与安装均通过的组件自动提交，其余保留原几何。`,
       );
     } catch (e) {
       if (alive.current && generation === autoGeneration.current) {
@@ -577,6 +581,8 @@ export default function ReconstructionPanel({
       });
       const model = data.model as Model;
       if (alive.current) {
+        if (data.semanticWarning)
+          setComponentNote(String(data.semanticWarning));
         const applied = Number(data.applied || 0),
           dropped = (data.dropped as string[]) || [];
         setRegions((data.regions as ComponentRegion[]) || regions);
@@ -1210,9 +1216,17 @@ export default function ReconstructionPanel({
                 </p>
                 {multiDiagnostics.depthAgreement && (
                   <p>
-                    重叠区域最大深度冲突：{Math.round(100 * Math.max(0, ...multiDiagnostics.depthAgreement
-                      .filter(pair => pair.compared >= 100)
-                      .map(pair => pair.conflictFraction || 0)))}%
+                    重叠区域最大深度冲突：
+                    {Math.round(
+                      100 *
+                        Math.max(
+                          0,
+                          ...multiDiagnostics.depthAgreement
+                            .filter((pair) => pair.compared >= 100)
+                            .map((pair) => pair.conflictFraction || 0),
+                        ),
+                    )}
+                    %
                   </p>
                 )}
                 {multiDiagnostics.failures.map((reason) => (

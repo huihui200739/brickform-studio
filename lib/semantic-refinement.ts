@@ -5,9 +5,7 @@ import {
   type ReferenceCamera,
 } from './reference-colors.ts';
 import { imageAnchorToMesh } from './image-to-mesh.ts';
-import {
-  type SemanticDetector,
-} from './image-semantics.ts';
+import { type SemanticDetector } from './image-semantics.ts';
 import {
   COMPONENT_SIZES,
   meshFrame,
@@ -23,6 +21,11 @@ import { enforceGroupConsistency } from './element-grouping.ts';
 import { routeRepresentation } from './representation-router.ts';
 import { analyzeScene } from './scene/scene-analysis.ts';
 import { LegacySceneDetector } from './scene/detectors/legacy-detector.ts';
+import {
+  VisionSceneDetector,
+  hasVerifiedIdentity,
+} from './scene/detectors/vision-detector.ts';
+import type { SceneDetector } from './scene/detectors/detector.ts';
 
 export const AUTO_REPLACEMENT_THRESHOLD = 0.7;
 export function automaticReplacementScore(region: ComponentRegion) {
@@ -82,10 +85,14 @@ export async function detectRefinements(
   resolution: number,
   detector?: SemanticDetector,
   camera?: ReferenceCamera,
+  sceneDetector?: SceneDetector,
 ): Promise<ComponentRegion[]> {
   const analysis = await analyzeScene(
     image,
-    new LegacySceneDetector(detector),
+    sceneDetector ??
+      (detector
+        ? new LegacySceneDetector(detector)
+        : new VisionSceneDetector()),
   );
   const detections = analysis.elements;
   if (!detections.length) return [];
@@ -93,6 +100,7 @@ export async function detectRefinements(
     frame = meshFrame(mesh, resolution);
   const regions: ComponentRegion[] = [];
   for (const [index, detection] of detections.entries()) {
+    if (detection.detectionSource === 'vision' && !hasVerifiedIdentity(detection)) continue;
     const hit = imageAnchorToMesh(
       mesh,
       alignment,
@@ -136,7 +144,7 @@ export async function detectRefinements(
     // Installation is provisional here. The transactional assembler must still
     // validate the complete surroundings before any actual replacement commits.
     const score = replacementConfidence(
-      detection.confidence,
+      hasVerifiedIdentity(detection) ? 1 : 0,
       alignment.confidence,
       hit.raycastConfidence,
       geometryFit,
@@ -150,22 +158,20 @@ export async function detectRefinements(
       // The ray hit is only a provisional mesh sample. Surface calibration
       // writes worldAnchor after it finds an attachable generated brick.
       scaleHint: size,
-      placementMode: kind === 'brazier'
-        ? 'wall-mounted' as const
-        : kind === 'statue'
-          ? 'pedestal-mounted' as const
-          : 'cavity-contained' as const,
+      placementMode:
+        kind === 'brazier'
+          ? ('wall-mounted' as const)
+          : kind === 'statue'
+            ? ('pedestal-mounted' as const)
+            : ('cavity-contained' as const),
     };
     const matches = retrieveComponentForInstance(sceneElement);
     const match = matches[0];
-    const decision = routeRepresentation(
-      sceneElement,
-      matches,
-    );
+    const decision = routeRepresentation(sceneElement, matches);
     regions.push({
       id: `image-${kind}-${index}`,
       kind,
-      source: 'color',
+      source: detection.detectionSource === 'vision' ? 'vision' : 'color',
       sceneElement,
       templateId: decision.templateId,
       representation: decision.kind,
@@ -181,7 +187,8 @@ export async function detectRefinements(
       ...(kind === 'brazier' && decision.templateId
         ? componentTemplate(decision.templateId)?.bboxStuds
         : {}),
-      rotation: kind === 'statue' ? referenceFacingRotation(alignment.camera.yaw) : 0,
+      rotation:
+        kind === 'statue' ? referenceFacingRotation(alignment.camera.yaw) : 0,
       placed: true,
       confidence: detection.confidence,
       replacementConfidence: score,
@@ -197,7 +204,7 @@ export async function detectRefinements(
       placementStatus: 'candidate',
       placementMode: sceneElement.placementMode,
       autoScoreWithInstallation: replacementConfidence(
-        detection.confidence,
+        hasVerifiedIdentity(detection) ? 1 : 0,
         alignment.confidence,
         hit.raycastConfidence,
         geometryFit,

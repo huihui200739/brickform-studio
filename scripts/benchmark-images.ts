@@ -11,6 +11,10 @@ import { colorFromReference } from '../lib/reference-colors.ts';
 import { detectRefinements } from '../lib/semantic-refinement.ts';
 import { meshToDesign, meshToDesignAuto } from '../lib/mesh-design.ts';
 import { validateModel, inventory, type Raster } from '../lib/brick-engine.ts';
+import {
+  VisionSceneDetector,
+  type VisionSceneResponse,
+} from '../lib/scene/detectors/vision-detector.ts';
 
 const args = process.argv.slice(2);
 const output = resolve(
@@ -18,6 +22,9 @@ const output = resolve(
 );
 const native = args.includes('--native');
 const onlyCase = args.find((a) => a.startsWith('--case='))?.split('=')[1];
+const sceneDirectory = args
+  .find((a) => a.startsWith('--scene-dir='))
+  ?.slice('--scene-dir='.length);
 const resolution = Number(
   args.find((a) => a.startsWith('--resolution='))?.split('=')[1] || 28,
 );
@@ -126,12 +133,70 @@ for (const item of manifest.cases as {
     const mesh = colorFromReference(raw, raster, undefined, true);
     row.camera = mesh.coloring;
     row.triangles = mesh.positions.length / 9;
+    const semanticRoot = resolve('work/semantic-engine');
+    const ready = readFileSync(join(semanticRoot, 'ready.json'));
+    const sceneRunner = resolve('scripts/local-scene-analysis.py');
+    const sceneFingerprint = createHash('sha256')
+      .update(ready)
+      .update(readFileSync(sceneRunner))
+      .digest('hex');
+    const rasterHash = createHash('sha256').update(rasterData).digest('hex');
+    const sceneFile = sceneDirectory
+      ? join(sceneDirectory, `${item.id}.scene.json`)
+      : join(dir, 'scene/reference.scene.json');
+    if (
+      !sceneDirectory &&
+      (!existsSync(sceneFile) ||
+        JSON.parse(readFileSync(sceneFile, 'utf8')).engineFingerprint !==
+          sceneFingerprint ||
+        JSON.parse(readFileSync(sceneFile, 'utf8')).imageSha256 !== rasterHash)
+    ) {
+      const sceneDir = join(dir, 'scene');
+      mkdirSync(sceneDir, { recursive: true });
+      const inputRaster = join(sceneDir, 'reference.rgba');
+      writeFileSync(inputRaster, rasterData);
+      execFileSync(
+        join(semanticRoot, '.venv/bin/python'),
+        [sceneRunner, inputRaster, '--output', sceneDir],
+        { timeout: 180000 },
+      );
+    }
+    const scene = JSON.parse(
+      readFileSync(sceneFile, 'utf8'),
+    ) as VisionSceneResponse & { imageSha256: string };
+    if (
+      scene.engineFingerprint !== sceneFingerprint ||
+      scene.imageSha256 !== rasterHash
+    )
+      throw Error(
+        'Learned observations differ from the input or current inference code.',
+      );
+    row.sceneEngineFingerprint = scene.engineFingerprint;
+    row.conversionFingerprint = createHash('sha256')
+      .update(
+        [
+          'lib/scene/detectors/vision-detector.ts',
+          'lib/semantic-refinement.ts',
+          'lib/mesh-design.ts',
+          'lib/component-retrieval.ts',
+        ]
+          .map((file) => readFileSync(file, 'utf8'))
+          .join('\n'),
+      )
+      .digest('hex');
+    row.observedObjects = scene.elements.map((e) => ({
+      category: e.category,
+      label: e.label,
+      identityScore: e.identityScore,
+      identitySupported: e.identitySupported,
+    }));
     const regions = await detectRefinements(
       mesh,
       raster,
       resolution,
       undefined,
       mesh.coloring,
+      new VisionSceneDetector(async () => scene),
     );
     row.detected = regions.map((r) => ({
       id: r.id,

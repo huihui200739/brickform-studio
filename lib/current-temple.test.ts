@@ -8,6 +8,10 @@ import { detectRefinements } from './semantic-refinement.ts';
 import { meshToDesignAuto } from './mesh-design.ts';
 import { validateModel, inventory } from './brick-engine.ts';
 import { connectors } from './assembly-validation.ts';
+import {
+  VisionSceneDetector,
+  type VisionSceneResponse,
+} from './scene/detectors/vision-detector.ts';
 
 test('actual September 30 standard draft keeps statue and both fully connected braziers after image downsampling', async () => {
   const bytes = gunzipSync(
@@ -33,6 +37,15 @@ test('actual September 30 standard draft keeps statue and both fully connected b
     28,
     undefined,
     mesh.coloring,
+    new VisionSceneDetector(
+      async () =>
+        JSON.parse(
+          readFileSync(
+            new URL('./fixtures/temple-standard.scene.json', import.meta.url),
+            'utf8',
+          ),
+        ) as VisionSceneResponse,
+    ),
   );
   const result = meshToDesignAuto(mesh, 28, regions, 48, {
     image,

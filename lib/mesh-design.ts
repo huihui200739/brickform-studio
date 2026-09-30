@@ -1,4 +1,5 @@
 import { componentTemplate } from './component-library.ts';
+import { hasVerifiedIdentity } from './scene/detectors/vision-detector.ts';
 import { repeatedGroups } from './scene-elements.ts';
 import {
   placementCandidates,
@@ -272,7 +273,7 @@ function ensureSceneElement(region: ComponentRegion): ComponentRegion {
     importance: category === 'statue' ? 'primary' : 'secondary',
     importanceScore: category === 'statue' ? 1 : 0.5,
     mustRepresent: category === 'statue',
-    detectionSource: region.source === 'color' ? 'color' : 'heuristic',
+    detectionSource: region.source === 'vision' ? 'vision' : region.source === 'color' ? 'color' : 'heuristic',
     anchorKind: category === 'statue' ? 'surface' : 'ground',
     evidence: ['legacy region promoted to a scene instance'],
     placementMode: category === 'brazier'
@@ -1014,7 +1015,7 @@ export function meshToDesignAuto(
       (r.source === 'manual' ||
         (!r.autoRefinement && (r.confirmed === true || !r.source)) ||
         (r.autoRefinement === true &&
-          r.source === 'color' &&
+          r.source === 'vision' && r.sceneElement?.category === r.kind && hasVerifiedIdentity(r.sceneElement) &&
           (r.kind !== 'statue' ||
             r.templateId === 'statue-relief' ||
             r.templateId === 'statue-simplified' ||
@@ -1160,7 +1161,8 @@ export function meshToDesignAuto(
   // ordered fallback chain until a visible representation is committed.
   const view = visibilityView(mesh, model, resolution, visibility);
   const focalRegions = [...applied, ...dropped].filter((r) =>
-    requiresFocalPreservation(r.sceneElement),
+    requiresFocalPreservation(r.sceneElement) &&
+    (!r.autoRefinement || (r.sceneElement?.category === r.kind && hasVerifiedIdentity(r.sceneElement))),
   );
   for (const focal of focalRegions) {
     const current = applied.find((r) => r.id === focal.id);

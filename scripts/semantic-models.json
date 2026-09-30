@@ -1,0 +1,4 @@
+{
+  "detection": { "repo": "IDEA-Research/grounding-dino-tiny", "revision": "a2bb814dd30d776dcf7e30523b00659f4f141c71" },
+  "segmentation": { "repo": "Zigeng/SlimSAM-uniform-77", "revision": "79c09c1ce6b4ae51f00634ed171d9b8e888f6911" }
+}

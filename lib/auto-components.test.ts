@@ -370,12 +370,32 @@ void test('automatic refinement commits high confidence only and rollback preser
   assert.ok(candidate);
   const low = {
     ...candidate,
+    source: 'vision' as const,
+    sceneElement: {
+      id: 'known-flame',
+      category: 'brazier' as const,
+      confidence: 0.44,
+      detectionSource: 'vision' as const,
+      imageMask: new Uint8Array([1]),
+      identity: {
+        status: 'verified' as const,
+        score: 0.44,
+        threshold: 0.3,
+        label: 'burning flame',
+        model: 'test/known-fixture',
+        revision: 'b'.repeat(40),
+      },
+    },
     autoRefinement: true,
     autoScoreWithInstallation: 0.45,
     confirmed: false,
   };
   const high = { ...low, autoScoreWithInstallation: 0.95 };
-  assert.deepEqual(meshToDesignAuto(mesh,28,[{...low,confirmed:true}]).model.bricks,baseline.bricks,'stale automatic confirmation cannot bypass current confidence');
+  assert.deepEqual(
+    meshToDesignAuto(mesh, 28, [{ ...low, confirmed: true }]).model.bricks,
+    baseline.bricks,
+    'stale automatic confirmation cannot bypass current confidence',
+  );
   for (const region of [
     low,
     { ...high, placementStatus: 'rejected' as const },
@@ -429,6 +449,22 @@ void test('mixed low confidence proposals cannot shift eligible pair indices', (
     .filter((r) => r.kind === 'brazier')
     .map((r) => ({
       ...r,
+      source: 'vision' as const,
+      sceneElement: {
+        id: r.id,
+        category: 'brazier' as const,
+        confidence: 0.44,
+        detectionSource: 'vision' as const,
+        imageMask: new Uint8Array([1]),
+        identity: {
+          status: 'verified' as const,
+          score: 0.44,
+          threshold: 0.3,
+          label: 'burning flame',
+          model: 'test/known-fixture',
+          revision: 'b'.repeat(40),
+        },
+      },
       autoRefinement: true,
       autoScoreWithInstallation: 0.95,
     }));

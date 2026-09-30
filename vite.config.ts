@@ -4,6 +4,7 @@ import vinext from 'vinext';
 import { defineConfig } from 'vite';
 import hostingConfig from './.openai/hosting.json';
 import { localReconstruction } from './scripts/local-reconstruction';
+import { localSemantics } from './scripts/local-semantics';
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   '00000000-0000-4000-8000-000000000000';
@@ -51,7 +52,9 @@ export default defineConfig(async () => {
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,
     plugins: [
-      ...(process.env.BRICKFORM_LOCAL_3D === '1' ? [localReconstruction()] : []),
+      ...(process.env.BRICKFORM_LOCAL_3D === '1'
+        ? [localReconstruction(), localSemantics()]
+        : []),
       vinext(),
       sites(),
       cloudflare({
