@@ -1,0 +1,67 @@
+{
+  "sourceRepository": "https://github.com/Tencent/Hunyuan3D-2",
+  "sourceRevision": "f8db63096c8282cb27354314d896feba5ba6ff8a",
+  "sourceDirectory": "assets/example_images",
+  "note": "Public engine example renders; these are not photographs, original LEGO sets, or held-out model-training data. Inputs and native outputs are cached locally, not redistributed here.",
+  "cases": [
+    {
+      "id": "house",
+      "image": "052.png",
+      "category": "building",
+      "forbiddenComponentKinds": [
+        "brazier"
+      ],
+      "sha256": "63dfa62dc5a19a1a3bd2df1d1589644f98dea501a4b31cb02a71679d0c74a0e7"
+    },
+    {
+      "id": "locomotive",
+      "image": "1022.png",
+      "category": "vehicle",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "df4284dabd513c4826d1cda8ad2dc6687ee4c30229d41c3d631749329175c90c"
+    },
+    {
+      "id": "horse",
+      "image": "1029.png",
+      "category": "animal",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "66305f50ddd7d90e521d718952c702b9fb71c30efe6970d39d918f6dbf5b6ec3"
+    },
+    {
+      "id": "sculpture-head",
+      "image": "075.png",
+      "category": "sculpture",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "58b926e26c0026df16378e214fb046e63dd0edceacb0f8db8005d9ed3f86949a"
+    },
+    {
+      "id": "wizard-hat",
+      "image": "1111.png",
+      "category": "accessory",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "d9d43eae5cc61c872bc01d480de4e8954da352743d81f9329345d96e052ee2ac"
+    },
+    {
+      "id": "costumed-figure",
+      "image": "004.png",
+      "category": "figure",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "6d08caba0671ffee9a683c5b3ca101b272cec71d3eb9e93b6e8d2b65ddd417fc"
+    }
+  ]
+}

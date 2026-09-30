@@ -41,7 +41,8 @@ for b in model['bricks']:
         brightness=.68+.32*max(0,n@light)
         triangles.append((points,tuple(np.clip(color*brightness,0,255).astype(int))))
 allpoints=np.vstack([t[0] for t in triangles]);mi=allpoints[:,:2].min(axis=0);ma=allpoints[:,:2].max(axis=0)
-W,H=1600,1500;scale=min((W-160)/(ma[0]-mi[0]),(H-160)/(ma[1]-mi[1]));offset=np.array([W/2,H/2])-(ma+mi)/2*scale
+W=max(400,min(2400,int(sys.argv[4]))) if len(sys.argv)>4 else 1600
+H=round(W*1500/1600);pad=W*.1;scale=min((W-pad)/(ma[0]-mi[0]),(H-pad)/(ma[1]-mi[1]));offset=np.array([W/2,H/2])-(ma+mi)/2*scale
 pixels=np.full((H,W,3),[237,240,244],dtype=np.uint8);depth=np.full((H,W),-np.inf)
 for pts,col in triangles:
     p=pts[:,:2]*scale+offset

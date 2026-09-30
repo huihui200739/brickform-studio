@@ -1,0 +1,1478 @@
+{
+  "scope": "Public engine example renders; these are not photographs, original LEGO sets, or held-out model-training data. Inputs and native outputs are cached locally, not redistributed here.",
+  "resolution": 28,
+  "cases": [
+    {
+      "id": "house",
+      "image": "052.png",
+      "category": "building",
+      "resolution": 28,
+      "inputSha256": "63dfa62dc5a19a1a3bd2df1d1589644f98dea501a4b31cb02a71679d0c74a0e7",
+      "seed": 1675601453,
+      "inferenceCached": false,
+      "meshSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+      "camera": {
+        "method": "reference-projection",
+        "yaw": 15,
+        "pitch": 0,
+        "perspective": 0.25,
+        "observedFraction": 0.2865175801447777
+      },
+      "triangles": 154720,
+      "detected": [
+        {
+          "id": "image-tree-7",
+          "kind": "tree",
+          "confidence": 0.7367768595041323
+        },
+        {
+          "id": "image-brazier-0",
+          "kind": "brazier",
+          "confidence": 0.8568614130434783
+        },
+        {
+          "id": "image-brazier-1",
+          "kind": "brazier",
+          "confidence": 0.8557894736842105
+        },
+        {
+          "id": "image-tree-2",
+          "kind": "tree",
+          "confidence": 0.8305555555555556
+        },
+        {
+          "id": "image-tree-4",
+          "kind": "tree",
+          "confidence": 0.784
+        },
+        {
+          "id": "image-tree-8",
+          "kind": "tree",
+          "confidence": 0.7273076923076923
+        }
+      ],
+      "status": "converted",
+      "bricks": 3197,
+      "steps": 320,
+      "supports": 387,
+      "partTypes": 19,
+      "structureCategory": "mass-building",
+      "structureConfidence": 0.5,
+      "applied": [
+        {
+          "id": "image-tree-7",
+          "kind": "tree"
+        },
+        {
+          "id": "image-brazier-0",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-tree-4",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-8",
+          "kind": "tree"
+        }
+      ],
+      "dropped": [
+        {
+          "id": "image-brazier-1",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-tree-2",
+          "kind": "tree"
+        }
+      ],
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3197
+      },
+      "inventoryTotal": 3197,
+      "colors": {
+        "0": 32,
+        "1": 216,
+        "2": 7,
+        "3": 32,
+        "4": 2020,
+        "5": 350,
+        "6": 6,
+        "7": 11,
+        "8": 164,
+        "9": 203,
+        "10": 12,
+        "11": 65,
+        "12": 79
+      },
+      "elapsedSeconds": 86.9,
+      "partColorTypes": 113,
+      "forbiddenComponentKinds": [
+        "brazier"
+      ],
+      "semanticFalsePositives": [
+        "image-brazier-0"
+      ],
+      "semanticGatePassed": false
+    },
+    {
+      "id": "locomotive",
+      "image": "1022.png",
+      "category": "vehicle",
+      "resolution": 28,
+      "inputSha256": "df4284dabd513c4826d1cda8ad2dc6687ee4c30229d41c3d631749329175c90c",
+      "seed": 3745678554,
+      "inferenceCached": false,
+      "meshSha256": "5b8be986de0fe82f66561518736b09237145beabe2891705710314ca88a9703a",
+      "camera": {
+        "method": "reference-projection",
+        "yaw": 45,
+        "pitch": 0,
+        "perspective": 0.25,
+        "observedFraction": 0.27527988192046343
+      },
+      "triangles": 143632,
+      "detected": [
+        {
+          "id": "image-brazier-3",
+          "kind": "brazier",
+          "confidence": 0.788888888888889
+        },
+        {
+          "id": "image-brazier-0",
+          "kind": "brazier",
+          "confidence": 0.8444444444444444
+        },
+        {
+          "id": "image-brazier-1",
+          "kind": "brazier",
+          "confidence": 0.8166666666666667
+        },
+        {
+          "id": "image-brazier-2",
+          "kind": "brazier",
+          "confidence": 0.8166666666666667
+        },
+        {
+          "id": "image-brazier-4",
+          "kind": "brazier",
+          "confidence": 0.765
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "confidence": 0.7526315789473684
+        },
+        {
+          "id": "image-brazier-6",
+          "kind": "brazier",
+          "confidence": 0.7458333333333333
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "confidence": 0.7402777777777778
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "confidence": 0.7125
+        },
+        {
+          "id": "image-brazier-9",
+          "kind": "brazier",
+          "confidence": 0.6980769230769232
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "confidence": 0.6852941176470588
+        }
+      ],
+      "status": "converted",
+      "bricks": 2803,
+      "steps": 317,
+      "supports": 467,
+      "partTypes": 17,
+      "structureCategory": "stepped-monument",
+      "structureConfidence": 0.55,
+      "applied": [
+        {
+          "id": "image-brazier-3",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-0",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-1",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-2",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-4",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-6",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-9",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier"
+        }
+      ],
+      "dropped": [],
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2803
+      },
+      "inventoryTotal": 2803,
+      "colors": {
+        "1": 93,
+        "2": 8,
+        "6": 52,
+        "7": 138,
+        "8": 6,
+        "9": 2480,
+        "10": 26
+      },
+      "elapsedSeconds": 73.2,
+      "partColorTypes": 57,
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "semanticFalsePositives": [
+        "image-brazier-3",
+        "image-brazier-0",
+        "image-brazier-1",
+        "image-brazier-2",
+        "image-brazier-4",
+        "image-brazier-5",
+        "image-brazier-6",
+        "image-brazier-7",
+        "image-brazier-8",
+        "image-brazier-9",
+        "image-brazier-10"
+      ],
+      "semanticGatePassed": false
+    },
+    {
+      "id": "horse",
+      "image": "1029.png",
+      "category": "animal",
+      "resolution": 28,
+      "inputSha256": "66305f50ddd7d90e521d718952c702b9fb71c30efe6970d39d918f6dbf5b6ec3",
+      "seed": 1714446160,
+      "inferenceCached": false,
+      "meshSha256": "718a8090e059a2aba32700f69a6b41f3771ed94df031b8b22bbcb7abe43adedb",
+      "camera": {
+        "method": "reference-projection",
+        "yaw": -25,
+        "pitch": 5,
+        "perspective": 0,
+        "observedFraction": 0.4114135319039671
+      },
+      "triangles": 62312,
+      "detected": [
+        {
+          "id": "image-brazier-9",
+          "kind": "brazier",
+          "confidence": 0.7303571428571429
+        },
+        {
+          "id": "image-brazier-3",
+          "kind": "brazier",
+          "confidence": 0.7875000000000001
+        },
+        {
+          "id": "image-brazier-0",
+          "kind": "brazier",
+          "confidence": 0.8791666666666667
+        },
+        {
+          "id": "image-brazier-1",
+          "kind": "brazier",
+          "confidence": 0.8027777777777778
+        },
+        {
+          "id": "image-brazier-2",
+          "kind": "brazier",
+          "confidence": 0.788888888888889
+        },
+        {
+          "id": "image-brazier-4",
+          "kind": "brazier",
+          "confidence": 0.7852272727272728
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "confidence": 0.775
+        },
+        {
+          "id": "image-brazier-6",
+          "kind": "brazier",
+          "confidence": 0.7541666666666667
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "confidence": 0.74375
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "confidence": 0.740909090909091
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "confidence": 0.7257575757575758
+        },
+        {
+          "id": "image-brazier-11",
+          "kind": "brazier",
+          "confidence": 0.7214285714285714
+        },
+        {
+          "id": "image-brazier-12",
+          "kind": "brazier",
+          "confidence": 0.7163265306122449
+        },
+        {
+          "id": "image-brazier-13",
+          "kind": "brazier",
+          "confidence": 0.7109375
+        },
+        {
+          "id": "image-brazier-14",
+          "kind": "brazier",
+          "confidence": 0.6954545454545454
+        },
+        {
+          "id": "image-brazier-16",
+          "kind": "brazier",
+          "confidence": 0.6901785714285714
+        },
+        {
+          "id": "image-brazier-17",
+          "kind": "brazier",
+          "confidence": 0.6833333333333333
+        },
+        {
+          "id": "image-brazier-18",
+          "kind": "brazier",
+          "confidence": 0.6782131661442007
+        }
+      ],
+      "status": "converted",
+      "bricks": 1985,
+      "steps": 233,
+      "supports": 655,
+      "partTypes": 17,
+      "structureCategory": "stepped-monument",
+      "structureConfidence": 0.55,
+      "applied": [
+        {
+          "id": "image-brazier-9",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-3",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-1",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-2",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-4",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-17",
+          "kind": "brazier"
+        }
+      ],
+      "dropped": [
+        {
+          "id": "image-brazier-0",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-6",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-11",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-12",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-13",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-14",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-16",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-18",
+          "kind": "brazier"
+        }
+      ],
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 1985
+      },
+      "inventoryTotal": 1985,
+      "colors": {
+        "1": 29,
+        "2": 109,
+        "6": 9,
+        "7": 222,
+        "8": 4,
+        "9": 1594,
+        "10": 17,
+        "11": 1
+      },
+      "elapsedSeconds": 77.2,
+      "partColorTypes": 51,
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "semanticFalsePositives": [
+        "image-brazier-9",
+        "image-brazier-3",
+        "image-brazier-1",
+        "image-brazier-2",
+        "image-brazier-4",
+        "image-brazier-5",
+        "image-brazier-8",
+        "image-brazier-17"
+      ],
+      "semanticGatePassed": false
+    },
+    {
+      "id": "sculpture-head",
+      "image": "075.png",
+      "category": "sculpture",
+      "resolution": 28,
+      "inputSha256": "58b926e26c0026df16378e214fb046e63dd0edceacb0f8db8005d9ed3f86949a",
+      "seed": 1488529122,
+      "inferenceCached": false,
+      "meshSha256": "1e845d750e10e0ba03667991c962ed7db8dc93af2cb7b83dd4bcbf208c848be8",
+      "camera": {
+        "method": "reference-projection",
+        "yaw": -5,
+        "pitch": 0,
+        "perspective": 0.5,
+        "observedFraction": 0.31269387637867646
+      },
+      "triangles": 139264,
+      "detected": [
+        {
+          "id": "image-tree-24",
+          "kind": "tree",
+          "confidence": 0.74375
+        },
+        {
+          "id": "image-tree-5",
+          "kind": "tree",
+          "confidence": 0.7854166666666667
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "confidence": 0.821875
+        },
+        {
+          "id": "image-tree-1",
+          "kind": "tree",
+          "confidence": 0.8166666666666667
+        },
+        {
+          "id": "image-tree-2",
+          "kind": "tree",
+          "confidence": 0.79375
+        },
+        {
+          "id": "image-tree-3",
+          "kind": "tree",
+          "confidence": 0.7875000000000001
+        },
+        {
+          "id": "image-tree-4",
+          "kind": "tree",
+          "confidence": 0.7854166666666667
+        },
+        {
+          "id": "image-tree-6",
+          "kind": "tree",
+          "confidence": 0.7796296296296297
+        },
+        {
+          "id": "image-tree-7",
+          "kind": "tree",
+          "confidence": 0.7794642857142857
+        },
+        {
+          "id": "image-tree-8",
+          "kind": "tree",
+          "confidence": 0.775
+        },
+        {
+          "id": "image-tree-9",
+          "kind": "tree",
+          "confidence": 0.775
+        },
+        {
+          "id": "image-tree-10",
+          "kind": "tree",
+          "confidence": 0.775
+        },
+        {
+          "id": "image-tree-11",
+          "kind": "tree",
+          "confidence": 0.775
+        },
+        {
+          "id": "image-tree-12",
+          "kind": "tree",
+          "confidence": 0.775
+        },
+        {
+          "id": "image-tree-13",
+          "kind": "tree",
+          "confidence": 0.7645833333333334
+        },
+        {
+          "id": "image-tree-14",
+          "kind": "tree",
+          "confidence": 0.7611111111111111
+        },
+        {
+          "id": "image-tree-15",
+          "kind": "tree",
+          "confidence": 0.7583333333333333
+        },
+        {
+          "id": "image-tree-16",
+          "kind": "tree",
+          "confidence": 0.7541666666666667
+        },
+        {
+          "id": "image-tree-17",
+          "kind": "tree",
+          "confidence": 0.7541666666666667
+        },
+        {
+          "id": "image-tree-18",
+          "kind": "tree",
+          "confidence": 0.7511904761904762
+        },
+        {
+          "id": "image-tree-19",
+          "kind": "tree",
+          "confidence": 0.75
+        },
+        {
+          "id": "image-tree-20",
+          "kind": "tree",
+          "confidence": 0.7484848484848485
+        },
+        {
+          "id": "image-tree-21",
+          "kind": "tree",
+          "confidence": 0.7482142857142857
+        },
+        {
+          "id": "image-tree-22",
+          "kind": "tree",
+          "confidence": 0.7472222222222222
+        },
+        {
+          "id": "image-tree-23",
+          "kind": "tree",
+          "confidence": 0.7466666666666667
+        },
+        {
+          "id": "image-tree-25",
+          "kind": "tree",
+          "confidence": 0.74375
+        },
+        {
+          "id": "image-tree-26",
+          "kind": "tree",
+          "confidence": 0.7428571428571429
+        },
+        {
+          "id": "image-tree-27",
+          "kind": "tree",
+          "confidence": 0.7425925925925926
+        },
+        {
+          "id": "image-tree-28",
+          "kind": "tree",
+          "confidence": 0.7418367346938776
+        },
+        {
+          "id": "image-tree-29",
+          "kind": "tree",
+          "confidence": 0.7416666666666667
+        },
+        {
+          "id": "image-tree-30",
+          "kind": "tree",
+          "confidence": 0.7392857142857143
+        },
+        {
+          "id": "image-tree-31",
+          "kind": "tree",
+          "confidence": 0.7368055555555556
+        },
+        {
+          "id": "image-tree-32",
+          "kind": "tree",
+          "confidence": 0.7359375
+        },
+        {
+          "id": "image-tree-33",
+          "kind": "tree",
+          "confidence": 0.7333333333333334
+        },
+        {
+          "id": "image-tree-34",
+          "kind": "tree",
+          "confidence": 0.7316326530612245
+        },
+        {
+          "id": "image-tree-35",
+          "kind": "tree",
+          "confidence": 0.7304195804195804
+        },
+        {
+          "id": "image-tree-36",
+          "kind": "tree",
+          "confidence": 0.7285714285714286
+        },
+        {
+          "id": "image-tree-37",
+          "kind": "tree",
+          "confidence": 0.728125
+        },
+        {
+          "id": "image-tree-38",
+          "kind": "tree",
+          "confidence": 0.7273809523809525
+        },
+        {
+          "id": "image-tree-39",
+          "kind": "tree",
+          "confidence": 0.7270676691729323
+        },
+        {
+          "id": "image-tree-40",
+          "kind": "tree",
+          "confidence": 0.726388888888889
+        },
+        {
+          "id": "image-tree-41",
+          "kind": "tree",
+          "confidence": 0.726388888888889
+        },
+        {
+          "id": "image-tree-42",
+          "kind": "tree",
+          "confidence": 0.7258928571428571
+        },
+        {
+          "id": "image-tree-43",
+          "kind": "tree",
+          "confidence": 0.725
+        },
+        {
+          "id": "image-tree-44",
+          "kind": "tree",
+          "confidence": 0.7240740740740741
+        },
+        {
+          "id": "image-tree-45",
+          "kind": "tree",
+          "confidence": 0.7229166666666667
+        },
+        {
+          "id": "image-tree-46",
+          "kind": "tree",
+          "confidence": 0.7225
+        },
+        {
+          "id": "image-tree-47",
+          "kind": "tree",
+          "confidence": 0.7223140495867769
+        },
+        {
+          "id": "image-tree-48",
+          "kind": "tree",
+          "confidence": 0.7214285714285714
+        },
+        {
+          "id": "image-tree-49",
+          "kind": "tree",
+          "confidence": 0.7214285714285714
+        },
+        {
+          "id": "image-tree-50",
+          "kind": "tree",
+          "confidence": 0.7214285714285714
+        },
+        {
+          "id": "image-tree-51",
+          "kind": "tree",
+          "confidence": 0.7203125
+        },
+        {
+          "id": "image-tree-52",
+          "kind": "tree",
+          "confidence": 0.7203125
+        },
+        {
+          "id": "image-tree-53",
+          "kind": "tree",
+          "confidence": 0.7200757575757576
+        },
+        {
+          "id": "image-tree-54",
+          "kind": "tree",
+          "confidence": 0.7191919191919192
+        },
+        {
+          "id": "image-tree-55",
+          "kind": "tree",
+          "confidence": 0.7187799043062201
+        },
+        {
+          "id": "image-tree-56",
+          "kind": "tree",
+          "confidence": 0.71875
+        },
+        {
+          "id": "image-tree-57",
+          "kind": "tree",
+          "confidence": 0.7181818181818183
+        },
+        {
+          "id": "image-tree-58",
+          "kind": "tree",
+          "confidence": 0.7166666666666667
+        },
+        {
+          "id": "image-tree-59",
+          "kind": "tree",
+          "confidence": 0.7156565656565657
+        },
+        {
+          "id": "image-tree-60",
+          "kind": "tree",
+          "confidence": 0.7156250000000001
+        },
+        {
+          "id": "image-tree-61",
+          "kind": "tree",
+          "confidence": 0.7112244897959183
+        },
+        {
+          "id": "image-tree-62",
+          "kind": "tree",
+          "confidence": 0.7107142857142857
+        },
+        {
+          "id": "image-tree-63",
+          "kind": "tree",
+          "confidence": 0.7106666666666667
+        }
+      ],
+      "status": "converted",
+      "bricks": 5412,
+      "steps": 518,
+      "supports": 1527,
+      "partTypes": 16,
+      "structureCategory": "mass-building",
+      "structureConfidence": 0.5,
+      "applied": [
+        {
+          "id": "image-tree-24",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-3",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-12",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-29",
+          "kind": "tree"
+        }
+      ],
+      "dropped": [
+        {
+          "id": "image-tree-5",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-1",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-2",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-4",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-6",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-7",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-8",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-9",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-10",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-11",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-13",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-14",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-15",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-16",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-17",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-18",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-19",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-20",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-21",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-22",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-23",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-25",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-26",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-27",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-28",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-30",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-31",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-32",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-33",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-34",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-35",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-36",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-37",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-38",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-39",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-40",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-41",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-42",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-43",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-44",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-45",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-46",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-47",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-48",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-49",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-50",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-51",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-52",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-53",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-54",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-55",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-56",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-57",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-58",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-59",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-60",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-61",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-62",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-63",
+          "kind": "tree"
+        }
+      ],
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 5412
+      },
+      "inventoryTotal": 5412,
+      "colors": {
+        "0": 4576,
+        "5": 16,
+        "7": 8,
+        "8": 84,
+        "9": 12,
+        "10": 125,
+        "11": 466,
+        "12": 125
+      },
+      "elapsedSeconds": 137.9,
+      "partColorTypes": 51,
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "semanticFalsePositives": [
+        "image-tree-24",
+        "image-tree-3",
+        "image-tree-12",
+        "image-tree-29"
+      ],
+      "semanticGatePassed": false
+    },
+    {
+      "id": "wizard-hat",
+      "image": "1111.png",
+      "category": "accessory",
+      "resolution": 28,
+      "inputSha256": "d9d43eae5cc61c872bc01d480de4e8954da352743d81f9329345d96e052ee2ac",
+      "seed": 3654565550,
+      "inferenceCached": false,
+      "meshSha256": "cd27bce9bedb14a0096ab71e7514e9da3a1c35abb52ba805edb0778f00eb2885",
+      "camera": {
+        "method": "reference-projection",
+        "yaw": -5,
+        "pitch": 0,
+        "perspective": 0.25,
+        "observedFraction": 0.2658300698560542
+      },
+      "triangles": 151168,
+      "detected": [
+        {
+          "id": "image-brazier-2",
+          "kind": "brazier",
+          "confidence": 0.8166666666666667
+        },
+        {
+          "id": "image-brazier-0",
+          "kind": "brazier",
+          "confidence": 0.853125
+        },
+        {
+          "id": "image-brazier-1",
+          "kind": "brazier",
+          "confidence": 0.8166666666666667
+        },
+        {
+          "id": "image-brazier-3",
+          "kind": "brazier",
+          "confidence": 0.80625
+        },
+        {
+          "id": "image-brazier-4",
+          "kind": "brazier",
+          "confidence": 0.7875000000000001
+        },
+        {
+          "id": "image-tree-5",
+          "kind": "tree",
+          "confidence": 0.7801169590643275
+        },
+        {
+          "id": "image-brazier-6",
+          "kind": "brazier",
+          "confidence": 0.78
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "confidence": 0.78
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "confidence": 0.7680555555555556
+        },
+        {
+          "id": "image-brazier-9",
+          "kind": "brazier",
+          "confidence": 0.74375
+        },
+        {
+          "id": "image-tree-10",
+          "kind": "tree",
+          "confidence": 0.7428672316384181
+        },
+        {
+          "id": "image-brazier-11",
+          "kind": "brazier",
+          "confidence": 0.7271929824561404
+        },
+        {
+          "id": "image-brazier-12",
+          "kind": "brazier",
+          "confidence": 0.726388888888889
+        }
+      ],
+      "status": "converted",
+      "bricks": 3281,
+      "steps": 339,
+      "supports": 1006,
+      "partTypes": 17,
+      "structureCategory": "mass-building",
+      "structureConfidence": 0.5,
+      "applied": [
+        {
+          "id": "image-brazier-2",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-0",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-1",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-3",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-4",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-6",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier"
+        }
+      ],
+      "dropped": [
+        {
+          "id": "image-tree-5",
+          "kind": "tree"
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-9",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-tree-10",
+          "kind": "tree"
+        },
+        {
+          "id": "image-brazier-11",
+          "kind": "brazier"
+        },
+        {
+          "id": "image-brazier-12",
+          "kind": "brazier"
+        }
+      ],
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3281
+      },
+      "inventoryTotal": 3281,
+      "colors": {
+        "1": 2765,
+        "3": 13,
+        "4": 297,
+        "5": 14,
+        "6": 8,
+        "7": 12,
+        "8": 1,
+        "9": 21,
+        "10": 14,
+        "11": 71,
+        "12": 57,
+        "13": 8
+      },
+      "elapsedSeconds": 62.2,
+      "partColorTypes": 69,
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "semanticFalsePositives": [
+        "image-brazier-2",
+        "image-brazier-0",
+        "image-brazier-1",
+        "image-brazier-3",
+        "image-brazier-4",
+        "image-brazier-6",
+        "image-brazier-8"
+      ],
+      "semanticGatePassed": false
+    },
+    {
+      "id": "costumed-figure",
+      "image": "004.png",
+      "category": "figure",
+      "resolution": 28,
+      "inputSha256": "6d08caba0671ffee9a683c5b3ca101b272cec71d3eb9e93b6e8d2b65ddd417fc",
+      "seed": 1829292730,
+      "inferenceCached": false,
+      "meshSha256": "7e0c17d2e11bb21eb29a78b9c96324758e1b8c524d1855c160f5d7571d0f0de9",
+      "camera": {
+        "method": "reference-projection",
+        "yaw": 0,
+        "pitch": 0,
+        "perspective": 0.5,
+        "observedFraction": 0.42200340039671297
+      },
+      "triangles": 98812,
+      "detected": [
+        {
+          "id": "image-tree-4",
+          "kind": "tree",
+          "confidence": 0.6958333333333333
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "confidence": 0.7307291666666667
+        },
+        {
+          "id": "image-tree-1",
+          "kind": "tree",
+          "confidence": 0.7034188034188035
+        },
+        {
+          "id": "image-tree-2",
+          "kind": "tree",
+          "confidence": 0.7024691358024692
+        },
+        {
+          "id": "image-tree-3",
+          "kind": "tree",
+          "confidence": 0.7000000000000001
+        },
+        {
+          "id": "image-tree-5",
+          "kind": "tree",
+          "confidence": 0.6916666666666667
+        },
+        {
+          "id": "image-tree-6",
+          "kind": "tree",
+          "confidence": 0.6765151515151515
+        },
+        {
+          "id": "image-tree-7",
+          "kind": "tree",
+          "confidence": 0.6740683229813664
+        }
+      ],
+      "status": "converted",
+      "bricks": 3164,
+      "steps": 311,
+      "supports": 555,
+      "partTypes": 16,
+      "structureCategory": "stepped-monument",
+      "structureConfidence": 0.55,
+      "applied": [
+        {
+          "id": "image-tree-4",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-3",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-5",
+          "kind": "tree"
+        }
+      ],
+      "dropped": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-1",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-2",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-6",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-7",
+          "kind": "tree"
+        }
+      ],
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3164
+      },
+      "inventoryTotal": 3164,
+      "colors": {
+        "0": 258,
+        "2": 68,
+        "3": 29,
+        "5": 8,
+        "7": 2745,
+        "9": 5,
+        "12": 51
+      },
+      "elapsedSeconds": 73.7,
+      "partColorTypes": 55,
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "semanticFalsePositives": [
+        "image-tree-4",
+        "image-tree-3",
+        "image-tree-5"
+      ],
+      "semanticGatePassed": false
+    }
+  ],
+  "limits": "Bilinear offline downsample approximates canvas; no browser UI, load stability, or physical build was tested. Connection checks are not visual quality scores.",
+  "sourceRevision": "f8db63096c8282cb27354314d896feba5ba6ff8a",
+  "conversionBaseCommit": "caa4a92",
+  "engineBinarySha256": "4bb28807df66f35e6dc399d11539ba12deda59c74bb5a911d5569c4d0fc359cd",
+  "assessmentNote": "Negative semantic labels were added after discovery in the first native batch. Tallies here were recomputed from saved committed components; the new CLI gate was separately verified on a cached house replay. No model changes are included in this audit."
+}
