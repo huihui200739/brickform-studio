@@ -37,6 +37,8 @@ export type ComponentRegion = {
   fallbackAnchors?: V3[];
   // Initial intended position, retained through every automatic retry.
   referenceAnchor?: V3;
+  /** Original mesh sample, retained when the installed component moves. */
+  sourceAnchor?: V3;
   positionLocked?: boolean;
   placementStatus?:
     | 'kept'
@@ -82,6 +84,11 @@ export const COMPONENT_SIZES = {
   brazier: { width: 4, depth: 4, height: 18 },
   statue: { width: 6, depth: 5, height: 23 },
 };
+// LDraw figures face local -Z. Quantize the reference camera to a legal
+// quarter turn so an automatic figure presents its face to the reference.
+export function referenceFacingRotation(yaw: number) {
+  return ((2 + Math.round(yaw / 90)) % 4 + 4) % 4;
+}
 export function meshFrame(mesh: TriangleMesh, resolution: number) {
   const min: V3 = [Infinity, Infinity, Infinity],
     max: V3 = [-Infinity, -Infinity, -Infinity];

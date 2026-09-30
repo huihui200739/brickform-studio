@@ -9,6 +9,7 @@ import {
   type ComponentKind,
   type ComponentRegion,
   COMPONENT_SIZES,
+  referenceFacingRotation,
 } from './semantic-components.ts';
 import { validateAssembly } from './assembly-validation.ts';
 import { meshToDesign, meshToDesignAuto } from './mesh-design.ts';
@@ -16,6 +17,16 @@ import { inventory, toLDraw, type Model } from './brick-engine.ts';
 import { installationText, detailDiagram } from './build-instructions.ts';
 import { brickFaces } from './assembly-diagram.ts';
 const kinds: ComponentKind[] = ['tree', 'brazier', 'statue'];
+test('catalog statue presents its shield toward each reference-camera direction', () => {
+  for (const yaw of [0, 90, 180, 270, -90, 15]) {
+    const parts = positionedComponent('statue', [0, 0, 0], referenceFacingRotation(yaw), { width: 20, depth: 20 });
+    const torso = parts.find(b => b.part === '973')!.pose!.position;
+    const shield = parts.find(b => b.part === '3846')!.pose!.position;
+    const angle = yaw * Math.PI / 180;
+    assert.ok((shield[0] - torso[0]) * Math.sin(angle) +
+      (shield[2] - torso[2]) * Math.cos(angle) > 0, 'the shield is on the visible front');
+  }
+});
 function fixture() {
   const pos: number[] = [],
     colors: number[] = [];

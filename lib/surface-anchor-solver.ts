@@ -233,6 +233,7 @@ export function applyAnchorResult(region: ComponentRegion, result: AnchorResult)
     return {
       ...region,
       anchorResult: result,
+      sourceAnchor: region.sourceAnchor || [...region.anchor] as V3,
       placementMode,
       placementScore: result.placementScore,
       sceneElement: region.sceneElement ? {
@@ -244,6 +245,7 @@ export function applyAnchorResult(region: ComponentRegion, result: AnchorResult)
     };
   return {
     ...region,
+    sourceAnchor: region.sourceAnchor || [...region.anchor] as V3,
     anchor: [...result.normalizedAnchor] as V3,
     referenceAnchor: [...result.normalizedAnchor] as V3,
     anchorResult: result,

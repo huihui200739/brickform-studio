@@ -7,6 +7,8 @@ import { meshToDesign } from './mesh-design.ts';
 import { meshToDesignAuto } from './mesh-design.ts';
 import { detectRefinements } from './semantic-refinement.ts';
 import { validateModel } from './brick-engine.ts';
+import { colorFromReference } from './reference-colors.ts';
+import { connectors } from './assembly-validation.ts';
 
 const mesh = JSON.parse(fs.readFileSync('outputs/local-3d/temple-mesh.json', 'utf8'));
 mesh.positions = new Float32Array(mesh.positions);
@@ -124,20 +126,24 @@ test('anchor calibration updates the placement anchor without using imageBox dir
   const result = solveSurfaceAnchor(region.sceneElement!, mesh, image, model, model.resolution, { yaw: 15, pitch: 25, perspective: 0.25 });
   const calibrated = applyAnchorResult(region, result);
   assert.deepEqual(calibrated.anchor, result.normalizedAnchor);
+  assert.deepEqual(calibrated.sourceAnchor, region.anchor);
   assert.notDeepEqual(calibrated.anchor, [0.5, 0.5, 0.5]);
   assert.equal(calibrated.anchorResult?.attached, true);
 });
 
-for (const resolution of [36, 48]) test(`fixture-temple ${resolution} keeps the detected statue and attached braziers`, async () => {
+for (const resolution of [36, 48]) test(`fixture-temple ${resolution} seats front-facing components and replaces projected flames`, async () => {
+  // Exercise the real browser pipeline: projection changes the packed source
+  // colours and previously left a second flame painted on the rear masonry.
+  const colored = colorFromReference(mesh, image);
   const regions = await detectRefinements(
-    mesh,
+    colored,
     image,
     resolution,
     undefined,
     { yaw: 15, pitch: 25, perspective: 0.25 },
   );
   const result = meshToDesignAuto(
-    mesh,
+    colored,
     resolution,
     regions,
     48,
@@ -146,11 +152,34 @@ for (const resolution of [36, 48]) test(`fixture-temple ${resolution} keeps the 
   const statue = result.applied.find((region) => region.kind === 'statue');
   const braziers = result.applied.filter((region) => region.kind === 'brazier');
   assert.ok(statue, 'the primary statue is retained as a component');
+  assert.equal(statue.rotation, 2);
   assert.ok((statue?.representationResult?.brickCount || 0) > 0);
   assert.equal(statue?.representationResult?.visibleFromReference, true);
   assert.equal(braziers.length, 2);
   assert.ok(braziers.every((region) => region.anchorResult?.attached));
   assert.ok(braziers.every((region) => region.representationResult?.visibleFromReference));
+  for (const region of braziers) {
+    const base = result.model.bricks.find(b => b.section === `component-${region.id}`)!;
+    const sockets = connectors(base).sockets;
+    const mountingStuds = result.model.bricks
+      .filter(b => region.anchorResult!.surface.supportBrickIds.includes(b.id))
+      .flatMap(b => connectors(b).studs);
+    assert.equal(sockets.length, 4);
+    assert.ok(sockets.every(socket => mountingStuds.some(stud =>
+      socket.point.every((value, i) => Math.abs(value - stud.point[i]) < 0.001),
+    )), 'all four base sockets must be seated');
+    for (let dy = 1; dy <= 6; dy++)
+      for (let x = base.x; x < base.x + base.w; x++)
+        for (let z = base.z; z < base.z + base.d; z++)
+          assert.ok(result.model.bricks.some(b =>
+            !b.section?.startsWith('component-') &&
+            x >= b.x && x < b.x + b.w && z >= b.z && z < b.z + b.d &&
+            base.y - dy >= b.y && base.y - dy < b.y + b.h,
+          ), 'the brazier foundation must not have gaps below the base');
+  }
+  assert.equal(result.model.bricks.filter(b =>
+    !b.section?.startsWith('component-') && [2, 3, 6].includes(b.color),
+  ).length, 0, 'fixture flames are represented only by the catalog components');
   const check = validateModel(result.model);
   assert.equal(new Set(result.model.bricks.map(b => b.id)).size, result.model.bricks.length);
   for (const region of result.applied) {

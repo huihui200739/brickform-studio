@@ -37,6 +37,7 @@ import { optimizeAestheticPacking } from './aesthetic-packing.ts';
 import { applyRepresentationTransaction } from './composition/transaction.ts';
 import { removeSemanticCutRemnants } from './semantic-cut-cleanup.ts';
 import { connectedBelow } from './build-instructions.ts';
+import { connectors } from './assembly-validation.ts';
 import { enforceGroupConsistency } from './element-grouping.ts';
 import { routeStructureRepresentation } from './representation/representation-router.ts';
 import { applyAnchorResult, solveSurfaceAnchor } from './surface-anchor-solver.ts';
@@ -217,13 +218,20 @@ function finalizeAnchor(model: Model, region: ComponentRegion, grid: V3) {
   const base = model.bricks.find(brick => brick.section === section);
   const support = base ? connectedBelow(model, base)
     .filter(brick => brick.section !== section).map(brick => brick.id) : [];
+  const sockets = base ? connectors(base).sockets : [];
+  const studs = model.bricks.filter(brick => support.includes(brick.id))
+    .flatMap(brick => connectors(brick).studs);
+  const fullySeated = sockets.length > 0 && sockets.every(socket =>
+    studs.some(stud => socket.point.every((v, i) => Math.abs(v - stud.point[i]) < 0.001) &&
+      socket.normal.every((v, i) => Math.abs(v - stud.normal[i]) < 0.001)),
+  );
   const [x, y, z] = mountingPoint(region, grid);
   region.anchorResult = {
     ...region.anchorResult,
     worldAnchor: { x, y, z },
     normalizedAnchor: [...region.anchor],
     surface: { ...region.anchorResult.surface, supportBrickIds: support },
-    attached: support.length > 0,
+    attached: support.length > 0 && (region.kind !== 'brazier' || fullySeated),
   };
   if (region.sceneElement) region.sceneElement = {
     ...region.sceneElement,
@@ -334,7 +342,7 @@ function reserveCommittedGeometry(model: Model) {
   model.reservedVolumes = (model.representationResults || [])
     .filter((result) => result.committed && result.bbox3d)
     .map((result) => result.bbox3d!);
-  model.semanticReservedCells = (model.representationResults || [])
+  const componentCells = (model.representationResults || [])
     .filter((result) => result.committed)
     .flatMap((result) => {
       const ids = new Set(result.brickIds);
@@ -349,6 +357,7 @@ function reserveCommittedGeometry(model: Model) {
           return cells;
         });
     });
+  model.semanticReservedCells = [...new Set([...(model.semanticReservedCells || []), ...componentCells])];
 }
 
 function focalFallbackCandidates(region: ComponentRegion): ComponentRegion[] {
@@ -581,12 +590,26 @@ function assembleVolume(
     cells = new Map(volume.cells);
   validateRegions(regions, [w, h, d]);
   const placements = regions.map((r) => regionPlacement(r, [w, h, d]));
+  const sources = regions.map((r) => regionPlacement({
+    ...r, anchor: r.sourceAnchor || r.referenceAnchor || r.anchor,
+  }, [w, h, d]));
   let removedCells = 0;
   for (const key of cells.keys()) {
     const p = key.split(',').map(Number) as [number, number, number];
     if (placements.some((r) => insideRegion(p, r))) {
       cells.delete(key);
       removedCells++;
+    } else if (regions.some((r, i) => {
+      if (r.kind !== 'brazier' || !r.autoRefinement || !r.sourceAnchor) return false;
+      const source = sources[i];
+      // Reference projection can paint a flame onto the masonry behind it.
+      // The flame component replaces those accents even after its mount moves
+      // out from the wall. Retain the wall's volume with its material colour.
+      return [2, 3, 6].includes(cells.get(key)!.color) &&
+        Math.abs(p[0] - source.x) <= 2 && Math.abs(p[2] - source.z) <= 3 &&
+        p[1] >= source.y - 4 && p[1] < source.y + r.height;
+    })) {
+      cells.set(key, { ...cells.get(key)!, color: dominant });
     }
   }
   // The cut can detach a canopy or a flame tip outside the box. Remove only
@@ -629,11 +652,13 @@ function assembleVolume(
   }
   // Seat each component on a connected four-stud mounting surface. Fill only
   // below the selected base, never refill the removed object above that base.
+  const mountingCells = new Set<string>();
   for (const r of placements)
     for (let x = r.x - 1; x < r.x + 1; x++)
       for (let z = r.z - 1; z < r.z + 1; z++) {
         for (let y = r.y - 1; y >= 2; y--) {
           const key = `${x},${y},${z}`;
+          mountingCells.add(key);
           if (cells.has(key)) break;
           cells.set(key, { color: dominant, support: true });
         }
@@ -780,6 +805,9 @@ function assembleVolume(
   }
   raw.bricks = finished.map((b, i) => ({ ...b, id: i + 1 }));
   raw.levels = [...new Set(raw.bricks.map((b) => b.y))].sort((a, b) => a - b);
+  // Installation foundations are required occupied cells. The existing
+  // optimizer respects reservations, so it cannot hollow their four columns.
+  raw.semanticReservedCells = [...mountingCells];
   if (raw.bricks.length > 14000)
     throw Error('此尺寸超过 14000 块零件，请降低积木尺寸后再转换。');
   const packing = optimizeAestheticPacking(raw, 192);
@@ -964,6 +992,7 @@ export function meshToDesignAuto(
       addRepresentation: (trial, plan) => {
         trial.regions.push(...plan);
         trialModel = assembleVolume(mesh, volume, resolution, trial.regions);
+        for (const region of trial.regions) finalizeAnchor(trialModel, region, grid);
       },
       validate: () => ({
         acceptable: trialModel !== null && attachmentFailures(list).length === 0,

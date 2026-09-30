@@ -11,6 +11,7 @@ import {
 import {
   COMPONENT_SIZES,
   meshFrame,
+  referenceFacingRotation,
   type ComponentRegion,
 } from './semantic-components.ts';
 import type { V3 } from './assembly-catalog.ts';
@@ -172,6 +173,7 @@ export async function detectRefinements(
       autoRefinement: true,
       anchor,
       referenceAnchor: [...anchor],
+      sourceAnchor: [...anchor],
       imageUV: detection.anchorUV,
       ...size,
       // Clear the catalog flame assembly's real envelope. The old 4 x 4
@@ -179,7 +181,7 @@ export async function detectRefinements(
       ...(kind === 'brazier' && decision.templateId
         ? componentTemplate(decision.templateId)?.bboxStuds
         : {}),
-      rotation: 0,
+      rotation: kind === 'statue' ? referenceFacingRotation(alignment.camera.yaw) : 0,
       placed: true,
       confidence: detection.confidence,
       replacementConfidence: score,
