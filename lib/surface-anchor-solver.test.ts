@@ -204,6 +204,8 @@ for (const resolution of [28, 36, 48])
     assert.equal(statue.rotation, 2);
     const opening = statue.anchorResult?.clearanceVolume;
     assert.ok(opening, 'the detected niche must reserve its opening');
+    assert.equal(result.model.designGeometry?.validation?.passed, true);
+    assert.equal(result.model.designGeometry?.planes.length, 1);
     assert.ok(
       result.model.bricks.every(
         (b) =>

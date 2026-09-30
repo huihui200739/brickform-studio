@@ -69,3 +69,9 @@ automatic components cannot satisfy those checks.
 
 Cached learned observations can be replayed with `--scene-dir=<directory>`;
 the runner checks their input and engine hashes instead of trusting a filename.
+
+## 结构化壁龛回归（2026-10-01）
+
+`node --experimental-strip-types scripts/benchmark-geometry.ts` 使用两份实际神庙失败草稿与记录的真实视觉结果，重放 28/36/48 六次转换。`geometry-2026-10-01.json` 记录后墙平面、材料推断、空腔、最终零件检查和来源哈希；`image-geometry-2026-10-01.json` 保存同期六类图转换。此批转换指纹覆盖全部生产库和 JS 锁文件，旧记录仍保留当时的指纹范围。
+
+六个入口后墙检查通过，不能作为整栋建筑/任意图片外观、承重、插入路径或实物步骤的验收。`outputs/geometry-calibration/` 的目录件离线图用于本机形状检查，不是浏览器或实物证据。

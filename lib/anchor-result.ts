@@ -28,4 +28,5 @@ export type AnchorResult = {
   /** Image-supported recess, in brick-grid coordinates. Support may not fill it. */
   clearanceVolume?: { min: V3; max: V3 };
   clearanceAxis?: 0 | 2;
+  designGeometry?: import('./design-geometry.ts').DesignGeometry;
 };

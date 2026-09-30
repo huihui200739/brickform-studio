@@ -38,7 +38,8 @@ import { optimizeAestheticPacking } from './aesthetic-packing.ts';
 import { applyRepresentationTransaction } from './composition/transaction.ts';
 import { removeSemanticCutRemnants } from './semantic-cut-cleanup.ts';
 import { connectedBelow } from './build-instructions.ts';
-import { connectors } from './assembly-validation.ts';
+import { connectors, validateAssembly } from './assembly-validation.ts';
+import { applyDesignPlanes, auditDesignGeometry, type DesignGeometry } from './design-geometry.ts';
 import { installCavityLintel } from './cavity-lintel.ts';
 import { brazierClearances } from './semantic-clearance.ts';
 import { enforceGroupConsistency } from './element-grouping.ts';
@@ -593,6 +594,11 @@ function assembleVolume(
     } = volume,
     cells = new Map(volume.cells);
   const adjustedPlatformCells = regularizePlatform(cells, w, h, d);
+  const geometries = regions.flatMap(r => r.anchorResult?.designGeometry ? [r.anchorResult.designGeometry] : []);
+  const designGeometry: DesignGeometry = { version: 1, coordinates: 'brick-grid',
+    planes: geometries.flatMap(g => g.planes), openings: geometries.flatMap(g => g.openings),
+    warnings: [...new Set(geometries.flatMap(g => g.warnings))] };
+  applyDesignPlanes(cells, designGeometry);
   validateRegions(regions, [w, h, d]);
   const placements = regions.map((r) => regionPlacement(r, [w, h, d]));
   const flameClearances = brazierClearances(regions, [w, h, d]);
@@ -867,6 +873,7 @@ function assembleVolume(
   const packing = optimizeAestheticPacking(raw, 192);
   const model = groupImageAssembly(raw);
   model.clearanceVolumes = openings;
+  if (designGeometry.planes.length) model.designGeometry = designGeometry;
   model.meshDesign = {
     method: 'mesh-volume',
     smoothTiles,
@@ -878,8 +885,9 @@ function assembleVolume(
   };
   model.assembly!.reference = `按三维网格体积生成；保留网格中的前后布局和孔洞。新增辅助支撑 ${model.supportCount} 块，已计入清单。网格可能含 AI 推测，连接检查不代表外观还原或实物稳定性已验证。`;
   removeSemanticCutRemnants(model, [...placements.filter((_, i) =>
-    regions[i].kind === 'statue' || (regions[i].kind === 'brazier' && regions[i].autoRefinement)), ...flameClearances]);
+    regions[i].kind === 'statue' || (regions[i].kind === 'brazier' && regions[i].autoRefinement)), ...openings]);
 
+  if (model.designGeometry) model.assembly!.reference += ' 入口后墙按参考区域拟合为平面，局部阴影配色已合并；隐藏墙体与跨梁承重仍需复核。';
   if (packing.removed)
     model.assembly!.reference += ` 美学后处理移除冗余隐藏支撑 ${packing.removed} 块，保留连接与连通性。`;
   if (mesh.statueFallback?.cells.length)
@@ -910,12 +918,17 @@ function assembleVolume(
     ),
   ));
   if (occupiedOpening) throw Error(`空腔被积木占用 (${occupiedOpening.x},${occupiedOpening.y},${occupiedOpening.z})，无法提交此安装方案。`);
-  const check = validateModel(model);
+  if (model.designGeometry) {
+    model.designGeometry.validation = auditDesignGeometry(model, model.designGeometry);
+    if (!model.designGeometry.validation.passed)
+      throw Error('结构化墙面在排砖后出现缺口或材质混用，无法提交此几何方案。');
+  }
+  const check = validateAssembly(model);
 
   if (check.collisions || check.unsupported || check.invalidParts || !check.connected)
     throw Error(
       regions.length
-        ? `组件安装检查失败：碰撞 ${check.collisions}，缺少连接 ${check.unsupported}，整体断开 ${check.connected ? 0 : 1}。`
+        ? `组件安装检查失败：碰撞 ${check.collisions}，缺少连接 ${check.unsupported}，整体断开 ${check.connected ? 0 : 1}。${check.badIds.slice(0, 4).map(id => { const b = model.bricks.find(b => b.id === id)!; return ` ${b.part}@(${b.x},${b.y},${b.z})`; }).join('')}`
         : '积木结构未通过连接检查，请降低尺寸后重试。',
     );
   return model;
@@ -1206,9 +1219,9 @@ export function meshToDesignAuto(
       ),
     );
   for (const report of reports) {
-    if (report.status !== 'preserved') continue;
+    if (applied.some(region => region.id === report.id)) continue;
     const reasons = [...(failureReasons.get(report.id) || [])];
-    if (reasons.length) report.message = `未替换，已保留原始几何。安装尝试：${reasons.slice(-3).join('；')}`;
+    if (reasons.length) report.message = `未替换，已保留原始几何；保留原网格继续生成。安装尝试：${reasons.slice(-3).join('；')}`;
   }
   for (const r of applied) {
     r.placementStatus = reports.find((v) => v.id === r.id)!.status;

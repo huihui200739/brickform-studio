@@ -1,0 +1,770 @@
+{
+  "date": "2026-10-01",
+  "conversionFingerprint": "3c8ae1f8ea6443521617c29f9579bc55ea5f742e5ba76ecc70f92e1d30d26990",
+  "scope": "Two actual user-image/native-mesh failure fixtures, recorded learned observations, six complete conversions. Not a new native inference or physical build.",
+  "cases": [
+    {
+      "case": "temple-original",
+      "resolution": 28,
+      "passed": true,
+      "camera": {
+        "yaw": 15,
+        "pitch": 25,
+        "perspective": 0.25
+      },
+      "imageSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+      "sourcePositionsSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+      "recordedSceneFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "bricks": 2210,
+      "steps": 242,
+      "inventoryTotal": 2210,
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-statue-3",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "geometry": {
+        "version": 1,
+        "coordinates": "brick-grid",
+        "planes": [
+          {
+            "id": "statue-4904-2472-733-1564-rear-wall",
+            "axis": 2,
+            "direction": 1,
+            "coordinate": 8,
+            "bounds": {
+              "min": [
+                12,
+                25,
+                6
+              ],
+              "max": [
+                18,
+                45,
+                8
+              ]
+            },
+            "material": {
+              "color": 8,
+              "source": "local-reference-region",
+              "supportFraction": 0.9064039408866995,
+              "inferredShadows": true
+            },
+            "evidence": {
+              "source": "mesh-and-reference",
+              "samples": 517,
+              "inlierFraction": 0.8111869424890154,
+              "rmseStuds": 0.10777775761153989,
+              "imageCoverage": 0.4791666666666667,
+              "observedCrossRange": [
+                12.28720298406304,
+                16.622516461637716
+              ]
+            }
+          }
+        ],
+        "openings": [
+          {
+            "id": "statue-4904-2472-733-1564-opening",
+            "bounds": {
+              "min": [
+                12,
+                25,
+                8
+              ],
+              "max": [
+                18,
+                45,
+                14
+              ]
+            },
+            "rearPlaneId": "statue-4904-2472-733-1564-rear-wall",
+            "source": "reference-boundary"
+          }
+        ],
+        "warnings": [
+          "Rear wall and material are a fitted design approximation; hidden structure and lintel strength require separate validation."
+        ],
+        "validation": {
+          "passed": true,
+          "planes": [
+            {
+              "id": "statue-4904-2472-733-1564-rear-wall",
+              "coordinate": 8,
+              "checkedCells": 120,
+              "missingCells": 0,
+              "materialMismatches": 0
+            }
+          ],
+          "occupiedOpenings": 0
+        }
+      },
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2210
+      },
+      "elapsedSeconds": 2.715
+    },
+    {
+      "case": "temple-original",
+      "resolution": 36,
+      "passed": true,
+      "camera": {
+        "yaw": 15,
+        "pitch": 25,
+        "perspective": 0.25
+      },
+      "imageSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+      "sourcePositionsSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+      "recordedSceneFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "bricks": 4004,
+      "steps": 401,
+      "inventoryTotal": 4004,
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-statue-3",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "geometry": {
+        "version": 1,
+        "coordinates": "brick-grid",
+        "planes": [
+          {
+            "id": "statue-4904-2472-733-1564-rear-wall",
+            "axis": 2,
+            "direction": 1,
+            "coordinate": 10,
+            "bounds": {
+              "min": [
+                15,
+                33,
+                8
+              ],
+              "max": [
+                23,
+                57,
+                10
+              ]
+            },
+            "material": {
+              "color": 8,
+              "source": "local-reference-region",
+              "supportFraction": 0.9052631578947369,
+              "inferredShadows": true
+            },
+            "evidence": {
+              "source": "mesh-and-reference",
+              "samples": 459,
+              "inlierFraction": 0.7335735265882987,
+              "rmseStuds": 0.010270764705605553,
+              "imageCoverage": 0.4166666666666667,
+              "observedCrossRange": [
+                16.362385426674408,
+                20.897143907219135
+              ]
+            }
+          }
+        ],
+        "openings": [
+          {
+            "id": "statue-4904-2472-733-1564-opening",
+            "bounds": {
+              "min": [
+                15,
+                33,
+                10
+              ],
+              "max": [
+                23,
+                57,
+                18
+              ]
+            },
+            "rearPlaneId": "statue-4904-2472-733-1564-rear-wall",
+            "source": "reference-boundary"
+          }
+        ],
+        "warnings": [
+          "Rear wall and material are a fitted design approximation; hidden structure and lintel strength require separate validation."
+        ],
+        "validation": {
+          "passed": true,
+          "planes": [
+            {
+              "id": "statue-4904-2472-733-1564-rear-wall",
+              "coordinate": 10,
+              "checkedCells": 192,
+              "missingCells": 0,
+              "materialMismatches": 0
+            }
+          ],
+          "occupiedOpenings": 0
+        }
+      },
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 4004
+      },
+      "elapsedSeconds": 4.286
+    },
+    {
+      "case": "temple-original",
+      "resolution": 48,
+      "passed": true,
+      "camera": {
+        "yaw": 15,
+        "pitch": 25,
+        "perspective": 0.25
+      },
+      "imageSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+      "sourcePositionsSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+      "recordedSceneFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "bricks": 8433,
+      "steps": 774,
+      "inventoryTotal": 8433,
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-statue-3",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "geometry": {
+        "version": 1,
+        "coordinates": "brick-grid",
+        "planes": [
+          {
+            "id": "statue-4904-2472-733-1564-rear-wall",
+            "axis": 2,
+            "direction": 1,
+            "coordinate": 14,
+            "bounds": {
+              "min": [
+                19,
+                42,
+                12
+              ],
+              "max": [
+                30,
+                75,
+                14
+              ]
+            },
+            "material": {
+              "color": 8,
+              "source": "local-reference-region",
+              "supportFraction": 0.9064039408866995,
+              "inferredShadows": true
+            },
+            "evidence": {
+              "source": "mesh-and-reference",
+              "samples": 516,
+              "inlierFraction": 0.8096830336312016,
+              "rmseStuds": 0.1820270700411449,
+              "imageCoverage": 0.4791666666666667,
+              "observedCrossRange": [
+                20.349490829822354,
+                27.781456791378943
+              ]
+            }
+          }
+        ],
+        "openings": [
+          {
+            "id": "statue-4904-2472-733-1564-opening",
+            "bounds": {
+              "min": [
+                19,
+                42,
+                14
+              ],
+              "max": [
+                30,
+                75,
+                23
+              ]
+            },
+            "rearPlaneId": "statue-4904-2472-733-1564-rear-wall",
+            "source": "reference-boundary"
+          }
+        ],
+        "warnings": [
+          "Rear wall and material are a fitted design approximation; hidden structure and lintel strength require separate validation."
+        ],
+        "validation": {
+          "passed": true,
+          "planes": [
+            {
+              "id": "statue-4904-2472-733-1564-rear-wall",
+              "coordinate": 14,
+              "checkedCells": 363,
+              "missingCells": 0,
+              "materialMismatches": 0
+            }
+          ],
+          "occupiedOpenings": 0
+        }
+      },
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 8433
+      },
+      "elapsedSeconds": 8.489
+    },
+    {
+      "case": "temple-standard",
+      "resolution": 28,
+      "passed": true,
+      "camera": {
+        "method": "reference-projection",
+        "yaw": 0,
+        "pitch": 20,
+        "perspective": 0.5,
+        "observedFraction": 0.2999285696990242
+      },
+      "imageSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "sourcePositionsSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "recordedSceneFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "bricks": 2329,
+      "steps": 246,
+      "inventoryTotal": 2329,
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "geometry": {
+        "version": 1,
+        "coordinates": "brick-grid",
+        "planes": [
+          {
+            "id": "statue-4510-2401-798-1988-rear-wall",
+            "axis": 2,
+            "direction": 1,
+            "coordinate": 9,
+            "bounds": {
+              "min": [
+                11,
+                22,
+                7
+              ],
+              "max": [
+                19,
+                43,
+                9
+              ]
+            },
+            "material": {
+              "color": 7,
+              "source": "local-reference-region",
+              "supportFraction": 0.9719298245614035,
+              "inferredShadows": true
+            },
+            "evidence": {
+              "source": "mesh-and-reference",
+              "samples": 1381,
+              "inlierFraction": 0.7955741015769487,
+              "rmseStuds": 0.07008306453895564,
+              "imageCoverage": 0.5833333333333334,
+              "observedCrossRange": [
+                11.769925423948788,
+                18.26075843435729
+              ]
+            }
+          }
+        ],
+        "openings": [
+          {
+            "id": "statue-4510-2401-798-1988-opening",
+            "bounds": {
+              "min": [
+                11,
+                22,
+                9
+              ],
+              "max": [
+                19,
+                43,
+                15
+              ]
+            },
+            "rearPlaneId": "statue-4510-2401-798-1988-rear-wall",
+            "source": "reference-boundary"
+          }
+        ],
+        "warnings": [
+          "Rear wall and material are a fitted design approximation; hidden structure and lintel strength require separate validation."
+        ],
+        "validation": {
+          "passed": true,
+          "planes": [
+            {
+              "id": "statue-4510-2401-798-1988-rear-wall",
+              "coordinate": 9,
+              "checkedCells": 168,
+              "missingCells": 0,
+              "materialMismatches": 0
+            }
+          ],
+          "occupiedOpenings": 0
+        }
+      },
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2329
+      },
+      "elapsedSeconds": 3.389
+    },
+    {
+      "case": "temple-standard",
+      "resolution": 36,
+      "passed": true,
+      "camera": {
+        "method": "reference-projection",
+        "yaw": 0,
+        "pitch": 20,
+        "perspective": 0.5,
+        "observedFraction": 0.2999285696990242
+      },
+      "imageSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "sourcePositionsSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "recordedSceneFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "bricks": 3728,
+      "steps": 373,
+      "inventoryTotal": 3728,
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "geometry": {
+        "version": 1,
+        "coordinates": "brick-grid",
+        "planes": [
+          {
+            "id": "statue-4510-2401-798-1988-rear-wall",
+            "axis": 2,
+            "direction": 1,
+            "coordinate": 12,
+            "bounds": {
+              "min": [
+                13,
+                28,
+                10
+              ],
+              "max": [
+                25,
+                56,
+                12
+              ]
+            },
+            "material": {
+              "color": 7,
+              "source": "local-reference-region",
+              "supportFraction": 0.9719298245614035,
+              "inferredShadows": true
+            },
+            "evidence": {
+              "source": "mesh-and-reference",
+              "samples": 1378,
+              "inlierFraction": 0.7482534271708193,
+              "rmseStuds": 0.08953747243507013,
+              "imageCoverage": 0.5833333333333334,
+              "observedCrossRange": [
+                14.847046973648443,
+                23.164624371635284
+              ]
+            }
+          }
+        ],
+        "openings": [
+          {
+            "id": "statue-4510-2401-798-1988-opening",
+            "bounds": {
+              "min": [
+                13,
+                28,
+                12
+              ],
+              "max": [
+                25,
+                56,
+                19
+              ]
+            },
+            "rearPlaneId": "statue-4510-2401-798-1988-rear-wall",
+            "source": "reference-boundary"
+          }
+        ],
+        "warnings": [
+          "Rear wall and material are a fitted design approximation; hidden structure and lintel strength require separate validation."
+        ],
+        "validation": {
+          "passed": true,
+          "planes": [
+            {
+              "id": "statue-4510-2401-798-1988-rear-wall",
+              "coordinate": 12,
+              "checkedCells": 336,
+              "missingCells": 0,
+              "materialMismatches": 0
+            }
+          ],
+          "occupiedOpenings": 0
+        }
+      },
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3728
+      },
+      "elapsedSeconds": 4.389
+    },
+    {
+      "case": "temple-standard",
+      "resolution": 48,
+      "passed": true,
+      "camera": {
+        "method": "reference-projection",
+        "yaw": 0,
+        "pitch": 20,
+        "perspective": 0.5,
+        "observedFraction": 0.2999285696990242
+      },
+      "imageSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "sourcePositionsSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "recordedSceneFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "bricks": 7618,
+      "steps": 714,
+      "inventoryTotal": 7618,
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "geometry": {
+        "version": 1,
+        "coordinates": "brick-grid",
+        "planes": [
+          {
+            "id": "statue-4510-2401-798-1988-rear-wall",
+            "axis": 2,
+            "direction": 1,
+            "coordinate": 15,
+            "bounds": {
+              "min": [
+                17,
+                36,
+                13
+              ],
+              "max": [
+                33,
+                74,
+                15
+              ]
+            },
+            "material": {
+              "color": 7,
+              "source": "local-reference-region",
+              "supportFraction": 0.9719298245614035,
+              "inferredShadows": true
+            },
+            "evidence": {
+              "source": "mesh-and-reference",
+              "samples": 1381,
+              "inlierFraction": 0.6833556700527743,
+              "rmseStuds": 0.1201423963524953,
+              "imageCoverage": 0.5833333333333334,
+              "observedCrossRange": [
+                19.46272929819792,
+                30.589871601755352
+              ]
+            }
+          }
+        ],
+        "openings": [
+          {
+            "id": "statue-4510-2401-798-1988-opening",
+            "bounds": {
+              "min": [
+                17,
+                36,
+                15
+              ],
+              "max": [
+                33,
+                74,
+                24
+              ]
+            },
+            "rearPlaneId": "statue-4510-2401-798-1988-rear-wall",
+            "source": "reference-boundary"
+          }
+        ],
+        "warnings": [
+          "Rear wall and material are a fitted design approximation; hidden structure and lintel strength require separate validation."
+        ],
+        "validation": {
+          "passed": true,
+          "planes": [
+            {
+              "id": "statue-4510-2401-798-1988-rear-wall",
+              "coordinate": 15,
+              "checkedCells": 608,
+              "missingCells": 0,
+              "materialMismatches": 0
+            }
+          ],
+          "occupiedOpenings": 0
+        }
+      },
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 7618
+      },
+      "elapsedSeconds": 8.095
+    }
+  ],
+  "limits": "Only the image-supported recess patch is redesigned. General surfaces, platform aesthetics, procurement, load strength and insertion paths remain unverified."
+}

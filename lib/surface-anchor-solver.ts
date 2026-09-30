@@ -2,13 +2,14 @@ import type { Model, Raster } from './brick-engine.ts';
 import type { TriangleMesh } from './mesh-types.ts';
 import type { ReferenceCamera } from './reference-colors.ts';
 import { referenceAlignment } from './reference-colors.ts';
-import { imageAnchorToMesh, projectImageRay } from './image-to-mesh.ts';
+import { imageAnchorToMesh } from './image-to-mesh.ts';
 import { meshFrame, type ComponentRegion } from './semantic-components.ts';
 import type { SceneElementInstance } from './scene/scene-types.ts';
 import type { V3 } from './assembly-catalog.ts';
 import type { AnchorResult, PlacementMode } from './anchor-result.ts';
 import { referenceFacingRotation } from './semantic-components.ts';
 import { rotate, transform } from './assembly-catalog.ts';
+import { fitRecessGeometry } from './design-geometry.ts';
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
@@ -222,33 +223,13 @@ export function solveSurfaceAnchor(
     if (element.category === 'statue' && element.nicheBox) {
       const front = transform(rotate(referenceFacingRotation(alignment.camera.yaw)), [0, 0, -1]);
       const axis = Math.abs(front[0]) > 0.5 ? 0 : 2;
-      const cross = axis === 0 ? 2 : 0;
-      const box = element.nicheBox;
-      const plane = frame.min[axis] + (world[axis] - 1) / frame.scale;
-      const topCorners = [box.x, box.x + box.width].map(x => {
-        const ray = projectImageRay(alignment, [image.width, image.height], [x, box.y]);
-        const t = (plane - ray.origin[axis]) / ray.direction[axis];
-        return ray.origin.map((v, i) =>
-          (v + t * ray.direction[i] - frame.min[i]) * frame.scale / (i === 1 ? 0.4 : 1) + (i === 1 ? 2 : 1),
-        ) as V3;
-      });
-      // Reserve equal whole-stud spans on both sides of the snapped centre.
-      // An odd width rounded down only on the left extended the right edge
-      // into the neighbouring brazier foundation at coarse resolution.
-      const width = Math.min(10, Math.floor(Math.abs(topCorners[1][cross] - topCorners[0][cross]) / 2) * 2);
-      const ceiling = Math.floor(Math.min(...topCorners.map(p => p[1]))) - 1;
-      const floor = Math.round(world[1]);
-      if (topCorners.every(p => p.every(Number.isFinite)) && width >= 6 && ceiling > floor + 12) {
-        const min: V3 = [0, floor, 0], max: V3 = [model.width, ceiling, model.depth];
-        min[cross] = Math.max(2, Math.round(world[cross]) - Math.floor(width / 2));
-        max[cross] = min[cross] + width;
-        const rear = Math.round(world[axis]) - front[axis] * 3;
-        if (front[axis] > 0) min[axis] = Math.max(1, rear);
-        else max[axis] = Math.min(axis === 0 ? model.width - 1 : model.depth - 1, rear);
-        if (max[cross] <= (cross === 0 ? model.width : model.depth) - 2 && max[axis] > min[axis]) {
-          result.clearanceVolume = { min, max };
-          result.clearanceAxis = axis;
-        }
+      const geometry = fitRecessGeometry(mesh, image, element, alignment, resolution, world, axis, Math.sign(front[axis]) as -1 | 1, reason => result.failureReasons.push(reason));
+      if (geometry) {
+        result.designGeometry = geometry;
+        result.clearanceVolume = geometry.openings[0].bounds;
+        result.clearanceAxis = axis;
+      } else {
+        result.failureReasons.push('recess plane or material lacks sufficient reference and mesh support; preserving unstructured geometry');
       }
     }
     result.normalizedAnchor = normalizedAnchor;

@@ -1,3 +1,4 @@
+import { conversionFingerprint } from './benchmark-evidence.ts';
 // Replay the actual single-image engine -> reference colors -> semantic detection
 // -> packing -> catalog connection validation. No synthetic mesh substitute.
 // Copy manifest inputs into <output>/inputs, then use --native to infer missing
@@ -172,18 +173,7 @@ for (const item of manifest.cases as {
         'Learned observations differ from the input or current inference code.',
       );
     row.sceneEngineFingerprint = scene.engineFingerprint;
-    row.conversionFingerprint = createHash('sha256')
-      .update(
-        [
-          'lib/scene/detectors/vision-detector.ts',
-          'lib/semantic-refinement.ts',
-          'lib/mesh-design.ts',
-          'lib/component-retrieval.ts',
-        ]
-          .map((file) => readFileSync(file, 'utf8'))
-          .join('\n'),
-      )
-      .digest('hex');
+    row.conversionFingerprint = conversionFingerprint();
     row.observedObjects = scene.elements.map((e) => ({
       category: e.category,
       label: e.label,

@@ -28,7 +28,9 @@ export function brazierClearances(regions: ComponentRegion[], grid: V3): BBox3d[
       else max[axis] = source.max[axis] + 1;
       min[1] = placed.y;
       max[1] = opening.max[1];
-      if (min[axis] < opening.min[axis] || max[axis] > opening.max[axis] ||
+      // A fitted cavity ends at the façade. The flame envelope is normally
+      // in front of that façade; only crossing the rear wall is prohibited.
+      if ((normal > 0 ? min[axis] < opening.min[axis] : max[axis] > opening.max[axis]) ||
           min.some(v => v < 1) || max.some((v, i) => v > grid[i] + (i === 1 ? 2 : 1))) continue;
       return [{ min, max }];
     }

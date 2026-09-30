@@ -1,0 +1,608 @@
+{
+  "scope": "Public engine example renders; these are not photographs, original LEGO sets, or held-out model-training data. Inputs and native outputs are cached locally, not redistributed here.",
+  "resolution": 28,
+  "cases": [
+    {
+      "id": "house",
+      "image": "052.png",
+      "category": "building",
+      "forbiddenComponentKinds": [
+        "brazier"
+      ],
+      "sha256": "63dfa62dc5a19a1a3bd2df1d1589644f98dea501a4b31cb02a71679d0c74a0e7",
+      "resolution": 28,
+      "inputSha256": "63dfa62dc5a19a1a3bd2df1d1589644f98dea501a4b31cb02a71679d0c74a0e7",
+      "seed": 1675601453,
+      "inferenceCached": true,
+      "meshSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+      "camera": {
+        "method": "reference-projection",
+        "yaw": 15,
+        "pitch": 0,
+        "perspective": 0.25,
+        "observedFraction": 0.2865175801447777
+      },
+      "triangles": 154720,
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "conversionFingerprint": "3c8ae1f8ea6443521617c29f9579bc55ea5f742e5ba76ecc70f92e1d30d26990",
+      "observedObjects": [
+        {
+          "category": "tree",
+          "label": "tree",
+          "identityScore": 0.6177938580513,
+          "identitySupported": true
+        },
+        {
+          "category": "tree",
+          "label": "tree",
+          "identityScore": 0.5296146273612976,
+          "identitySupported": true
+        },
+        {
+          "category": "building",
+          "label": "building",
+          "identityScore": 0.44659969210624695,
+          "identitySupported": true
+        },
+        {
+          "category": "building",
+          "label": "building",
+          "identityScore": 0.42272448539733887,
+          "identitySupported": true
+        },
+        {
+          "category": "lamp",
+          "label": "torch",
+          "identityScore": 0.4103813171386719,
+          "identitySupported": true
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.4096258282661438,
+          "identitySupported": false
+        },
+        {
+          "category": "building",
+          "label": "building",
+          "identityScore": 0.40700143575668335,
+          "identitySupported": true
+        },
+        {
+          "category": "building",
+          "label": "building",
+          "identityScore": 0.3989976644515991,
+          "identitySupported": true
+        }
+      ],
+      "detected": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "confidence": 0.6177938580513
+        }
+      ],
+      "status": "converted",
+      "bricks": 3253,
+      "steps": 309,
+      "supports": 416,
+      "partTypes": 13,
+      "partColorTypes": 105,
+      "structureCategory": "mass-building",
+      "structureConfidence": 0.5,
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree"
+        }
+      ],
+      "dropped": [],
+      "semanticFalsePositives": [],
+      "semanticGatePassed": true,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3253
+      },
+      "inventoryTotal": 3253,
+      "colors": {
+        "0": 36,
+        "1": 227,
+        "2": 9,
+        "3": 31,
+        "4": 2029,
+        "5": 362,
+        "7": 8,
+        "8": 168,
+        "9": 214,
+        "10": 16,
+        "11": 70,
+        "12": 83
+      },
+      "elapsedSeconds": 4.7
+    },
+    {
+      "id": "locomotive",
+      "image": "1022.png",
+      "category": "vehicle",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "df4284dabd513c4826d1cda8ad2dc6687ee4c30229d41c3d631749329175c90c",
+      "resolution": 28,
+      "inputSha256": "df4284dabd513c4826d1cda8ad2dc6687ee4c30229d41c3d631749329175c90c",
+      "seed": 3745678554,
+      "inferenceCached": true,
+      "meshSha256": "5b8be986de0fe82f66561518736b09237145beabe2891705710314ca88a9703a",
+      "camera": {
+        "method": "reference-projection",
+        "yaw": 45,
+        "pitch": 0,
+        "perspective": 0.25,
+        "observedFraction": 0.27527988192046343
+      },
+      "triangles": 143632,
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "conversionFingerprint": "3c8ae1f8ea6443521617c29f9579bc55ea5f742e5ba76ecc70f92e1d30d26990",
+      "observedObjects": [
+        {
+          "category": "vehicle",
+          "label": "train",
+          "identityScore": 0.6132896542549133,
+          "identitySupported": true
+        },
+        {
+          "category": "vehicle",
+          "label": "train",
+          "identityScore": 0.5892465710639954,
+          "identitySupported": true
+        },
+        {
+          "category": "vehicle",
+          "label": "train",
+          "identityScore": 0.5338549017906189,
+          "identitySupported": true
+        },
+        {
+          "category": "lamp",
+          "label": "torch",
+          "identityScore": 0.5326309204101562,
+          "identitySupported": true
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.434997022151947,
+          "identitySupported": false
+        },
+        {
+          "category": "lamp",
+          "label": "torch",
+          "identityScore": 0.39759594202041626,
+          "identitySupported": true
+        },
+        {
+          "category": "vehicle",
+          "label": "train",
+          "identityScore": 0.3433223068714142,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.33012399077415466,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "wizard hat",
+          "identityScore": 0.3107086420059204,
+          "identitySupported": true
+        }
+      ],
+      "detected": [],
+      "status": "converted",
+      "bricks": 2819,
+      "steps": 266,
+      "supports": 464,
+      "partTypes": 13,
+      "partColorTypes": 59,
+      "structureCategory": "stepped-monument",
+      "structureConfidence": 0.55,
+      "applied": [],
+      "dropped": [],
+      "semanticFalsePositives": [],
+      "semanticGatePassed": true,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2819
+      },
+      "inventoryTotal": 2819,
+      "colors": {
+        "1": 71,
+        "2": 34,
+        "6": 74,
+        "7": 130,
+        "8": 6,
+        "9": 2467,
+        "10": 37
+      },
+      "elapsedSeconds": 1.7
+    },
+    {
+      "id": "horse",
+      "image": "1029.png",
+      "category": "animal",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "66305f50ddd7d90e521d718952c702b9fb71c30efe6970d39d918f6dbf5b6ec3",
+      "resolution": 28,
+      "inputSha256": "66305f50ddd7d90e521d718952c702b9fb71c30efe6970d39d918f6dbf5b6ec3",
+      "seed": 1714446160,
+      "inferenceCached": true,
+      "meshSha256": "718a8090e059a2aba32700f69a6b41f3771ed94df031b8b22bbcb7abe43adedb",
+      "camera": {
+        "method": "reference-projection",
+        "yaw": -25,
+        "pitch": 5,
+        "perspective": 0,
+        "observedFraction": 0.4114135319039671
+      },
+      "triangles": 62312,
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "conversionFingerprint": "3c8ae1f8ea6443521617c29f9579bc55ea5f742e5ba76ecc70f92e1d30d26990",
+      "observedObjects": [
+        {
+          "category": "animal",
+          "label": "horse",
+          "identityScore": 0.7069995403289795,
+          "identitySupported": true
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.5789812207221985,
+          "identitySupported": false
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.4835703372955322,
+          "identitySupported": false
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.4802486002445221,
+          "identitySupported": false
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.44752755761146545,
+          "identitySupported": false
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.41102463006973267,
+          "identitySupported": true
+        },
+        {
+          "category": "lamp",
+          "label": "torch",
+          "identityScore": 0.3046872615814209,
+          "identitySupported": true
+        }
+      ],
+      "detected": [],
+      "status": "converted",
+      "bricks": 1927,
+      "steps": 190,
+      "supports": 561,
+      "partTypes": 13,
+      "partColorTypes": 51,
+      "structureCategory": "stepped-monument",
+      "structureConfidence": 0.55,
+      "applied": [],
+      "dropped": [],
+      "semanticFalsePositives": [],
+      "semanticGatePassed": true,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 1927
+      },
+      "inventoryTotal": 1927,
+      "colors": {
+        "1": 6,
+        "2": 249,
+        "6": 24,
+        "7": 227,
+        "8": 4,
+        "9": 1397,
+        "10": 19,
+        "11": 1
+      },
+      "elapsedSeconds": 0.9
+    },
+    {
+      "id": "sculpture-head",
+      "image": "075.png",
+      "category": "sculpture",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "58b926e26c0026df16378e214fb046e63dd0edceacb0f8db8005d9ed3f86949a",
+      "resolution": 28,
+      "inputSha256": "58b926e26c0026df16378e214fb046e63dd0edceacb0f8db8005d9ed3f86949a",
+      "seed": 1488529122,
+      "inferenceCached": true,
+      "meshSha256": "1e845d750e10e0ba03667991c962ed7db8dc93af2cb7b83dd4bcbf208c848be8",
+      "camera": {
+        "method": "reference-projection",
+        "yaw": -5,
+        "pitch": 0,
+        "perspective": 0.5,
+        "observedFraction": 0.31269387637867646
+      },
+      "triangles": 139264,
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "conversionFingerprint": "3c8ae1f8ea6443521617c29f9579bc55ea5f742e5ba76ecc70f92e1d30d26990",
+      "observedObjects": [
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.48327720165252686,
+          "identitySupported": false
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.4302121102809906,
+          "identitySupported": true
+        }
+      ],
+      "detected": [],
+      "status": "converted",
+      "bricks": 5758,
+      "steps": 513,
+      "supports": 1542,
+      "partTypes": 12,
+      "partColorTypes": 50,
+      "structureCategory": "mass-building",
+      "structureConfidence": 0.5,
+      "applied": [],
+      "dropped": [],
+      "semanticFalsePositives": [],
+      "semanticGatePassed": true,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 5758
+      },
+      "inventoryTotal": 5758,
+      "colors": {
+        "0": 4910,
+        "8": 118,
+        "10": 128,
+        "11": 473,
+        "12": 129
+      },
+      "elapsedSeconds": 1.6
+    },
+    {
+      "id": "wizard-hat",
+      "image": "1111.png",
+      "category": "accessory",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "d9d43eae5cc61c872bc01d480de4e8954da352743d81f9329345d96e052ee2ac",
+      "resolution": 28,
+      "inputSha256": "d9d43eae5cc61c872bc01d480de4e8954da352743d81f9329345d96e052ee2ac",
+      "seed": 3654565550,
+      "inferenceCached": true,
+      "meshSha256": "cd27bce9bedb14a0096ab71e7514e9da3a1c35abb52ba805edb0778f00eb2885",
+      "camera": {
+        "method": "reference-projection",
+        "yaw": -5,
+        "pitch": 0,
+        "perspective": 0.25,
+        "observedFraction": 0.2658300698560542
+      },
+      "triangles": 151168,
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "conversionFingerprint": "3c8ae1f8ea6443521617c29f9579bc55ea5f742e5ba76ecc70f92e1d30d26990",
+      "observedObjects": [
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.516106128692627,
+          "identitySupported": false
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.4963582456111908,
+          "identitySupported": false
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.4839760661125183,
+          "identitySupported": false
+        },
+        {
+          "category": "decor",
+          "label": "wizard hat",
+          "identityScore": 0.4698655903339386,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.46094220876693726,
+          "identitySupported": true
+        },
+        {
+          "category": "lamp",
+          "label": "torch",
+          "identityScore": 0.4433497488498688,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "wizard hat",
+          "identityScore": 0.4099682569503784,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "wizard hat",
+          "identityScore": 0.40314146876335144,
+          "identitySupported": true
+        }
+      ],
+      "detected": [],
+      "status": "converted",
+      "bricks": 3256,
+      "steps": 303,
+      "supports": 974,
+      "partTypes": 13,
+      "partColorTypes": 69,
+      "structureCategory": "mass-building",
+      "structureConfidence": 0.5,
+      "applied": [],
+      "dropped": [],
+      "semanticFalsePositives": [],
+      "semanticGatePassed": true,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3256
+      },
+      "inventoryTotal": 3256,
+      "colors": {
+        "1": 2730,
+        "3": 19,
+        "4": 299,
+        "5": 16,
+        "6": 6,
+        "7": 5,
+        "8": 1,
+        "9": 29,
+        "10": 14,
+        "11": 71,
+        "12": 58,
+        "13": 8
+      },
+      "elapsedSeconds": 1.5
+    },
+    {
+      "id": "costumed-figure",
+      "image": "004.png",
+      "category": "figure",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "6d08caba0671ffee9a683c5b3ca101b272cec71d3eb9e93b6e8d2b65ddd417fc",
+      "resolution": 28,
+      "inputSha256": "6d08caba0671ffee9a683c5b3ca101b272cec71d3eb9e93b6e8d2b65ddd417fc",
+      "seed": 1829292730,
+      "inferenceCached": true,
+      "meshSha256": "7e0c17d2e11bb21eb29a78b9c96324758e1b8c524d1855c160f5d7571d0f0de9",
+      "camera": {
+        "method": "reference-projection",
+        "yaw": 0,
+        "pitch": 0,
+        "perspective": 0.5,
+        "observedFraction": 0.42200340039671297
+      },
+      "triangles": 98812,
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "conversionFingerprint": "3c8ae1f8ea6443521617c29f9579bc55ea5f742e5ba76ecc70f92e1d30d26990",
+      "observedObjects": [
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.6174764037132263,
+          "identitySupported": false
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.5496727228164673,
+          "identitySupported": true
+        },
+        {
+          "category": "lamp",
+          "label": "torch",
+          "identityScore": 0.5259319543838501,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.4738605320453644,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.30261266231536865,
+          "identitySupported": true
+        }
+      ],
+      "detected": [],
+      "status": "converted",
+      "bricks": 3235,
+      "steps": 301,
+      "supports": 556,
+      "partTypes": 13,
+      "partColorTypes": 49,
+      "structureCategory": "stepped-monument",
+      "structureConfidence": 0.55,
+      "applied": [],
+      "dropped": [],
+      "semanticFalsePositives": [],
+      "semanticGatePassed": true,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3235
+      },
+      "inventoryTotal": 3235,
+      "colors": {
+        "0": 261,
+        "2": 68,
+        "3": 29,
+        "7": 2826,
+        "12": 51
+      },
+      "elapsedSeconds": 1.2
+    }
+  ],
+  "limits": "Bilinear offline downsample approximates canvas; no browser UI, load stability, or physical build was tested. Connection checks are not visual quality scores.",
+  "date": "2026-10-01",
+  "stage": "After recess geometry implementation"
+}
