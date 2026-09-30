@@ -39,6 +39,7 @@ import { removeSemanticCutRemnants } from './semantic-cut-cleanup.ts';
 import { connectedBelow } from './build-instructions.ts';
 import { connectors } from './assembly-validation.ts';
 import { installCavityLintel } from './cavity-lintel.ts';
+import { brazierClearances } from './semantic-clearance.ts';
 import { enforceGroupConsistency } from './element-grouping.ts';
 import { routeStructureRepresentation } from './representation/representation-router.ts';
 import { applyAnchorResult, solveSurfaceAnchor } from './surface-anchor-solver.ts';
@@ -591,7 +592,8 @@ function assembleVolume(
     cells = new Map(volume.cells);
   validateRegions(regions, [w, h, d]);
   const placements = regions.map((r) => regionPlacement(r, [w, h, d]));
-  const openings = regions.flatMap(r => r.anchorResult?.clearanceVolume ? [r.anchorResult.clearanceVolume] : []);
+  const flameClearances = brazierClearances(regions, [w, h, d]);
+  const openings = [...regions.flatMap(r => r.anchorResult?.clearanceVolume ? [r.anchorResult.clearanceVolume] : []), ...flameClearances];
   const cuts = [...placements, ...openings];
   const sources = regions.map((r) => regionPlacement({
     ...r, anchor: r.sourceAnchor || r.referenceAnchor || r.anchor,
@@ -703,7 +705,8 @@ function assembleVolume(
   }
   for (const region of regions) {
     const box = region.anchorResult?.clearanceVolume;
-    if (box) bridges.push(...installCavityLintel(cells, volume.cells, box, region.anchorResult!.clearanceAxis ?? 2, dominant));
+    if (box) bridges.push(...installCavityLintel(cells, volume.cells, box, region.anchorResult!.clearanceAxis ?? 2, dominant,
+      (x, y, z) => flameClearances.some(cut => insideRegion([x, y, z], cut))));
   }
   const raw = finishModel(
     cells,
@@ -830,7 +833,7 @@ function assembleVolume(
     openRowFraction: openRows / Math.max(1, intersected),
   };
   model.assembly!.reference = `按三维网格体积生成；保留网格中的前后布局和孔洞。新增辅助支撑 ${model.supportCount} 块，已计入清单。网格可能含 AI 推测，连接检查不代表外观还原或实物稳定性已验证。`;
-  removeSemanticCutRemnants(model, placements.filter((_, i) => regions[i].kind === 'statue'));
+  removeSemanticCutRemnants(model, [...placements.filter((_, i) => regions[i].kind === 'statue'), ...flameClearances]);
 
   if (packing.removed)
     model.assembly!.reference += ` 美学后处理移除冗余隐藏支撑 ${packing.removed} 块，保留连接与连通性。`;

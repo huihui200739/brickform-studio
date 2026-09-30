@@ -163,6 +163,12 @@ for (const resolution of [36, 48]) test(`fixture-temple ${resolution} seats fron
   assert.ok((statue?.representationResult?.brickCount || 0) > 0);
   assert.equal(statue?.representationResult?.visibleFromReference, true);
   assert.equal(braziers.length, 2);
+  assert.equal(result.model.clearanceVolumes?.length, 3, 'the entry and both foreground flame spaces are reserved');
+  assert.ok(result.model.bricks.every(b => b.section?.startsWith('component-') ||
+    result.model.clearanceVolumes!.every(box => ![0, 1, 2].every(axis =>
+      [b.x, b.y, b.z][axis] < box.max[axis] &&
+      [b.x + b.w, b.y + b.h, b.z + b.d][axis] > box.min[axis],
+    ))), 'ordinary bricks and support posts cannot reappear behind the flames');
   assert.ok(braziers.every((region) => region.anchorResult?.attached));
   assert.ok(braziers.every((region) => region.representationResult?.visibleFromReference));
   for (const region of braziers) {

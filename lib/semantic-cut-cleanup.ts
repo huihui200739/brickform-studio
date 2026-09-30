@@ -60,7 +60,7 @@ export function removeSemanticCutRemnants(model: Model, cuts: BBox3d[]) {
     });
     for (const brick of model.bricks) brick.step = remap.get(brick.step!);
     model.levels = model.assembly.steps.map((_, i) => i);
-    model.assembly.reference += ` 雕像替换清理了切口上方无安装连接的残片 ${removed.size} 块。`;
+    model.assembly.reference += ` 语义组件替换清理了切口上方无安装连接的残片 ${removed.size} 块。`;
   }
   return removed.size;
 }

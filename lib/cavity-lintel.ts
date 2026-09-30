@@ -11,6 +11,7 @@ export function installCavityLintel(
   box: BBox3d,
   axis: 0 | 2,
   color: number,
+  blocked?: (x: number, y: number, z: number) => boolean,
 ): Brick[] {
   const cross = axis === 0 ? 2 : 0;
   const left = box.min[cross], right = box.max[cross], span = right - left;
@@ -36,6 +37,18 @@ export function installCavityLintel(
           if (source.has(axis === 2 ? `${u},${y},${r}` : `${r},${y},${u}`)) roof = true;
     if (!roof) continue;
     const shelfY = box.max[1];
+    // A roof sample does not authorize a new column in another object's
+    // foreground clearance. Check both complete bearing paths before writing.
+    let prohibited = false;
+    for (const start of [left - 2, right])
+      for (let u = start; u < start + 2; u++)
+        for (let r = run; r < run + 2; r++)
+          for (let y = shelfY - 1; y >= 2; y--) {
+            const x = axis === 2 ? u : r, z = axis === 2 ? r : u;
+            if (cells.has(`${x},${y},${z}`)) break;
+            if (blocked?.(x, y, z)) prohibited = true;
+          }
+    if (prohibited) continue;
     // Fill only the two jamb bearing areas. Never grow a support in the opening.
     for (const start of [left - 2, right])
       for (let u = start; u < start + 2; u++)
