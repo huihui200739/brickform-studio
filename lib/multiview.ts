@@ -7,7 +7,7 @@ import {
   type Raster,
 } from './brick-engine.ts';
 import { groupImageAssembly } from './image-design.ts';
-import { referenceMask } from './reference-colors.ts';
+import { referenceMask, materialColourMap } from './reference-colors.ts';
 import type { TriangleMesh } from './mesh-types.ts';
 
 // Silhouette carving. Every voxel must fall inside the outline of every view it
@@ -44,8 +44,8 @@ type Silhouette = {
   flippedVertical: boolean;
 };
 export function outline(view: MultiView): Silhouette {
-  const { mask: raw } = referenceMask(view.image),
-    { width, height } = view.image;
+  const { width, height } = view.image;
+  const raw = multiViewSilhouette(view.image);
   // Keep the largest connected body only: a drop shadow, a watermark or a
   // screenshot's own toolbar must not become part of the object.
   const mask = largestBody(raw, width, height);
@@ -97,6 +97,53 @@ export function outline(view: MultiView): Silhouette {
     flippedVertical: !!view.flippedVertical,
   };
 }
+// RGB shading is appearance, not empty space. Use a bounded background flood
+// for opaque views, then fill enclosed RGB highlights. Alpha-cut holes remain
+// explicit geometry and are preserved. Never grow indefinitely via local colour
+// differences: that walks from a white backdrop into a pale stair surface.
+function multiViewSilhouette(image: Raster): Uint8Array {
+  const { width: w, height: h, data } = image;
+  if (!w || !h || data.length !== w * h * 4) throw Error('参考图数据无效。');
+  let transparent = 0;
+  for (let i = 0; i < w * h; i++) if (data[i * 4 + 3] <= 100) transparent++;
+  if (transparent >= w * h * 0.01) return referenceMask(image).mask;
+  const corners = [0, w - 1, (h - 1) * w, w * h - 1].map((i) => [
+    data[i * 4],
+    data[i * 4 + 1],
+    data[i * 4 + 2],
+  ]);
+  const mask = new Uint8Array(w * h).fill(1),
+    seen = new Uint8Array(w * h);
+  const queue: number[] = [];
+  for (let x = 0; x < w; x++) queue.push(x, (h - 1) * w + x);
+  for (let y = 0; y < h; y++) queue.push(y * w, y * w + w - 1);
+  for (let head = 0; head < queue.length; head++) {
+    const i = queue[head];
+    if (seen[i]) continue;
+    seen[i] = 1;
+    if (
+      !corners.some(
+        (c) =>
+          c.reduce(
+            (sum, value, axis) => sum + Math.abs(data[i * 4 + axis] - value),
+            0,
+          ) < 84,
+      )
+    )
+      continue;
+    mask[i] = 0;
+    const x = i % w,
+      y = Math.floor(i / w);
+    if (x > 0) queue.push(i - 1);
+    if (x + 1 < w) queue.push(i + 1);
+    if (y > 0) queue.push(i - w);
+    if (y + 1 < h) queue.push(i + w);
+  }
+  // Unreached interior pixels are solid even if their RGB matches the backdrop.
+  if (!mask.some(Boolean))
+    throw Error('参考图中没有清晰主体，请换一张背景干净的图片。');
+  return mask;
+}
 function largestBody(raw: Uint8Array, width: number, height: number) {
   const seen = new Uint8Array(raw.length),
     keep = new Uint8Array(raw.length);
@@ -138,9 +185,20 @@ export type MultiViewVolume = {
   resolution: number;
   solid: Uint8Array;
   colours: Uint8Array;
+  // Visible first-hit colours for +Z, +X and +Y; 255 means unobserved.
+  faceColours?: Uint8Array;
+  quality?: MultiViewQuality;
   dominant: number;
   views: ViewAxis[];
 };
+export type MultiViewQuality = {
+  passed: boolean;
+  projections: { axis: ViewAxis; retainedFraction: number }[];
+  components: number;
+  largestComponentFraction: number;
+  reasons: string[];
+};
+export type MultiViewSettings = { softenShadows?: boolean };
 export type MultiViewReconstruction = {
   volume: MultiViewVolume;
   mesh: TriangleMesh;
@@ -150,6 +208,7 @@ export type MultiViewReconstruction = {
 export function buildMultiViewVolume(
   views: MultiView[],
   resolution = 36,
+  settings: MultiViewSettings = {},
 ): MultiViewVolume {
   if (![20, 28, 36, 48].includes(resolution))
     throw Error('三视图只支持 20 / 28 / 36 / 48 凸点尺寸。');
@@ -261,43 +320,49 @@ export function buildMultiViewVolume(
         }
         if (keep) solid[at(x, y, z)] = 1;
       }
-  // Each exposed side takes its colour from the view that looks straight at it.
-  // 255 marks a voxel whose surface was never sampled: those keep the dominant
-  // material. Using index 0 as "unset" would paint the whole interior white.
+  // A reference can colour only the first surface on its viewing ray. Copying
+  // it to every exposed/back-facing voxel prints stairs, flames and dark seams
+  // repeatedly onto inner walls and rear faces.
   const colours = new Uint8Array(w * h * d).fill(255),
+    faceColours = new Uint8Array(w * h * d * 3).fill(255),
     counts = new Uint32Array(PALETTE.length);
-  const exposed = (x: number, y: number, z: number) =>
-    x < 0 || y < 0 || z < 0 || x >= w || y >= h || z >= d
-      ? 0
-      : solid[at(x, y, z)];
+  const frontHits = new Int32Array(w * h).fill(-1),
+    sideHits = new Int32Array(d * h).fill(-1),
+    topHits = new Int32Array(w * d).fill(-1);
   for (let y = 0; y < h; y++)
-    for (let x = 0; x < w; x++)
-      for (let z = 0; z < d; z++) {
+    for (let z = 0; z < d; z++)
+      for (let x = 0; x < w; x++) {
         if (!solid[at(x, y, z)]) continue;
+        frontHits[y * w + x] = z;
+        sideHits[y * d + z] = x;
+        topHits[z * w + x] = y;
+      }
+  for (let y = 0; y < h; y++)
+    for (let z = 0; z < d; z++)
+      for (let x = 0; x < w; x++) {
+        const index = at(x, y, z);
+        if (!solid[index]) continue;
         const ux = (x + 0.5) / w,
           uz = (z + 0.5) / d,
-          vy = (y + 0.5) / h,
-          directions: [ViewAxis, number, number][] = [];
-        if (!exposed(x, y, z + 1)) directions.push(['front', ux, vy]);
-        if (!exposed(x, y, z - 1)) directions.push(['front', ux, vy]);
-        if (!exposed(x + 1, y, z)) directions.push(['side', 1 - uz, vy]);
-        if (!exposed(x - 1, y, z)) directions.push(['side', 1 - uz, vy]);
-        if (!exposed(x, y + 1, z)) directions.push(['top', ux, 1 - uz]);
-        if (!exposed(x, y - 1, z)) directions.push(['top', ux, 1 - uz]);
+          vy = (y + 0.5) / h;
+        const visible: [ViewAxis, number, number, number][] = [];
+        if (frontHits[y * w + x] === z) visible.push(['front', ux, vy, 0]);
+        if (sideHits[y * d + z] === x) visible.push(['side', 1 - uz, vy, 1]);
+        if (topHits[z * w + x] === y) visible.push(['top', ux, 1 - uz, 2]);
         const votes = new Uint32Array(PALETTE.length);
-        for (const [axis, u, v] of directions)
-          for (const s of shaped) {
-            if (s.axis !== axis) continue;
-            const colour = sample(s, u, v);
-            if (colour >= 0) votes[colour]++;
-          }
+        for (const [axis, u, v, face] of visible) {
+          const s = byAxis.get(axis);
+          if (!s) continue;
+          const colour = sample(s, u, v);
+          if (colour < 0) continue;
+          faceColours[index * 3 + face] = colour;
+          votes[colour]++;
+          counts[colour]++;
+        }
         let best = -1;
         for (let i = 0; i < votes.length; i++)
           if (votes[i] > (best < 0 ? 0 : votes[best])) best = i;
-        if (best >= 0) {
-          colours[at(x, y, z)] = best;
-          counts[best]++;
-        }
+        if (best >= 0) colours[index] = best;
       }
   const dominant = Math.max(
     0,
@@ -305,8 +370,11 @@ export function buildMultiViewVolume(
   );
   if (!solid.some(Boolean))
     throw Error('三个轮廓相交后没有体积，请检查主体分离和视图方向。');
+  const remap = materialColourMap(dominant, settings.softenShadows !== false);
   for (let i = 0; i < colours.length; i++)
-    if (colours[i] === 255) colours[i] = dominant;
+    colours[i] = colours[i] === 255 ? dominant : remap[colours[i]];
+  for (let i = 0; i < faceColours.length; i++)
+    if (faceColours[i] !== 255) faceColours[i] = remap[faceColours[i]];
   return {
     width: w,
     height: h,
@@ -314,6 +382,7 @@ export function buildMultiViewVolume(
     resolution,
     solid,
     colours,
+    faceColours,
     dominant,
     views: shaped.map((s) => s.axis),
   };
@@ -390,8 +459,7 @@ export function multiViewMesh(
     for (let z = 0; z < d; z++)
       for (let x = 0; x < w; x++) {
         if (!occupied(x, y, z)) continue;
-        const hex = PALETTE[colours[at(x, y, z)]].hex;
-        const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+
         for (const {
           normal: [nx, ny, nz],
           corners,
@@ -401,6 +469,16 @@ export function multiViewMesh(
             const [cx, cy, cz] = corners[index];
             positions.push(x + cx, (y + cy) * 0.4, z + cz);
           }
+          const face = nz > 0 ? 0 : nx > 0 ? 1 : ny > 0 ? 2 : -1;
+          const observed =
+            face < 0 ? 255 : volume.faceColours?.[at(x, y, z) * 3 + face];
+          const colour = volume.faceColours
+            ? observed === undefined || observed === 255
+              ? volume.dominant
+              : observed
+            : colours[at(x, y, z)];
+          const hex = PALETTE[colour].hex;
+          const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
           colors.push(...rgb, ...rgb);
         }
       }
@@ -411,12 +489,115 @@ export function multiViewMesh(
   };
 }
 
+// Reproject the resulting volume into each input view. A fragmented object
+// may have valid triangles but cannot account for the foreground it came from.
+export function multiViewQuality(
+  volume: MultiViewVolume,
+  views: MultiView[],
+): MultiViewQuality {
+  const { width: w, height: h, depth: d, solid } = volume;
+  const at = (x: number, y: number, z: number) => (y * d + z) * w + x;
+  const projections = views.map((view) => {
+    const s = outline(view),
+      a = view.axis === 'side' ? d : w,
+      b = view.axis === 'top' ? d : h;
+    let expected = 0,
+      retained = 0;
+    for (let row = 0; row < b; row++)
+      for (let col = 0; col < a; col++) {
+        const u = (col + 0.5) / a,
+          v = (row + 0.5) / b;
+        const imageU = s.mirrored ? 1 - u : u,
+          imageV = s.flippedVertical ? 1 - v : v;
+        const px =
+          s.left + Math.min(size(s).x - 1, Math.floor(imageU * size(s).x));
+        const py =
+          s.bottom - Math.min(size(s).y - 1, Math.floor(imageV * size(s).y));
+        if (!s.mask[py * s.width + px]) continue;
+        expected++;
+        let found = false;
+        const length = view.axis === 'front' ? d : view.axis === 'side' ? w : h;
+        for (let ray = 0; ray < length; ray++) {
+          const x = view.axis === 'side' ? ray : col;
+          const y = view.axis === 'top' ? ray : row;
+          const z =
+            view.axis === 'front'
+              ? ray
+              : view.axis === 'side'
+                ? d - col - 1
+                : d - row - 1;
+          if (solid[at(x, y, z)]) {
+            found = true;
+            break;
+          }
+        }
+        if (found) retained++;
+      }
+    return {
+      axis: view.axis,
+      retainedFraction: retained / Math.max(1, expected),
+    };
+  });
+  const seen = new Uint8Array(solid.length);
+  let components = 0,
+    largest = 0,
+    total = 0;
+  for (let start = 0; start < solid.length; start++) {
+    if (!solid[start] || seen[start]) continue;
+    components++;
+    let count = 0;
+    const queue = [start];
+    seen[start] = 1;
+    for (let head = 0; head < queue.length; head++) {
+      const i = queue[head],
+        x = i % w,
+        z = Math.floor(i / w) % d,
+        y = Math.floor(i / (w * d));
+      count++;
+      for (const j of [
+        x > 0 ? i - 1 : -1,
+        x + 1 < w ? i + 1 : -1,
+        z > 0 ? i - w : -1,
+        z + 1 < d ? i + w : -1,
+        y > 0 ? i - w * d : -1,
+        y + 1 < h ? i + w * d : -1,
+      ]) {
+        if (j < 0 || !solid[j] || seen[j]) continue;
+        seen[j] = 1;
+        queue.push(j);
+      }
+    }
+    largest = Math.max(largest, count);
+    total += count;
+  }
+  const reasons = projections
+    .filter((p) => p.retainedFraction < 0.98)
+    .map(
+      (p) =>
+        `${VIEW_LABELS[p.axis]}只有 ${(p.retainedFraction * 100).toFixed(0)}% 的主体能被草稿解释，请检查方向、主体遮罩和透视`,
+    );
+  const largestComponentFraction = largest / Math.max(1, total);
+  if (components > 1)
+    reasons.push(
+      `体积分裂为 ${components} 块，最大主体仅占 ${(largestComponentFraction * 100).toFixed(0)}%`,
+    );
+  return {
+    passed: reasons.length === 0,
+    projections,
+    components,
+    largestComponentFraction,
+    reasons,
+  };
+}
+
 export function reconstructMultiView(
   views: MultiView[],
   resolution = 36,
   name = '三视图三维草稿',
+  settings: MultiViewSettings = {},
 ): MultiViewReconstruction {
-  const volume = buildMultiViewVolume(views, resolution);
+  const volume = buildMultiViewVolume(views, resolution, settings);
+  volume.quality = multiViewQuality(volume, views);
   return { volume, mesh: multiViewMesh(volume, name) };
 }
 
@@ -432,6 +613,10 @@ export function multiViewToModel(
   volume: MultiViewVolume,
   name = '三视图积木',
 ): Model {
+  if (volume.quality && !volume.quality.passed)
+    throw Error(
+      `三维草稿未通过一致性检查：${volume.quality.reasons.join('；')}`,
+    );
   const {
     width: w,
     height: h,

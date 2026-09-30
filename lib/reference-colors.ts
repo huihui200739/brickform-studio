@@ -272,6 +272,49 @@ export function estimateReferenceCamera(
 ): ReferenceCamera {
   return referenceAlignment(mesh, image).camera;
 }
+// Shared, optional illumination reduction for reference projections. The map
+// operates on material hue; it does not alter silhouettes or create geometry.
+export function materialColourMap(dominant: number, softenShadows = true) {
+  const base = colors[dominant];
+  return colors.map((c, index) => {
+    const chroma = Math.hypot(c[1], c[2]),
+      baseChroma = Math.hypot(base[1], base[2]);
+    const hueSimilarity =
+      (c[1] * base[1] + c[2] * base[2]) / Math.max(1, chroma * baseChroma);
+    // A near-black neutral in a photograph is a shadow, not a black part: with
+    // shadow reduction on it becomes the darkest grey instead of a hole. This
+    // only applies while the model's own material is light.
+    if (softenShadows && base[0] >= 65 && c[0] < 30 && chroma < 12) {
+      const lifted = [c[0] + (base[0] - c[0]) * 0.45, c[1], c[2]];
+      let best = index,
+        distance = Infinity;
+      colors.forEach((candidate, i) => {
+        const d = candidate.reduce(
+          (sum, v, a) => sum + (v - lifted[a]) ** 2,
+          0,
+        );
+        if (d < distance) {
+          distance = d;
+          best = i;
+        }
+      });
+      return best;
+    }
+    if (
+      !softenShadows ||
+      base[0] < 65 ||
+      c[0] > base[0] - 18 ||
+      hueSimilarity < 0.91
+    )
+      return index;
+    // A darker colour in the main material's own hue family is shading, a
+    // brick joint or a soft shadow rather than a different part. Stepping it
+    // down one shade still leaves whole walls looking like another material,
+    // so it is folded back into the dominant material instead.
+    return dominant;
+  });
+}
+
 export function colorFromReference(
   mesh: TriangleMesh,
   image: Raster,
@@ -372,44 +415,7 @@ export function colorFromReference(
   // hue family. Red/green accents and neutral dark openings remain separate.
   // This is optional because a photograph cannot distinguish paint from shadow.
   const dominant = counts.indexOf(Math.max(...counts));
-  const base = colors[dominant];
-  const remap = colors.map((c, index) => {
-    const chroma = Math.hypot(c[1], c[2]),
-      baseChroma = Math.hypot(base[1], base[2]);
-    const hueSimilarity =
-      (c[1] * base[1] + c[2] * base[2]) / Math.max(1, chroma * baseChroma);
-    // A near-black neutral in a photograph is a shadow, not a black part: with
-    // shadow reduction on it becomes the darkest grey instead of a hole. This
-    // only applies while the model's own material is light.
-    if (softenShadows && base[0] >= 65 && c[0] < 30 && chroma < 12) {
-      const lifted = [c[0] + (base[0] - c[0]) * 0.45, c[1], c[2]];
-      let best = index,
-        distance = Infinity;
-      colors.forEach((candidate, i) => {
-        const d = candidate.reduce(
-          (sum, v, a) => sum + (v - lifted[a]) ** 2,
-          0,
-        );
-        if (d < distance) {
-          distance = d;
-          best = i;
-        }
-      });
-      return best;
-    }
-    if (
-      !softenShadows ||
-      base[0] < 65 ||
-      c[0] > base[0] - 18 ||
-      hueSimilarity < 0.91
-    )
-      return index;
-    // A darker colour in the main material's own hue family is shading, a
-    // brick joint or a soft shadow rather than a different part. Stepping it
-    // down one shade still leaves whole walls looking like another material,
-    // so it is folded back into the dominant material instead.
-    return dominant;
-  });
+  const remap = materialColourMap(dominant, softenShadows);
   // Unseen surfaces have no trustworthy texture. Use broad material bands
   // rather than copying a nearby dark doorway through to the back wall. A dark
   // neutral colour is an opening or a shadow, not a material: it only votes for

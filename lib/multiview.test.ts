@@ -347,3 +347,131 @@ void test('top silhouette orientation and vertical flip agree with front at +Z',
   assert.equal(flipped.solid[at(0)], 0);
   assert.equal(flipped.solid[at(v.depth - 1)], 1);
 });
+
+void test('opaque background gradients cannot flood through a pale stepped surface', () => {
+  const shades: Colour[] = [
+    [245, 237, 227],
+    [239, 231, 217],
+    [233, 225, 207],
+    [227, 219, 197],
+    [221, 213, 187],
+    [215, 207, 177],
+    [215, 201, 165],
+    [215, 195, 153],
+    [215, 189, 141],
+  ];
+  const image = picture(40, 40, (x, y) => {
+    if (x < 4 || x >= 36 || y < 4 || y >= 36) return [255, 255, 255];
+    return shades[y - 4] || [215, 186, 140];
+  });
+  const s = outline({ axis: 'front', image });
+  assert.equal(
+    s.mask[20 * 40 + 20],
+    1,
+    'the continuous platform is not erased',
+  );
+  assert.equal(s.mask[39 * 40 + 20], 0, 'the backdrop is still excluded');
+});
+
+void test('an explicit transparent doorway remains a hole in the carved structure', () => {
+  const image = front([14, 14, 12, 12]);
+  const s = outline({ axis: 'front', image });
+  assert.equal(s.mask[20 * 40 + 20], 0);
+  const { volume } = reconstructMultiView(
+    [
+      { axis: 'front', image },
+      { axis: 'side', image: side() },
+      { axis: 'top', image: plan() },
+    ],
+    20,
+  );
+  const x = Math.floor(volume.width / 2),
+    y = Math.floor(volume.height / 2);
+  for (let z = 0; z < volume.depth; z++)
+    assert.equal(
+      volume.solid[(y * volume.depth + z) * volume.width + x],
+      0,
+      'opening is not cosmetically filled',
+    );
+});
+
+void test('front paint is not repeated onto the unobserved back or hidden faces', () => {
+  const painted = picture(40, 40, (x, y) => {
+    if (x < 4 || x >= 36 || y < 4 || y >= 36) return null;
+    return x > 14 && x < 26 && y > 10 && y < 30
+      ? [36, 36, 36]
+      : [215, 186, 140];
+  });
+  const { mesh, volume } = reconstructMultiView(
+    [
+      { axis: 'front', image: painted },
+      { axis: 'side', image: side() },
+      { axis: 'top', image: plan() },
+    ],
+    20,
+    'paint',
+    { softenShadows: false },
+  );
+  let frontDark = 0,
+    backDark = 0;
+  for (let i = 0; i < mesh.positions.length; i += 9) {
+    const zs = [
+      mesh.positions[i + 2],
+      mesh.positions[i + 5],
+      mesh.positions[i + 8],
+    ];
+    const dark = mesh.colors[i / 3] === 36;
+    if (dark && zs.every((z) => z === volume.depth)) frontDark++;
+    if (dark && zs.every((z) => z === 0)) backDark++;
+  }
+  assert.ok(frontDark > 0, 'observed material is retained');
+  assert.equal(backDark, 0, 'a doorway is not printed on the unseen rear');
+});
+
+void test('contradictory same-size silhouettes cannot release a truncated model', () => {
+  const step = picture(40, 40, (x, y) => {
+    if (x < 4 || x >= 36 || y < 4 || y >= 36) return null;
+    return y >= 20 || x < 20 ? [215, 186, 140] : null;
+  });
+  const planL = picture(40, 40, (x, y) => {
+    if (x < 4 || x >= 36 || y < 4 || y >= 36 || (x < 20 && y >= 20))
+      return null;
+    return [215, 186, 140];
+  });
+  const { volume } = reconstructMultiView(
+    [
+      { axis: 'front', image: step },
+      { axis: 'side', image: step },
+      { axis: 'top', image: planL },
+    ],
+    20,
+  );
+  assert.equal(volume.quality!.passed, false);
+  assert.ok(volume.quality!.projections.some((p) => p.retainedFraction < 0.8));
+  assert.throws(() => multiViewToModel(volume), /未通过一致性检查/);
+});
+
+void test('optional material shading reduction keeps accents while suppressing warm wall shadows', () => {
+  const shaded = picture(40, 40, (x, y) => {
+    if (x < 4 || x >= 36 || y < 4 || y >= 36) return null;
+    if (x >= 14 && x < 20) return [53, 33, 0];
+    if (x >= 26 && x < 30 && y > 10 && y < 30) return [201, 26, 9];
+    return [215, 186, 140];
+  });
+  const views: MultiView[] = [
+    { axis: 'front', image: shaded },
+    { axis: 'side', image: side() },
+    { axis: 'top', image: plan() },
+  ];
+  const on = reconstructMultiView(views, 20).volume;
+  const off = reconstructMultiView(views, 20, 'raw', {
+    softenShadows: false,
+  }).volume;
+  assert.ok(on.colours.includes(2), 'red accent survives');
+  assert.equal(
+    on.colours.includes(10),
+    false,
+    'dark warm seam is not a second wall material',
+  );
+  assert.ok(off.colours.includes(10), 'raw material option remains available');
+});

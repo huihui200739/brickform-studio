@@ -55,6 +55,7 @@ self.onmessage = async (
           event.data.views || [],
           options.resolution,
           name,
+          { softenShadows: event.data.softenShadows },
         ),
       });
       return;

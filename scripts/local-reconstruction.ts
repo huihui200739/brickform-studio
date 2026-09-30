@@ -1,15 +1,19 @@
 // Development-only native reconstruction. This module never enters the hosted Worker.
-import { existsSync, createReadStream } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { existsSync, createReadStream, statSync } from 'node:fs';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import type { Plugin } from 'vite';
+import { decodeLocalViews } from '../lib/local-view-request.ts';
 
 export function localReconstruction(): Plugin {
   const root = path.resolve('work/local-3d');
   const binary = path.join(root, 'hy3d');
   const weights = path.join(root, 'weights');
+  const multiRoot = path.resolve('work/multiview-engine');
+  const multiPython = path.join(multiRoot, '.venv/bin/python');
+  const multiRunner = path.resolve('scripts/local-multiview.py');
   type Job = {
     id: string;
     ticket: string;
@@ -17,6 +21,7 @@ export function localReconstruction(): Plugin {
     progress: number;
     error?: string;
     output: string;
+    multiView: boolean;
   };
   const jobs = new Map<string, Job>();
   let active = false;
@@ -45,12 +50,25 @@ export function localReconstruction(): Plugin {
             existsSync(binary) &&
             existsSync(path.join(root, 'mlx.metallib')) &&
             existsSync(path.join(weights, 'model.fp16.safetensors'));
+          const multiWeights = path.join(
+            multiRoot,
+            'weights/map-anything/model.safetensors',
+          );
+          const multiReady =
+            existsSync(multiPython) &&
+            existsSync(path.join(multiRoot, 'ready.json')) &&
+            existsSync(multiWeights) &&
+            statSync(multiWeights).size === 4914062480;
           const queryId = url.searchParams.get('id');
           if (req.method === 'GET' && !queryId)
             return send(200, {
               configured: ready,
               provider: 'local',
               model: 'Hunyuan3D mini · Apple Silicon',
+              multiView: {
+                configured: multiReady,
+                model: 'MapAnything MLX · 联合三视图',
+              },
             });
           if (req.method === 'GET') {
             const job = jobs.get(queryId || ''),
@@ -70,7 +88,10 @@ export function localReconstruction(): Plugin {
               const cutout = path.join(dir, 'cutout.png');
               const file = existsSync(cutout)
                 ? cutout
-                : path.join(dir, 'input.png');
+                : path.join(
+                    dir,
+                    job.multiView ? 'views/0-front.png' : 'input.png',
+                  );
               res.writeHead(200, {
                 'Content-Type': 'image/png',
                 'Cache-Control': 'no-store',
@@ -88,7 +109,17 @@ export function localReconstruction(): Plugin {
               createReadStream(job.output).pipe(res);
               return;
             }
+            const diagnostics =
+              job.multiView && job.status === 'SUCCEEDED'
+                ? JSON.parse(
+                    await readFile(
+                      job.output.replace(/\.glb$/, '.json'),
+                      'utf8',
+                    ),
+                  )
+                : undefined;
             return send(200, {
+              multiDiagnostics: diagnostics,
               status: job.status,
               progress: job.progress,
               ready: job.status === 'SUCCEEDED',
@@ -97,7 +128,7 @@ export function localReconstruction(): Plugin {
           }
           if (req.method !== 'POST')
             return send(405, { error: '不支持此操作。' });
-          if (!ready) return send(503, { error: '本机模型尚未安装完成。' });
+
           if (active)
             return send(409, {
               error: '电脑正在处理另一张图片，请等完成后再试。',
@@ -105,13 +136,26 @@ export function localReconstruction(): Plugin {
           let body = '';
           for await (const chunk of req) {
             body += chunk.toString();
-            if (body.length > 6 * 1024 * 1024)
+            if (body.length > 21 * 1024 * 1024)
               return send(413, { error: '图片太大，请缩小后上传。' });
           }
-          const image = (JSON.parse(body) as { image?: unknown }).image;
+          const payload = JSON.parse(body) as {
+            image?: unknown;
+            views?: unknown;
+          };
+          const multiView = payload.views !== undefined;
+          const images = multiView ? decodeLocalViews(payload.views) : [];
+          if (!(multiView ? multiReady : ready))
+            return send(503, {
+              error: multiView
+                ? '本机三视图引擎尚未安装完成。'
+                : '本机模型尚未安装完成。',
+            });
+          const image = payload.image;
           if (
-            typeof image !== 'string' ||
-            !/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]+=*$/.test(image)
+            !multiView &&
+            (typeof image !== 'string' ||
+              !/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]+=*$/.test(image))
           )
             return send(400, { error: '请上传 PNG 或 JPG 图片。' });
           // Recheck after the asynchronous body read; one inference fits the memory budget.
@@ -122,16 +166,27 @@ export function localReconstruction(): Plugin {
             ticket = randomBytes(24).toString('hex');
           const dir = path.join(root, 'jobs', id);
           await mkdir(dir, { recursive: true });
-          await writeFile(
-            path.join(dir, 'input.png'),
-            Buffer.from(image.split(',')[1], 'base64'),
-          );
+          if (multiView) {
+            const inputs = path.join(dir, 'views');
+            await mkdir(inputs);
+            for (const [index, view] of images.entries())
+              await writeFile(
+                path.join(inputs, `${index}-${view.axis}.png`),
+                view.bytes,
+              );
+          } else {
+            await writeFile(
+              path.join(dir, 'input.png'),
+              Buffer.from((image as string).split(',')[1], 'base64'),
+            );
+          }
           const job: Job = {
             id,
             ticket,
             status: 'RUNNING',
             progress: 1,
             output: path.join(dir, 'model.glb'),
+            multiView,
           };
           jobs.set(id, job);
           const execute = (file: string, args: string[]) =>
@@ -170,36 +225,48 @@ export function localReconstruction(): Plugin {
             });
           void (async () => {
             try {
-              let input = path.join(dir, 'input.png');
-              if (existsSync(path.join(root, 'prepare-image'))) {
-                try {
-                  await execute(path.join(root, 'prepare-image'), [
-                    input,
-                    path.join(dir, 'cutout.png'),
-                  ]);
-                  input = path.join(dir, 'cutout.png');
-                } catch {
-                  /* The original image remains usable if the OS mask finds no foreground. */
+              if (multiView) {
+                await execute(multiPython, [
+                  multiRunner,
+                  path.join(dir, 'views'),
+                  job.output,
+                ]);
+              } else {
+                let input = path.join(dir, 'input.png');
+                if (existsSync(path.join(root, 'prepare-image'))) {
+                  try {
+                    await execute(path.join(root, 'prepare-image'), [
+                      input,
+                      path.join(dir, 'cutout.png'),
+                    ]);
+                    input = path.join(dir, 'cutout.png');
+                  } catch {
+                    /* The original image remains usable if the OS mask finds no foreground. */
+                  }
                 }
+                await execute(binary, [
+                  'shape',
+                  input,
+                  '-o',
+                  job.output,
+                  '--weights',
+                  weights,
+                  '--steps',
+                  '30',
+                  '--octree',
+                  '128',
+                ]);
               }
-              await execute(binary, [
-                'shape',
-                input,
-                '-o',
-                job.output,
-                '--weights',
-                weights,
-                '--steps',
-                '30',
-                '--octree',
-                '128',
-              ]);
               job.status = 'SUCCEEDED';
               job.progress = 100;
-            } catch {
+            } catch (e) {
+              await writeFile(path.join(dir, 'error.log'), String(e)).catch(
+                () => {},
+              );
               job.status = 'FAILED';
-              job.error =
-                '本机重建未完成。请关闭占用内存较大的应用后重试；也可换一张主体更清晰的图片。';
+              job.error = multiView
+                ? '三图联合重建未完成。请确认三张图来自同一模型且有重叠区域；本机日志已保留。'
+                : '本机重建未完成。请关闭占用内存较大的应用后重试；也可换一张主体更清晰的图片。';
             } finally {
               active = false;
             }
@@ -208,7 +275,9 @@ export function localReconstruction(): Plugin {
         };
         void run().catch(() => {
           if (reserved) active = false;
-          send(400, { error: '无法读取图片或创建本机任务，请重试。' });
+          send(400, {
+            error: '无法读取图片或创建本机任务，请检查三张图片的格式和视角。',
+          });
         });
       });
     },

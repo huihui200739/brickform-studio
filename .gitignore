@@ -40,3 +40,7 @@ next-env.d.ts
 *.tsbuildinfo
 
 !.env.example
+
+# local Python inference caches
+__pycache__/
+*.pyc

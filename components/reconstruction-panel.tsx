@@ -18,8 +18,15 @@ import MeshDraftViewer from './mesh-draft-viewer';
 // oxlint-disable-next-line import/default -- Vite exports the public worker asset URL.
 import workerUrl from '@/lib/image-design.worker.ts?worker&url';
 
+type MultiDiagnostics = {
+  conversionAllowed: boolean;
+  failures: string[];
+  warnings: string[];
+  cameraAngles: { frontSide: number; frontTop: number };
+};
 type ApiResponse = {
   configured?: boolean;
+  multiDiagnostics?: MultiDiagnostics;
   provider?: string;
   error?: string;
   status?: string;
@@ -27,6 +34,7 @@ type ApiResponse = {
   ready?: boolean;
   id?: string;
   ticket?: string;
+  multiView?: { configured: boolean; model: string };
 };
 type Job = { id: string; ticket: string };
 export default function ReconstructionPanel({
@@ -51,7 +59,7 @@ export default function ReconstructionPanel({
     [componentNote, setComponentNote] = useState(''),
     [placementReports, setPlacementReports] = useState<PlacementReport[]>([]),
     [autoBusy, setAutoBusy] = useState(false);
-  // Three-view mode: outlines are intersected instead of guessing a volume.
+  // Perspective views use joint native inference; orthographic outlines remain an optional draft route.
   const [inputMode, setInputMode] = useState<'single' | 'views' | 'face'>(
       'single',
     ),
@@ -73,6 +81,7 @@ export default function ReconstructionPanel({
             raster: Raster;
             url: string;
             preview: string;
+            imageData: string;
             coverage: number;
             mirrored: boolean;
             flippedVertical: boolean;
@@ -84,7 +93,7 @@ export default function ReconstructionPanel({
     [viewDraft, setViewDraft] = useState<MultiViewReconstruction | null>(null),
     [viewProjection, setViewProjection] = useState<
       'orthographic' | 'perspective'
-    >('orthographic'),
+    >('perspective'),
     [viewLoading, setViewLoading] = useState<
       Partial<Record<ViewAxis, boolean>>
     >({});
@@ -96,13 +105,7 @@ export default function ReconstructionPanel({
       side: 0,
       top: 0,
     });
-  useEffect(() => {
-    viewGeneration.current++;
-    setViewDraft(null);
-    setViewError('');
-    setPhase('');
-    if (inputMode === 'views') onInputsChangeRef.current?.();
-  }, [views, resolution, viewProjection, inputMode]);
+
   useEffect(
     () => () => {
       for (const view of Object.values(viewsRef.current))
@@ -114,6 +117,11 @@ export default function ReconstructionPanel({
     viewFiles = useRef<Partial<Record<ViewAxis, HTMLInputElement | null>>>({}),
     viewsRef = useRef(views);
   viewsRef.current = views;
+  const [multiConfigured, setMultiConfigured] = useState(false);
+  const [multiDiagnostics, setMultiDiagnostics] =
+    useState<MultiDiagnostics | null>(null);
+  const [neuralDraft, setNeuralDraft] = useState<TriangleMesh | null>(null);
+  const [multiJob, setMultiJob] = useState<Job | null>(null);
   const [configured, setConfigured] = useState<boolean | null>(null),
     [provider, setProvider] = useState(''),
     [softenShadows, setSoftenShadows] = useState(true),
@@ -136,6 +144,15 @@ export default function ReconstructionPanel({
       key: '',
     });
   useEffect(() => {
+    viewGeneration.current++;
+    setViewDraft(null);
+    setNeuralDraft(null);
+    setMultiDiagnostics(null);
+    setViewError('');
+    setPhase('');
+    if (inputMode === 'views') onInputsChangeRef.current?.();
+  }, [views, resolution, viewProjection, inputMode, softenShadows]);
+  useEffect(() => {
     alive.current = true;
     const c = new AbortController();
     void fetch('/api/reconstruction', { signal: c.signal })
@@ -144,6 +161,7 @@ export default function ReconstructionPanel({
         if (!r.ok) throw Error(body.error || '无法查询服务状态');
         if (alive.current) {
           setConfigured(!!body.configured);
+          setMultiConfigured(!!body.multiView?.configured);
           setProvider(body.provider || '');
         }
       })
@@ -173,14 +191,20 @@ export default function ReconstructionPanel({
     if (!r.ok) throw Error(body.error || '三维服务请求失败。');
     return body;
   }
-  async function follow(task: Job) {
+  async function follow(
+    task: Job,
+    multi = false,
+    generation = viewGeneration.current,
+  ) {
     for (let attempt = 0; attempt < 180; attempt++) {
       if (!alive.current) return;
       const q = `?id=${encodeURIComponent(task.id)}&ticket=${encodeURIComponent(task.ticket)}`;
       const status = await api(q);
       setProgress(status.progress || 0);
-      if (status.status === 'FAILED' || status.status === 'CANCELED')
+      if (status.status === 'FAILED' || status.status === 'CANCELED') {
+        if (multi && alive.current) setMultiJob(null);
         throw Error(status.error || '三维任务已停止。');
+      }
       if (status.ready) {
         setPhase('正在读取三维草稿');
         const r = await fetch('/api/reconstruction' + q + '&download=1', {
@@ -192,6 +216,20 @@ export default function ReconstructionPanel({
         }
         const buffer = await r.arrayBuffer();
         const mesh = await readGLB(buffer, name);
+        if (multi) {
+          if (alive.current) setMultiJob(null);
+          if (alive.current && generation === viewGeneration.current) {
+            setNeuralDraft(mesh);
+            setMultiDiagnostics(status.multiDiagnostics || null);
+            setMultiJob(null);
+            setPhase(
+              status.multiDiagnostics?.conversionAllowed
+                ? '三张图已联合生成三维草稿。请旋转检查壁龛、台阶、侧面和背面，再转换成积木。'
+                : '三维草稿已生成，但相机校准检查未通过，积木转换已暂停。请检查或更换匹配失败的视角。',
+            );
+          }
+          return;
+        }
         if (alive.current) {
           setGlbUrl(
             URL.createObjectURL(
@@ -260,6 +298,53 @@ export default function ReconstructionPanel({
     } catch (e) {
       if (alive.current)
         setError(e instanceof Error ? e.message : '三维重建失败。');
+    } finally {
+      if (alive.current) setBusy(false);
+    }
+  }
+  async function reconstructViews(resume = false) {
+    setViewError('');
+    setBusy(true);
+    const generation = ++viewGeneration.current;
+    controller.current = new AbortController();
+    try {
+      if (Object.keys(views).length !== 3) throw Error('请先上传三个视角。');
+      setPhase('正在把三张图一起提交给本机重建引擎');
+      const inputs = await Promise.all(
+        (['front', 'side', 'top'] as ViewAxis[]).map(async (axis) => {
+          const view = views[axis]!;
+          const img = new Image();
+          img.src = view.imageData;
+          await img.decode();
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d')!;
+          ctx.translate(
+            view.mirrored ? img.width : 0,
+            view.flippedVertical ? img.height : 0,
+          );
+          ctx.scale(view.mirrored ? -1 : 1, view.flippedVertical ? -1 : 1);
+          ctx.drawImage(img, 0, 0);
+          return { axis, image: canvas.toDataURL('image/png') };
+        }),
+      );
+      const task =
+        resume && multiJob
+          ? multiJob
+          : await api('', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ views: inputs }),
+            });
+      if (!task.id || !task.ticket) throw Error('服务没有返回任务凭证。');
+      const handle = { id: task.id, ticket: task.ticket };
+      setMultiJob(handle);
+      setPhase('本机正在联合估计三视角相机与深度，然后融合三维表面');
+      await follow(handle, true, generation);
+    } catch (e) {
+      if (alive.current)
+        setViewError(e instanceof Error ? e.message : '三图联合重建失败。');
     } finally {
       if (alive.current) setBusy(false);
     }
@@ -466,6 +551,10 @@ export default function ReconstructionPanel({
   }
   async function convert(target = draft) {
     if (!target) return;
+    if (target === neuralDraft && !multiDiagnostics?.conversionAllowed) {
+      setViewError('三视图相机校准未通过，请先检查侧面与俯视图片。');
+      return;
+    }
     setBusy(true);
     setError('');
     setPhase('正在把三维体积转换为积木，并检查连接');
@@ -474,10 +563,12 @@ export default function ReconstructionPanel({
         mesh: target,
         options: { resolution },
         regions: target === draft ? regions : [],
-        raster: image
-          ? await readReferenceRaster(referenceUrl.current || image).catch(
-              () => undefined,
-            )
+        raster: (inputMode === 'views' ? views.front?.imageData : image)
+          ? await readReferenceRaster(
+              inputMode === 'views'
+                ? views.front!.imageData
+                : referenceUrl.current || image!,
+            ).catch(() => undefined)
           : undefined,
         autoSemanticRefinement: autoComponents,
       });
@@ -529,6 +620,14 @@ export default function ReconstructionPanel({
         height: canvas.height,
         data: ctx.getImageData(0, 0, canvas.width, canvas.height).data,
       };
+      const fullCanvas = document.createElement('canvas');
+      const fullScale = Math.min(1, 1024 / Math.max(img.width, img.height));
+      fullCanvas.width = Math.max(1, Math.round(img.width * fullScale));
+      fullCanvas.height = Math.max(1, Math.round(img.height * fullScale));
+      fullCanvas
+        .getContext('2d')!
+        .drawImage(img, 0, 0, fullCanvas.width, fullCanvas.height);
+      const imageData = fullCanvas.toDataURL('image/png');
       // What the carver will treat as the object, drawn over the picture, so a
       // shadow or a background that was not separated is visible straight away.
       const { mask } = outline({ axis, image: raster });
@@ -555,6 +654,7 @@ export default function ReconstructionPanel({
             raster,
             url: readyUrl,
             preview,
+            imageData,
             coverage: subject / mask.length,
             mirrored: previous?.mirrored || false,
             flippedVertical: previous?.flippedVertical || false,
@@ -611,6 +711,7 @@ export default function ReconstructionPanel({
         views: list,
         volume: convertToBricks ? viewDraft!.volume : undefined,
         options: { resolution },
+        softenShadows,
         name: '三视图积木',
       });
       if (!alive.current || generation !== viewGeneration.current) return;
@@ -622,7 +723,13 @@ export default function ReconstructionPanel({
         );
       } else {
         setViewDraft(data.reconstruction as MultiViewReconstruction);
-        setPhase('三维草稿已生成，请旋转检查侧面、背面和开口，再转换为积木。');
+        const quality = (data.reconstruction as MultiViewReconstruction).volume
+          .quality;
+        setPhase(
+          quality?.passed
+            ? '轮廓体积已生成；轮廓一致性检查通过，不代表相机视角正确或细节已恢复。'
+            : '草稿未通过轮廓一致性检查，已停止积木转换。',
+        );
       }
     } catch (e) {
       if (alive.current && generation === viewGeneration.current) {
@@ -897,8 +1004,8 @@ export default function ReconstructionPanel({
         <div className="reconstruction-heading">
           <Box size={23} />
           <div>
-            <h2>三视图重建</h2>
-            <p>正 / 侧 / 俯三个轮廓相交，直接算出体积。</p>
+            <h2>本机三视图重建</h2>
+            <p>三张图联合估计相机、深度和表面，再转换成积木。</p>
           </div>
         </div>
         {modeSwitch}
@@ -923,9 +1030,9 @@ export default function ReconstructionPanel({
         </label>
         {viewProjection === 'perspective' ? (
           <output className="reconstruction-message">
-            普通照片有透视，不能直接把三个轮廓当成正交三视图。
-            当前本地流程尚未接入照片的相机校准与多视角立体重建。
-            可先用同一三维模型导出无透视的正面、右侧、俯视图；实拍重建通常还需要更多相邻角度的重叠照片。
+            正面、侧面和俯视图会一起参与本机重建。请使用同一模型、有重叠区域的图片。
+            三视角能减少形状猜测；看不到的背面、内部结构和真实连接仍需推断与检查。
+            {!multiConfigured && ' 本机三视图引擎正在准备，完成前不能提交。'}
           </output>
         ) : (
           <p className="field-hint">
@@ -933,6 +1040,17 @@ export default function ReconstructionPanel({
             正面：正常朝向；右侧：物体正面在画面左边；俯视：物体正面在画面下方。
             红色遮罩表示已排除的背景，请先检查是否误删主体。
           </p>
+        )}
+        {viewProjection === 'orthographic' && (
+          <label className="view-projection-field">
+            <input
+              type="checkbox"
+              checked={softenShadows}
+              disabled={busy}
+              onChange={(event) => setSoftenShadows(event.target.checked)}
+            />
+            减少阴影混色（深浅同色归并，真实色块可能受影响）
+          </label>
         )}
         <div className="view-slots">
           {(['front', 'side', 'top'] as ViewAxis[]).map((axis) => (
@@ -950,7 +1068,11 @@ export default function ReconstructionPanel({
                     style={{
                       transform: `scale(${views[axis]!.mirrored ? -1 : 1}, ${views[axis]!.flippedVertical ? -1 : 1})`,
                     }}
-                    src={views[axis]!.preview}
+                    src={
+                      viewProjection === 'perspective'
+                        ? views[axis]!.imageData
+                        : views[axis]!.preview
+                    }
                     alt={`${VIEW_LABELS[axis]}参考图与识别到的主体`}
                   />
                   <small className="view-slot-coverage">
@@ -1036,18 +1158,64 @@ export default function ReconstructionPanel({
               busy ||
               Object.values(viewLoading).some(Boolean) ||
               Object.keys(views).length !== 3 ||
-              viewProjection !== 'orthographic'
+              (viewProjection === 'perspective' &&
+                (!multiConfigured || !!multiJob))
             }
-            onClick={() => void carveViews()}
+            onClick={() =>
+              void (viewProjection === 'perspective'
+                ? reconstructViews()
+                : carveViews())
+            }
           >
             {busy ? <LoaderCircle size={17} className="spin" /> : null}
-            1. 生成本地三维草稿
+            1.{' '}
+            {viewProjection === 'perspective'
+              ? '在本机联合重建三视图'
+              : '生成正交轮廓草稿'}
           </button>
           <span>
             {resolution} 凸点精度 · 已上传 {Object.keys(views).length} / 3
             个视图
           </span>
         </div>
+        {multiJob && viewProjection === 'perspective' && (
+          <button disabled={busy} onClick={() => void reconstructViews(true)}>
+            继续查看三图任务
+          </button>
+        )}
+        {neuralDraft && viewProjection === 'perspective' && (
+          <div className="view-draft-result">
+            <MeshDraftViewer mesh={neuralDraft} resolution={resolution} />
+            {multiDiagnostics && (
+              <div
+                className={
+                  multiDiagnostics.conversionAllowed
+                    ? 'reconstruction-status'
+                    : 'reconstruction-error'
+                }
+              >
+                <p>
+                  估计视角差：正面 / 侧面{' '}
+                  {multiDiagnostics.cameraAngles.frontSide.toFixed(1)}° · 正面 /
+                  俯视 {multiDiagnostics.cameraAngles.frontTop.toFixed(1)}°
+                </p>
+                {multiDiagnostics.failures.map((reason) => (
+                  <p key={reason}>{reason}</p>
+                ))}
+              </div>
+            )}
+            <p className="field-hint">
+              三图融合草稿 · 未观察到的背面闭合部分仍为估计。请先检查形状。
+            </p>
+            <button
+              className="primary"
+              disabled={busy || !multiDiagnostics?.conversionAllowed}
+              onClick={() => void convert(neuralDraft)}
+            >
+              2. 转换为积木与拼装步骤
+            </button>
+          </div>
+        )}
         {viewDraft && (
           <div className="view-draft-result">
             <MeshDraftViewer mesh={viewDraft.mesh} resolution={resolution} />
@@ -1057,10 +1225,30 @@ export default function ReconstructionPanel({
               {(viewDraft.volume.height * 0.32).toFixed(1)} cm（宽 × 深 ×
               高，不含积木底板）。 草稿显示轮廓相交的体积，尚未选择零件。
             </p>
+            {viewDraft.volume.quality && (
+              <div
+                className={
+                  viewDraft.volume.quality.passed
+                    ? 'reconstruction-status'
+                    : 'reconstruction-error'
+                }
+              >
+                {viewDraft.volume.quality.projections.map((p) => (
+                  <span key={p.axis}>
+                    {VIEW_LABELS[p.axis]}轮廓保留{' '}
+                    {(p.retainedFraction * 100).toFixed(0)}% ·{' '}
+                  </span>
+                ))}
+                <span>体积连通块 {viewDraft.volume.quality.components}</span>
+                {viewDraft.volume.quality.reasons.map((reason) => (
+                  <p key={reason}>{reason}</p>
+                ))}
+              </div>
+            )}
             <div className="reconstruction-actions">
               <button
                 className="primary"
-                disabled={busy}
+                disabled={busy || !viewDraft.volume.quality?.passed}
                 onClick={() => void carveViews(true)}
               >
                 2. 转换为积木与拼装步骤
@@ -1078,8 +1266,7 @@ export default function ReconstructionPanel({
           </p>
         )}
         <p className="field-hint">
-          只能复活轮廓里有的东西：被遮挡的凹面、任何视图都看不到的内部结构无法恢复，
-          也不能凭空加出照片里没有的细节。转换后仍会做零件连接检查。
+          多视角重建仍有估计误差。积木转换会检查碰撞和连接；实物稳定性与每步可操作性仍需要复核。
         </p>
       </section>
     );
