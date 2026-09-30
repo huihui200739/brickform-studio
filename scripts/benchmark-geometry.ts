@@ -76,6 +76,7 @@ for (const name of ['original', 'standard']) {
       flames.length === 2 &&
       flames.every((r) => r.anchorResult?.attached === true) &&
       result.model.designGeometry?.validation?.passed === true &&
+      result.model.platformDesign?.validation?.passed === true &&
       inventoryTotal === result.model.bricks.length &&
       validation.connected &&
       validation.collisions +
@@ -101,6 +102,7 @@ for (const name of ['original', 'standard']) {
         attached: r.anchorResult?.attached,
       })),
       geometry: result.model.designGeometry,
+      platform: result.model.platformDesign,
       validation,
       elapsedSeconds: (Date.now() - started) / 1000,
     };
@@ -122,7 +124,7 @@ writeFileSync(
         'Two actual user-image/native-mesh failure fixtures, recorded learned observations, six complete conversions. Not a new native inference or physical build.',
       cases: rows,
       limits:
-        'Only the image-supported recess patch is redesigned. General surfaces, platform aesthetics, procurement, load strength and insertion paths remain unverified.',
+        'Recess walls use mesh-and-reference evidence; lower display platforms use reconstructed mesh normals and area consensus. Only declared patches are redesigned. Source material patterns, inferred back geometry, procurement, load strength and insertion paths remain unverified.',
     },
     null,
     2,

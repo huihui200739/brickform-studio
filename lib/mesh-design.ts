@@ -43,7 +43,7 @@ import { applyDesignPlanes, auditDesignGeometry, type DesignGeometry } from './d
 import { installCavityLintel } from './cavity-lintel.ts';
 import { brazierClearances } from './semantic-clearance.ts';
 import { enforceGroupConsistency } from './element-grouping.ts';
-import { regularizePlatform } from './horizontal-surfaces.ts';
+import { applyPlatform, auditPlatform, fitPlatform, type PlatformDesign } from './platform-design.ts';
 import { routeStructureRepresentation } from './representation/representation-router.ts';
 import { applyAnchorResult, solveSurfaceAnchor } from './surface-anchor-solver.ts';
 import {
@@ -69,6 +69,7 @@ export type MeshVolume = {
   openRows: number;
   intersected: number;
   protectedCells: Set<string>;
+  platform?: PlatformDesign;
 };
 export type PreservedRegion = {
   kind: 'statue';
@@ -572,6 +573,7 @@ export function buildMeshVolume(
     openRows,
     intersected,
     protectedCells,
+    platform: fitPlatform(mesh, resolution, cells, w, h, d),
   };
 }
 // Assemble the brick model from a cast volume and the requested component
@@ -593,7 +595,9 @@ function assembleVolume(
       protectedCells,
     } = volume,
     cells = new Map(volume.cells);
-  const adjustedPlatformCells = regularizePlatform(cells, w, h, d);
+  const platform = volume.platform ? { ...volume.platform } : undefined;
+  const adjustedPlatformCells = platform ? applyPlatform(cells, platform) : 0;
+  if (platform) platform.adjustedColumns = adjustedPlatformCells;
   const geometries = regions.flatMap(r => r.anchorResult?.designGeometry ? [r.anchorResult.designGeometry] : []);
   const designGeometry: DesignGeometry = { version: 1, coordinates: 'brick-grid',
     planes: geometries.flatMap(g => g.planes), openings: geometries.flatMap(g => g.openings),
@@ -723,6 +727,23 @@ function assembleVolume(
     if (box) bridges.push(...installCavityLintel(cells, volume.cells, box, region.anchorResult!.clearanceAxis ?? 2, dominant,
       (x, y, z) => flameClearances.some(cut => insideRegion([x, y, z], cut))));
   }
+  const floorColumns = new Set(platform?.columns);
+  const excludedFloorColumns = new Set<string>();
+  if (platform) {
+    const tops = new Map<string, number>();
+    for (const key of cells.keys()) {
+      const [x, y, z] = key.split(',').map(Number), column = `${x},${z}`;
+      if (floorColumns.has(column)) tops.set(column, Math.max(tops.get(column) ?? -1, y));
+    }
+    for (const column of floorColumns)
+      if (tops.get(column) !== platform.topY) excludedFloorColumns.add(column);
+    for (const placement of placements)
+      for (let x = placement.min[0]; x < placement.max[0]; x++)
+        for (let z = placement.min[2]; z < placement.max[2]; z++) {
+          const column = `${x},${z}`;
+          if (floorColumns.has(column)) excludedFloorColumns.add(column);
+        }
+  }
   const raw = finishModel(
     cells,
     w + 2,
@@ -768,8 +789,12 @@ function assembleVolume(
   };
   const finished: typeof raw.bricks = [];
   for (const b of raw.bricks) {
+    const supportOnFloor = !!b.support && platform && b.y + b.h === platform.topY + 1 &&
+      Array.from({ length: b.w }, (_, dx) => dx).some(dx =>
+        Array.from({ length: b.d }, (_, dz) => dz).some(dz =>
+          floorColumns.has(`${b.x + dx},${b.z + dz}`) && !excludedFloorColumns.has(`${b.x + dx},${b.z + dz}`)));
     const protectedTop =
-      !!b.support ||
+      (!!b.support && !supportOnFloor) ||
       b.y < 2 ||
       placements.some(
         (r) =>
@@ -782,7 +807,9 @@ function assembleVolume(
     const coveredCells = new Set<string>();
     for (let x = b.x; x < b.x + b.w; x++)
       for (let z = b.z; z < b.z + b.d; z++)
-        if (cells.has(`${x},${b.y + b.h},${z}`)) coveredCells.add(`${x},${z}`);
+        if (cells.has(`${x},${b.y + b.h},${z}`) ||
+          (supportOnFloor && (!floorColumns.has(`${x},${z}`) || excludedFloorColumns.has(`${x},${z}`))))
+          coveredCells.add(`${x},${z}`);
     if (protectedTop || coveredCells.size === b.w * b.d) {
       finished.push(b);
       continue;
@@ -873,6 +900,7 @@ function assembleVolume(
   const packing = optimizeAestheticPacking(raw, 192);
   const model = groupImageAssembly(raw);
   model.clearanceVolumes = openings;
+  if (platform) model.platformDesign = platform;
   if (designGeometry.planes.length) model.designGeometry = designGeometry;
   model.meshDesign = {
     method: 'mesh-volume',
@@ -922,6 +950,12 @@ function assembleVolume(
     model.designGeometry.validation = auditDesignGeometry(model, model.designGeometry);
     if (!model.designGeometry.validation.passed)
       throw Error('结构化墙面在排砖后出现缺口或材质混用，无法提交此几何方案。');
+  }
+  if (platform) {
+    platform.validation = auditPlatform(model, platform, excludedFloorColumns);
+    if (!platform.validation.passed)
+      throw Error(`平台铺面未满足设计约束：缺口 ${platform.validation.missing}，高差 ${platform.validation.uneven}，裸露凸点 ${platform.validation.exposedStuds}。`);
+    model.assembly!.reference += ' 大面积低位水平网格已拟合为连续光面铺面；保留台阶、孔洞与组件安装区。平台为设计近似，材质与实物承重仍需复核。';
   }
   const check = validateAssembly(model);
 

@@ -215,6 +215,7 @@ for (const item of manifest.cases as {
     row.partColorTypes = inventory(model.bricks).length;
     row.structureCategory = model.structureCategory;
     row.structureConfidence = model.structureConfidence;
+    row.platform = model.platformDesign;
     row.applied = result.applied.map((r) => ({ id: r.id, kind: r.kind }));
     row.dropped = result.dropped.map((r) => ({ id: r.id, kind: r.kind }));
     row.semanticFalsePositives = result.applied

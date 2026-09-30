@@ -44,6 +44,7 @@ export type Model = {
   semanticReservedCells?: string[];
   reservedVolumes?: import('./scene/scene-types.ts').BBox3d[];
   designGeometry?: import('./design-geometry.ts').DesignGeometry;
+  platformDesign?: import('./platform-design.ts').PlatformDesign;
   clearanceVolumes?: import('./scene/scene-types.ts').BBox3d[];
   repeatedGroups?: import('./scene-elements.ts').RepeatedElementGroup[];
   structureCategory?: import('./structure-classifier.ts').StructureCategory;

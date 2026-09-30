@@ -115,4 +115,9 @@ for (const resolution of [28, 36, 48])
       result.model.bricks.length,
     );
     assert.ok(result.model.meshDesign!.adjustedPlatformCells! > 0);
+    const platform = result.model.platformDesign;
+    assert.ok(platform, 'the actual low platform has measured horizontal support');
+    assert.equal(platform.validation?.passed, true);
+    assert.ok(platform.validation!.checkedColumns > 100);
+    assert.equal(platform.validation!.uneven + platform.validation!.missing + platform.validation!.exposedStuds, 0);
   });
