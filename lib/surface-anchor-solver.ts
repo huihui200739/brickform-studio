@@ -150,7 +150,15 @@ export function solveSurfaceAnchor(
     const point = hit.point.map((value, axis) =>
       (value - frame.min[axis]) * frame.scale / (axis === 1 ? 0.4 : 1) + (axis === 1 ? 2 : 1),
     ) as V3;
-    const normal = hit.normal as [number, number, number];
+    const normal = [...hit.normal] as [number, number, number];
+    // The bowl's sloped face is not its mounting plane. Resolve an ambiguous
+    // front/top hit to the nearby vertical masonry face, then offset outward.
+    if (element.category === 'brazier' && Math.hypot(normal[0], normal[2]) > 0.55) {
+      const axis = Math.abs(normal[0]) > Math.abs(normal[2]) ? 0 : 2;
+      const direction = Math.sign(normal[axis]);
+      normal.fill(0);
+      normal[axis] = direction;
+    }
     const kind: AnchorResult['surfaceKind'] = Math.abs(normal[1]) > 0.55 ? 'ground' : Math.abs(normal[0]) + Math.abs(normal[2]) > 0.55 ? 'wall' : 'unknown';
     const candidates = surfaceCandidates(model, point, normal, kind);
     let support = candidates.slice(0, kind === 'wall' ? 3 : 2).map((candidate) => candidate.brick.id);
@@ -224,7 +232,10 @@ export function solveSurfaceAnchor(
           (v + t * ray.direction[i] - frame.min[i]) * frame.scale / (i === 1 ? 0.4 : 1) + (i === 1 ? 2 : 1),
         ) as V3;
       });
-      const width = Math.min(10, Math.floor(Math.abs(topCorners[1][cross] - topCorners[0][cross])));
+      // Reserve equal whole-stud spans on both sides of the snapped centre.
+      // An odd width rounded down only on the left extended the right edge
+      // into the neighbouring brazier foundation at coarse resolution.
+      const width = Math.min(10, Math.floor(Math.abs(topCorners[1][cross] - topCorners[0][cross]) / 2) * 2);
       const ceiling = Math.floor(Math.min(...topCorners.map(p => p[1]))) - 1;
       const floor = Math.round(world[1]);
       if (topCorners.every(p => p.every(Number.isFinite)) && width >= 6 && ceiling > floor + 12) {

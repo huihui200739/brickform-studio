@@ -68,6 +68,7 @@ export type Model = {
   meshDesign?: {
     method: 'mesh-volume';
     smoothTiles?: number;
+    adjustedPlatformCells?: number;
     referenceColors?: boolean;
     triangles: number;
     resolution: number;

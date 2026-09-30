@@ -19,10 +19,12 @@ import MeshDraftViewer from './mesh-draft-viewer';
 import workerUrl from '@/lib/image-design.worker.ts?worker&url';
 
 type MultiDiagnostics = {
+  fusionVersion?: number;
   conversionAllowed: boolean;
   failures: string[];
   warnings: string[];
   cameraAngles: { frontSide: number; frontTop: number };
+  depthAgreement?: { compared: number; conflictFraction: number | null }[];
 };
 type ApiResponse = {
   configured?: boolean;
@@ -121,6 +123,7 @@ export default function ReconstructionPanel({
   const [multiDiagnostics, setMultiDiagnostics] =
     useState<MultiDiagnostics | null>(null);
   const [neuralDraft, setNeuralDraft] = useState<TriangleMesh | null>(null);
+  const multiVerified = multiDiagnostics?.fusionVersion === 2 && multiDiagnostics.conversionAllowed;
   const [multiJob, setMultiJob] = useState<Job | null>(null);
   const [configured, setConfigured] = useState<boolean | null>(null),
     [provider, setProvider] = useState(''),
@@ -223,9 +226,9 @@ export default function ReconstructionPanel({
             setMultiDiagnostics(status.multiDiagnostics || null);
             setMultiJob(null);
             setPhase(
-              status.multiDiagnostics?.conversionAllowed
+              status.multiDiagnostics?.fusionVersion === 2 && status.multiDiagnostics.conversionAllowed
                 ? '三张图已联合生成三维草稿。请旋转检查壁龛、台阶、侧面和背面，再转换成积木。'
-                : '三维草稿已生成，但相机校准检查未通过，积木转换已暂停。请检查或更换匹配失败的视角。',
+                : '三维草稿已生成，但估计的相机或深度不一致，积木转换已暂停。',
             );
           }
           return;
@@ -551,8 +554,8 @@ export default function ReconstructionPanel({
   }
   async function convert(target = draft) {
     if (!target) return;
-    if (target === neuralDraft && !multiDiagnostics?.conversionAllowed) {
-      setViewError('三视图相机校准未通过，请先检查侧面与俯视图片。');
+    if (target === neuralDraft && !multiVerified) {
+      setViewError('三视图重建一致性检查未通过，当前草稿不能可靠转换。');
       return;
     }
     setBusy(true);
@@ -1195,7 +1198,7 @@ export default function ReconstructionPanel({
             {multiDiagnostics && (
               <div
                 className={
-                  multiDiagnostics.conversionAllowed
+                  multiVerified
                     ? 'reconstruction-status'
                     : 'reconstruction-error'
                 }
@@ -1205,12 +1208,22 @@ export default function ReconstructionPanel({
                   {multiDiagnostics.cameraAngles.frontSide.toFixed(1)}° · 正面 /
                   俯视 {multiDiagnostics.cameraAngles.frontTop.toFixed(1)}°
                 </p>
+                {multiDiagnostics.depthAgreement && (
+                  <p>
+                    重叠区域最大深度冲突：{Math.round(100 * Math.max(0, ...multiDiagnostics.depthAgreement
+                      .filter(pair => pair.compared >= 100)
+                      .map(pair => pair.conflictFraction || 0)))}%
+                  </p>
+                )}
                 {multiDiagnostics.failures.map((reason) => (
                   <p key={reason}>{reason}</p>
                 ))}
-                {!multiDiagnostics.conversionAllowed && (
+                {multiDiagnostics.fusionVersion !== 2 && (
+                  <p>旧草稿尚未经过深度一致性检查，请重新联合重建三张图。</p>
+                )}
+                {!multiVerified && (
                   <p>
-                    这是重建结果的相机匹配检查，不代表原图片一定不合格。请先核对三张图中的墙角、开口和装饰是否能对应。
+                    当前引擎的相机或深度估计未能对齐。这不代表原图片一定不合格；增加积木精度也不能修复三维估计错误。
                   </p>
                 )}
               </div>
@@ -1220,7 +1233,7 @@ export default function ReconstructionPanel({
             </p>
             <button
               className="primary"
-              disabled={busy || !multiDiagnostics?.conversionAllowed}
+              disabled={busy || !multiVerified}
               onClick={() => void convert(neuralDraft)}
             >
               2. 转换为积木与拼装步骤

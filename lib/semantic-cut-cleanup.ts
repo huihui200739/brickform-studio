@@ -12,6 +12,7 @@ export function removeSemanticCutRemnants(model: Model, cuts: BBox3d[]) {
     (port.type || 'stud') + ':' + [...port.point, ...port.normal]
       .map(value => Math.round(value * 1000)).join(',');
   const ports = model.bricks.map(brick => ({ brick, ...connectors(brick) }));
+  const byId = new Map(model.bricks.map(brick => [brick.id, brick]));
   const studs = new Map<string, number[]>();
   const links = new Map<number, Set<number>>();
   for (const { brick, studs: plugs } of ports) {
@@ -45,6 +46,39 @@ export function removeSemanticCutRemnants(model: Model, cuts: BBox3d[]) {
       brick.x < cut.max[0] + 1 && brick.x + brick.w > cut.min[0] - 1 &&
       brick.z < cut.max[2] + 1 && brick.z + brick.d > cut.min[2] - 1,
     )) removed.add(brick.id);
+  }
+  // Removing a local bridge can orphan a branch that extends past the cut.
+  // Follow connector links to the whole disconnected branch; a coordinate
+  // test on each brick alone leaves its distant end floating.
+  const grounded = new Set<number>();
+  const queue = model.bricks.filter(b => b.y === 0).map(b => b.id);
+  while (queue.length) {
+    const id = queue.pop()!;
+    if (removed.has(id) || grounded.has(id)) continue;
+    grounded.add(id);
+    queue.push(...links.get(id)!);
+  }
+  const visited = new Set<number>();
+  for (const brick of model.bricks) {
+    if (grounded.has(brick.id) || removed.has(brick.id) || visited.has(brick.id)) continue;
+    const branch: number[] = [], pending = [brick.id];
+    let touchesCut = false;
+    while (pending.length) {
+      const id = pending.pop()!;
+      if (visited.has(id) || grounded.has(id) || removed.has(id)) continue;
+      visited.add(id);
+      branch.push(id);
+      const member = byId.get(id)!;
+      if (cuts.some(cut => member.y >= cut.min[1] &&
+        member.x <= cut.max[0] + 1 && member.x + member.w >= cut.min[0] - 1 &&
+        member.z <= cut.max[2] + 1 && member.z + member.d >= cut.min[2] - 1) ||
+        [...links.get(id)!].some(next => removed.has(next))) touchesCut = true;
+      pending.push(...links.get(id)!);
+    }
+    if (touchesCut && branch.every(id => {
+      const b = byId.get(id)!;
+      return b.section === 'subject' || b.section === 'supports';
+    })) for (const id of branch) removed.add(id);
   }
   if (!removed.size) return 0;
   model.bricks = model.bricks.filter(brick => !removed.has(brick.id))

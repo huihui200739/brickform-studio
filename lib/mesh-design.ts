@@ -41,6 +41,7 @@ import { connectors } from './assembly-validation.ts';
 import { installCavityLintel } from './cavity-lintel.ts';
 import { brazierClearances } from './semantic-clearance.ts';
 import { enforceGroupConsistency } from './element-grouping.ts';
+import { regularizePlatform } from './horizontal-surfaces.ts';
 import { routeStructureRepresentation } from './representation/representation-router.ts';
 import { applyAnchorResult, solveSurfaceAnchor } from './surface-anchor-solver.ts';
 import {
@@ -590,6 +591,7 @@ function assembleVolume(
       protectedCells,
     } = volume,
     cells = new Map(volume.cells);
+  const adjustedPlatformCells = regularizePlatform(cells, w, h, d);
   validateRegions(regions, [w, h, d]);
   const placements = regions.map((r) => regionPlacement(r, [w, h, d]));
   const flameClearances = brazierClearances(regions, [w, h, d]);
@@ -759,7 +761,7 @@ function assembleVolume(
   };
   const finished: typeof raw.bricks = [];
   for (const b of raw.bricks) {
-    let covered =
+    const protectedTop =
       !!b.support ||
       b.y < 2 ||
       placements.some(
@@ -770,11 +772,45 @@ function assembleVolume(
           b.z < r.z + 1 &&
           b.z + b.d > r.z - 1,
       );
+    const coveredCells = new Set<string>();
     for (let x = b.x; x < b.x + b.w; x++)
       for (let z = b.z; z < b.z + b.d; z++)
-        if (cells.has(`${x},${b.y + b.h},${z}`)) covered = true;
-    if (covered) {
+        if (cells.has(`${x},${b.y + b.h},${z}`)) coveredCells.add(`${x},${z}`);
+    if (protectedTop || coveredCells.size === b.w * b.d) {
       finished.push(b);
+      continue;
+    }
+    if (coveredCells.size && (plates[b.part] || tiles[b.part] || b.part === '3020' || b.part === '3710')) {
+      const top: typeof raw.bricks = [], used = new Set<string>();
+      let supported = true;
+      for (let x = b.x; x < b.x + b.w; x++)
+        for (let z = b.z; z < b.z + b.d; z++) {
+          if (used.has(`${x},${z}`)) continue;
+          const covered = coveredCells.has(`${x},${z}`);
+          const [w, d] = [[2, 2], [2, 1], [1, 2], [1, 1]].find(([ww, dd]) =>
+            x + ww <= b.x + b.w && z + dd <= b.z + b.d &&
+            Array.from({ length: ww }, (_, dx) => dx).every(dx =>
+              Array.from({ length: dd }, (_, dz) => dz).every(dz =>
+                !used.has(`${x + dx},${z + dz}`) && coveredCells.has(`${x + dx},${z + dz}`) === covered)))!;
+          let contact = b.h === 3;
+          for (let xx = x; xx < x + w; xx++)
+            for (let zz = z; zz < z + d; zz++) {
+              used.add(`${xx},${zz}`);
+              if (cells.has(`${xx},${b.y - 1},${zz}`)) contact = true;
+            }
+          if (!contact) supported = false;
+          const part = covered
+            ? (w * d === 4 ? '3022' : w * d === 2 ? '3023' : '3024')
+            : (w * d === 4 ? '3068b' : w * d === 2 ? '3069b' : '3070b');
+          top.push({ ...b, x, z, w, d, h: 1, y: b.y + b.h - 1, part });
+        }
+      if (!supported) { finished.push(b); continue; }
+      if (b.h === 3) finished.push(
+        { ...b, part: plates[b.part], h: 1 },
+        { ...b, part: plates[b.part], y: b.y + 1, h: 1 },
+      );
+      finished.push(...top);
+      smoothTiles += top.filter(t => ['3068b', '3069b', '3070b'].includes(t.part)).length;
       continue;
     }
     if (tiles[b.part]) {
@@ -833,13 +869,15 @@ function assembleVolume(
   model.meshDesign = {
     method: 'mesh-volume',
     smoothTiles,
+    adjustedPlatformCells,
     referenceColors: !!mesh.coloring,
     triangles,
     resolution,
     openRowFraction: openRows / Math.max(1, intersected),
   };
   model.assembly!.reference = `按三维网格体积生成；保留网格中的前后布局和孔洞。新增辅助支撑 ${model.supportCount} 块，已计入清单。网格可能含 AI 推测，连接检查不代表外观还原或实物稳定性已验证。`;
-  removeSemanticCutRemnants(model, [...placements.filter((_, i) => regions[i].kind === 'statue'), ...flameClearances]);
+  removeSemanticCutRemnants(model, [...placements.filter((_, i) =>
+    regions[i].kind === 'statue' || (regions[i].kind === 'brazier' && regions[i].autoRefinement)), ...flameClearances]);
 
   if (packing.removed)
     model.assembly!.reference += ` 美学后处理移除冗余隐藏支撑 ${packing.removed} 块，保留连接与连通性。`;
@@ -864,23 +902,19 @@ function assembleVolume(
       '所选区域上方仍有结构需要支撑，请缩小清除范围，避开墙体或屋顶。',
     );
   addComponents(model, regions, [w, h, d], removedCells);
-  if (model.bricks.some(b => !b.section?.startsWith('component-') && openings.some(box =>
+  const occupiedOpening = model.bricks.find(b => !b.section?.startsWith('component-') && openings.some(box =>
     [0, 1, 2].every(axis =>
       [b.x, b.y, b.z][axis] < box.max[axis] &&
       [b.x + b.w, b.y + b.h, b.z + b.d][axis] > box.min[axis],
     ),
-  ))) throw Error('入口空腔被支撑或主体积木占用，无法提交此安装方案。');
+  ));
+  if (occupiedOpening) throw Error(`空腔被积木占用 (${occupiedOpening.x},${occupiedOpening.y},${occupiedOpening.z})，无法提交此安装方案。`);
   const check = validateModel(model);
 
-  if (
-    check.collisions ||
-    check.unsupported ||
-    check.invalidParts ||
-    !check.connected
-  )
+  if (check.collisions || check.unsupported || check.invalidParts || !check.connected)
     throw Error(
       regions.length
-        ? '组件与周围建筑发生干涉或缺少连接，请调整底部位置与清除范围后重试。'
+        ? `组件安装检查失败：碰撞 ${check.collisions}，缺少连接 ${check.unsupported}，整体断开 ${check.connected ? 0 : 1}。`
         : '积木结构未通过连接检查，请降低尺寸后重试。',
     );
   return model;
@@ -999,6 +1033,7 @@ export function meshToDesignAuto(
     Math.min(96, Number.isFinite(budget) ? Math.floor(budget) : 48),
   );
   let attempts = 0;
+  const failureReasons = new Map<string, Set<string>>();
   const attempt = (list: ComponentRegion[]) => {
     if (attempts >= limit) return null;
     attempts++;
@@ -1024,6 +1059,12 @@ export function meshToDesignAuto(
           .flatMap((region) => region.anchorResult!.failureReasons),
       }),
     });
+    if (!transaction.committed)
+      for (const region of list) {
+        const reasons = failureReasons.get(region.id) || new Set<string>();
+        for (const reason of transaction.validation.reasons || []) reasons.add(reason);
+        failureReasons.set(region.id, reasons);
+      }
     return transaction.committed ? trialModel : null;
   };
   const applied: ComponentRegion[] = [],
@@ -1162,6 +1203,11 @@ export function meshToDesignAuto(
         attempts >= limit,
       ),
     );
+  for (const report of reports) {
+    if (report.status !== 'preserved') continue;
+    const reasons = [...(failureReasons.get(report.id) || [])];
+    if (reasons.length) report.message = `未替换，已保留原始几何。安装尝试：${reasons.slice(-3).join('；')}`;
+  }
   for (const r of applied) {
     r.placementStatus = reports.find((v) => v.id === r.id)!.status;
     if (r.autoRefinement) {

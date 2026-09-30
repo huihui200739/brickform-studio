@@ -3,7 +3,6 @@ from pathlib import Path
 import json
 import numpy as np
 from scipy import ndimage
-from scipy.spatial import cKDTree
 from skimage.measure import marching_cubes
 import trimesh
 
@@ -19,6 +18,32 @@ def foreground(rgb):
     return ~ndimage.binary_propagation(seed, mask=similar)
 
 
+def depth_agreement(points, depths, masks, extrinsics, intrinsics, tolerance, background_masks):
+    """Check surfaces against other cameras, excluding genuinely occluded points."""
+    pairs = []
+    for i in range(len(points)):
+        source = points[i][masks[i]]
+        source = source[::max(1, len(source)//20000)]
+        for j in range(len(points)):
+            if i == j: continue
+            camera = source @ extrinsics[j, :3, :3].T + extrinsics[j, :3, 3]
+            uvw = camera @ intrinsics[j].T
+            uv = np.rint(uvw[:, :2] / np.maximum(uvw[:, 2:3], 1e-9)).astype(int)
+            h, w = depths[j].shape
+            valid = (camera[:, 2] > 0) & (uv[:, 0] >= 0) & (uv[:, 0] < w) & (uv[:, 1] >= 0) & (uv[:, 1] < h)
+            camera, uv = camera[valid], uv[valid]
+            background = ndimage.binary_erosion(background_masks[j], iterations=2)[uv[:, 1], uv[:, 0]]
+            silhouette_conflicts = int(background.sum())
+            valid = masks[j, uv[:, 1], uv[:, 0]]
+            camera, uv = camera[valid], uv[valid]
+            error = camera[:, 2] - depths[j, uv[:, 1], uv[:, 0]]
+            visible = error <= tolerance  # further points can be behind a nearer surface
+            count = int(visible.sum()) + silhouette_conflicts
+            pairs.append({'source': i, 'target': j, 'compared': count,
+                          'conflictFraction': float((np.sum(error[visible] < -tolerance) + silhouette_conflicts)/count) if count else None})
+    return pairs
+
+
 def fuse_scene(scene, output, grid_size=128):
     images = np.asarray(scene['images'])
     points = np.asarray(scene['world_points'])
@@ -30,8 +55,9 @@ def fuse_scene(scene, output, grid_size=128):
     intrinsics = np.asarray(scene['intrinsics'])
     if len(images) != 3 or points.shape != images.shape:
         raise ValueError('Expected three jointly reconstructed views')
+    subject_masks = np.stack([foreground(image) for image in images])
     for i in range(3):
-        masks[i] &= foreground(images[i]) & np.isfinite(points[i]).all(-1) & (depths[i] > 0)
+        masks[i] &= subject_masks[i] & np.isfinite(points[i]).all(-1) & (depths[i] > 0)
         if masks[i].sum() < 100: raise ValueError(f'View {i+1} has too little valid subject depth')
     all_points = points[masks]
     center = np.median(all_points, axis=0)
@@ -73,10 +99,15 @@ def fuse_scene(scene, output, grid_size=128):
         ids = np.flatnonzero(inside); x, y = uv[ids].T
         subject = masks[i, y, x]
         # Background is empty space only where the image mask is confidently outside the object.
-        bg = ~foreground(images[i])[y, x]
+        bg = ~subject_masks[i, y, x]
         empty[ids[bg]] = True
         ids = ids[subject]; x, y = uv[ids].T
         diff = depths[i, y, x] - camera[ids, 2]
+        # A depth map observes free space in front and a narrow surface band.
+        # It says nothing about far occluded space. Integrating -1 all the way
+        # behind a surface manufactured the old solid rear walls.
+        observed = diff >= -trunc
+        ids, x, y, diff = ids[observed], x[observed], y[observed], diff[observed]
         weight = np.clip(confidence[i, y, x], .1, 20)
         sums[ids] += np.clip(diff/trunc, -1, 1)*weight
         weights[ids] += weight
@@ -99,27 +130,51 @@ def fuse_scene(scene, output, grid_size=128):
     mesh = trimesh.util.concatenate([p for p in pieces if p.area > total_area*.0002])
     if len(mesh.faces) > 180000: mesh = mesh.simplify_quadric_decimation(face_count=180000)
     world_vertices = mesh.vertices @ basis.T + center
-    _, nearest = cKDTree(all_points).query(world_vertices)
     rgb = images[masks]
     if rgb.max() <= 1.01: rgb = rgb*255
+    # Colour only surfaces that are actually at an observed depth. Unknown
+    # closure uses the median material, never nearest front-image decoration.
+    vertex_rgb = np.zeros((len(world_vertices), 3)); colour_weights = np.zeros(len(world_vertices))
+    for i in range(3):
+        camera = world_vertices @ extrinsics[i, :3, :3].T + extrinsics[i, :3, 3]
+        uvw = camera @ intrinsics[i].T
+        uv = np.rint(uvw[:, :2] / np.maximum(uvw[:, 2:3], 1e-9)).astype(int)
+        h, w = depths[i].shape
+        inside = (camera[:, 2] > 0) & (uv[:, 0] >= 0) & (uv[:, 0] < w) & (uv[:, 1] >= 0) & (uv[:, 1] < h)
+        ids = np.flatnonzero(inside); x, y = uv[ids].T
+        observed = masks[i, y, x] & (np.abs(depths[i, y, x] - camera[ids, 2]) <= step*2)
+        ids, x, y = ids[observed], x[observed], y[observed]
+        weight = np.clip(confidence[i, y, x], .1, 20)
+        colours = images[i, y, x].astype(float)
+        if images.max() <= 1.01: colours *= 255
+        vertex_rgb[ids] += colours * weight[:, None]; colour_weights[ids] += weight
+    observed = colour_weights > 0
+    vertex_rgb[observed] /= colour_weights[observed, None]
+    vertex_rgb[~observed] = np.median(rgb, axis=0)
     # glTF vertex COLOR_0 is linear; source images are sRGB.
-    srgb = np.clip(rgb[nearest] / 255, 0, 1)
+    srgb = np.clip(vertex_rgb / 255, 0, 1)
     linear = np.where(srgb <= .04045, srgb / 12.92, ((srgb + .055) / 1.055) ** 2.4)
-    mesh.visual.vertex_colors = np.column_stack([np.rint(linear * 255).astype(np.uint8), np.full(len(nearest), 255, np.uint8)])
+    mesh.visual.vertex_colors = np.column_stack([np.rint(linear * 255).astype(np.uint8), np.full(len(mesh.vertices), 255, np.uint8)])
     mesh.vertices[:, 1] -= mesh.vertices[:, 1].min()
     mesh.export(output)
     directions = cameras[:, :3, 2]
     angles = np.degrees(np.arccos(np.clip(directions @ directions[0], -1, 1)))
     failures = []
+    agreement = depth_agreement(points, depths, masks, extrinsics, intrinsics, step*2, ~subject_masks)
+    minimum_overlap = max(20, int(np.prod(depths.shape[1:])*.0004))
+    contradictory = [pair for pair in agreement if pair['compared'] >= minimum_overlap and pair['conflictFraction'] > .25]
+    if contradictory:
+        failures.append('估计的相机与深度在重叠区域不一致，融合形状不可靠；视角差通过不代表三维校准成功。')
     if angles[1] < 20:
         failures.append(f'侧面与正面估计视角仅相差 {angles[1]:.1f}°，侧面相机匹配可能错误，不能可靠转换。')
     if angles[2] < 20:
         failures.append(f'俯视与正面估计视角仅相差 {angles[2]:.1f}°，俯视相机匹配可能错误，不能可靠转换。')
     if not mesh.is_watertight: failures.append('融合表面存在开放边界，不能可靠填充积木体积。')
-    report = {'engine': 'MapAnything MLX', 'jointViews': 3, 'validSubjectPixels': per_view,
+    report = {'engine': 'MapAnything MLX', 'fusionVersion': 2, 'jointViews': 3, 'validSubjectPixels': per_view,
               'triangles': len(mesh.faces), 'watertight': bool(mesh.is_watertight),
               'components': len(pieces), 'inferredUnseenClosure': True,
               'cameraAngles': {'frontSide': float(angles[1]), 'frontTop': float(angles[2])},
+              'depthAgreement': agreement, 'unobservedColourFraction': float(np.mean(~observed)),
               'conversionAllowed': not failures, 'failures': failures,
               'warnings': ['未被三张图覆盖的背面与内部体积仍为估计。', '相机与闭合检查通过仍不等于形状准确或实物稳定性验证。']}
     Path(output).with_suffix('.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))

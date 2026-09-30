@@ -3,7 +3,7 @@ import { existsSync, createReadStream, statSync } from 'node:fs';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { Plugin } from 'vite';
 import { decodeLocalViews } from '../lib/local-view-request.ts';
 
@@ -255,6 +255,10 @@ export function localReconstruction(): Plugin {
                   '30',
                   '--octree',
                   '128',
+                  '--seed',
+                  // A reference has one repeatable draft. Resolution changes
+                  // affect brick packing, never resample the hidden geometry.
+                  String(createHash('sha256').update(await readFile(path.join(dir, 'input.png'))).digest().readUInt32BE(0)),
                 ]);
               }
               job.status = 'SUCCEEDED';

@@ -148,3 +148,15 @@ void test('nonempty statue fallback initializes assembly before writing referenc
   delete mesh.statueFallback;
   assert.doesNotMatch(meshToDesign(mesh,20).assembly!.reference,/参考图提取的轮廓/);
 });
+
+void test('partially covered plaza plates tile exposed cells without removing stair attachment studs', () => {
+  const model = meshToDesign(boxes([[0,0,0,20,1.2,20],[0,1.2,0,6,3.2,20]]),20);
+  const check=validateModel(model);
+  assert.equal(check.collisions+check.unsupported+check.invalidParts,0);
+  assert.equal(check.connected,true);
+  const studded=new Set(['3001','3003','3010','3004','3005','3020','3710','3022','3023','3024']);
+  for(const b of model.bricks.filter(b=>!b.support && b.y>=2 && studded.has(b.part)))
+    for(let x=Math.max(9,b.x);x<b.x+b.w;x++) for(let z=b.z;z<b.z+b.d;z++)
+      assert.ok(model.bricks.some(above=>above.y===b.y+b.h && x>=above.x && x<above.x+above.w && z>=above.z && z<above.z+above.d),
+        'exposed plaza cells are tiled even when another portion of the original brick is covered');
+});

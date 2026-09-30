@@ -55,4 +55,18 @@ class FusionTests(unittest.TestCase):
             after=trimesh.load(Path(d)/'two.glb',force='mesh')
             self.assertGreater(abs(after.volume-before.volume),.1)
 
+    def test_depth_conflict_blocks_conversion_even_with_good_camera_angles(self):
+        with tempfile.TemporaryDirectory() as d:
+            scene=cube_scene(); pose=scene['camera_poses'][2]
+            valid=scene['masks'][2]
+            scene['depth'][2][valid] *= .85
+            local=(scene['world_points'][2]-pose[:3,3])@pose[:3,:3]
+            local[valid] *= .85
+            scene['world_points'][2]=local@pose[:3,:3].T+pose[:3,3]
+            report=fusion.fuse_scene(scene,Path(d)/'conflict.glb',64)
+            self.assertGreater(report['cameraAngles']['frontSide'],20)
+            self.assertGreater(report['cameraAngles']['frontTop'],20)
+            self.assertFalse(report['conversionAllowed'])
+            self.assertTrue(any('深度' in reason for reason in report['failures']))
+
 if __name__=='__main__':unittest.main()
