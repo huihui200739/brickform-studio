@@ -3329,6 +3329,10 @@ h1 {
   line-height: 1.7;
 }
 .reconstruction-message {
+  display: block;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   padding: 18px;
   background: #fff6df;
   color: #785921;
@@ -3336,6 +3340,12 @@ h1 {
   font-size: 14px;
   line-height: 1.7;
   margin: 20px 0;
+}
+.reconstruction-message p {
+  margin: 0;
+}
+.reconstruction-message p + p {
+  margin-top: 8px;
 }
 .reconstruction-message a {
   text-decoration: underline;

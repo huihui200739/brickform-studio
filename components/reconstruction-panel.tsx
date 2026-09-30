@@ -1029,11 +1029,17 @@ export default function ReconstructionPanel({
           </select>
         </label>
         {viewProjection === 'perspective' ? (
-          <output className="reconstruction-message">
-            正面、侧面和俯视图会一起参与本机重建。请使用同一模型、有重叠区域的图片。
-            三视角能减少形状猜测；看不到的背面、内部结构和真实连接仍需推断与检查。
-            {!multiConfigured && ' 本机三视图引擎正在准备，完成前不能提交。'}
-          </output>
+          <div className="reconstruction-message">
+            <p>请上传同一模型、彼此有重叠区域的三张图。</p>
+            <p>
+              可用正面、右前方约 45°、前上方约 60°
+              的视角，保留可对应的墙角、台阶和装饰。不要分别重新设计模型。
+            </p>
+            <p>三视角能减少猜测；隐藏的背面、内部结构与真实连接仍需检查。</p>
+            {!multiConfigured && (
+              <p role="status">本机三视图引擎正在准备，完成前不能提交。</p>
+            )}
+          </div>
         ) : (
           <p className="field-hint">
             三张图必须来自同一个模型，并完整包含主体。优先用纯色或透明背景，避免投影阴影。
@@ -1202,6 +1208,11 @@ export default function ReconstructionPanel({
                 {multiDiagnostics.failures.map((reason) => (
                   <p key={reason}>{reason}</p>
                 ))}
+                {!multiDiagnostics.conversionAllowed && (
+                  <p>
+                    这是重建结果的相机匹配检查，不代表原图片一定不合格。请先核对三张图中的墙角、开口和装饰是否能对应。
+                  </p>
+                )}
               </div>
             )}
             <p className="field-hint">
