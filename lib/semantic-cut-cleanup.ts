@@ -9,16 +9,20 @@ import { connectors } from './assembly-validation.ts';
 export function removeSemanticCutRemnants(model: Model, cuts: BBox3d[]) {
   if (!cuts.length) return 0;
   const key = (port: ReturnType<typeof connectors>['studs'][number]) =>
-    (port.type || 'stud') + ':' + [...port.point, ...port.normal]
-      .map(value => Math.round(value * 1000)).join(',');
-  const ports = model.bricks.map(brick => ({ brick, ...connectors(brick) }));
-  const byId = new Map(model.bricks.map(brick => [brick.id, brick]));
+    (port.type || 'stud') +
+    ':' +
+    [...port.point, ...port.normal]
+      .map((value) => Math.round(value * 1000))
+      .join(',');
+  const ports = model.bricks.map((brick) => ({ brick, ...connectors(brick) }));
+  const byId = new Map(model.bricks.map((brick) => [brick.id, brick]));
   const studs = new Map<string, number[]>();
   const links = new Map<number, Set<number>>();
   for (const { brick, studs: plugs } of ports) {
     links.set(brick.id, new Set());
     for (const plug of plugs) {
-      const k = key(plug), ids = studs.get(k) || [];
+      const k = key(plug),
+        ids = studs.get(k) || [];
       ids.push(brick.id);
       studs.set(k, ids);
     }
@@ -29,29 +33,43 @@ export function removeSemanticCutRemnants(model: Model, cuts: BBox3d[]) {
         links.get(brick.id)!.add(id);
         links.get(id)!.add(brick.id);
       }
-  const supported = new Set<number>(), removed = new Set<number>();
-  const ordered = [...model.bricks].sort((a, b) =>
-    (a.step || 0) - (b.step || 0) || a.id - b.id,
+  const supported = new Set<number>(),
+    removed = new Set<number>();
+  const ordered = [...model.bricks].sort(
+    (a, b) => (a.step || 0) - (b.step || 0) || a.id - b.id,
   );
   for (const brick of ordered) {
-    if (brick.y === 0 || [...links.get(brick.id)!].some(id => supported.has(id))) {
+    // A graph-planned assembly may attach below an upper parent. Before that
+    // plan exists, height order cannot identify an orphan. Use the whole
+    // grounded graph below instead of deleting valid hanging pieces.
+    if (model.assemblyStrategy === 'connector-graph') break;
+    if (
+      brick.y === 0 ||
+      [...links.get(brick.id)!].some((id) => supported.has(id))
+    ) {
       supported.add(brick.id);
       continue;
     }
     if (brick.section !== 'subject' && brick.section !== 'supports') continue;
     // Grid packing can leave pieces one stud beyond the cut. Only follow
     // those local remnants upward; preserve the base and distant structure.
-    if (cuts.some(cut =>
-      brick.y >= cut.min[1] &&
-      brick.x < cut.max[0] + 1 && brick.x + brick.w > cut.min[0] - 1 &&
-      brick.z < cut.max[2] + 1 && brick.z + brick.d > cut.min[2] - 1,
-    )) removed.add(brick.id);
+    if (
+      cuts.some(
+        (cut) =>
+          brick.y >= cut.min[1] &&
+          brick.x < cut.max[0] + 1 &&
+          brick.x + brick.w > cut.min[0] - 1 &&
+          brick.z < cut.max[2] + 1 &&
+          brick.z + brick.d > cut.min[2] - 1,
+      )
+    )
+      removed.add(brick.id);
   }
   // Removing a local bridge can orphan a branch that extends past the cut.
   // Follow connector links to the whole disconnected branch; a coordinate
   // test on each brick alone leaves its distant end floating.
   const grounded = new Set<number>();
-  const queue = model.bricks.filter(b => b.y === 0).map(b => b.id);
+  const queue = model.bricks.filter((b) => b.y === 0).map((b) => b.id);
   while (queue.length) {
     const id = queue.pop()!;
     if (removed.has(id) || grounded.has(id)) continue;
@@ -60,8 +78,14 @@ export function removeSemanticCutRemnants(model: Model, cuts: BBox3d[]) {
   }
   const visited = new Set<number>();
   for (const brick of model.bricks) {
-    if (grounded.has(brick.id) || removed.has(brick.id) || visited.has(brick.id)) continue;
-    const branch: number[] = [], pending = [brick.id];
+    if (
+      grounded.has(brick.id) ||
+      removed.has(brick.id) ||
+      visited.has(brick.id)
+    )
+      continue;
+    const branch: number[] = [],
+      pending = [brick.id];
     let touchesCut = false;
     while (pending.length) {
       const id = pending.pop()!;
@@ -69,23 +93,49 @@ export function removeSemanticCutRemnants(model: Model, cuts: BBox3d[]) {
       visited.add(id);
       branch.push(id);
       const member = byId.get(id)!;
-      if (cuts.some(cut => member.y >= cut.min[1] &&
-        member.x <= cut.max[0] + 1 && member.x + member.w >= cut.min[0] - 1 &&
-        member.z <= cut.max[2] + 1 && member.z + member.d >= cut.min[2] - 1) ||
-        [...links.get(id)!].some(next => removed.has(next))) touchesCut = true;
+      if (
+        cuts.some(
+          (cut) =>
+            member.y >= cut.min[1] &&
+            member.x <= cut.max[0] + 1 &&
+            member.x + member.w >= cut.min[0] - 1 &&
+            member.z <= cut.max[2] + 1 &&
+            member.z + member.d >= cut.min[2] - 1,
+        ) ||
+        [...links.get(id)!].some((next) => removed.has(next))
+      )
+        touchesCut = true;
       pending.push(...links.get(id)!);
     }
-    if (touchesCut && branch.every(id => {
-      const b = byId.get(id)!;
-      return b.section === 'subject' || b.section === 'supports';
-    })) for (const id of branch) removed.add(id);
+    if (
+      touchesCut &&
+      branch.every((id) => {
+        const b = byId.get(id)!;
+        return b.section === 'subject' || b.section === 'supports';
+      })
+    )
+      for (const id of branch) removed.add(id);
   }
   if (!removed.size) return 0;
-  model.bricks = model.bricks.filter(brick => !removed.has(brick.id))
-    .map((brick, index) => ({ ...brick, id: index + 1 }));
-  model.supportCount = model.bricks.filter(brick => brick.support).length;
+  const kept = model.bricks.filter((brick) => !removed.has(brick.id));
+  const ids = new Map(kept.map((brick, index) => [brick.id, index + 1]));
+  model.bricks = kept.map((brick) => ({
+    ...brick,
+    id: ids.get(brick.id)!,
+    ...(brick.assemblyMove
+      ? {
+          assemblyMove: {
+            ...brick.assemblyMove,
+            parentIds: brick.assemblyMove.parentIds
+              .filter((id) => ids.has(id))
+              .map((id) => ids.get(id)!),
+          },
+        }
+      : {}),
+  }));
+  model.supportCount = model.bricks.filter((brick) => brick.support).length;
   if (model.assembly) {
-    const activeSteps = new Set(model.bricks.map(brick => brick.step));
+    const activeSteps = new Set(model.bricks.map((brick) => brick.step));
     const remap = new Map<number, number>();
     model.assembly.steps = model.assembly.steps.filter((_, old) => {
       if (!activeSteps.has(old)) return false;

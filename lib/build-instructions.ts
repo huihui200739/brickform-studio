@@ -86,6 +86,8 @@ export function gridAddress(model: Model, b: Brick) {
   return `${column(Math.max(0, Math.round(b.x - origin.x)))}${Math.round(b.z - origin.z) + 1}`;
 }
 export function installationText(model: Model, b: Brick) {
+  if (b.assemblyMove?.direction === 'up')
+    return `将零件对准俯视定位图的 ${gridAddress(model, b)} 格。凸点朝上，从下方对准已装零件的底孔，向上按紧。`;
   if (b.installation) return b.installation;
   const kind = ASSEMBLY_PARTS[b.part].kind;
   if (isSideMounted(b))
@@ -117,22 +119,30 @@ export function placementContext(
 }
 export function connectedBelow(model: Model, b: Brick) {
   const ports = connectors(b);
-  const matches = (a: typeof ports.studs[number], c: typeof ports.studs[number]) =>
+  const matches = (
+    a: (typeof ports.studs)[number],
+    c: (typeof ports.studs)[number],
+  ) =>
     (a.type || 'stud') === (c.type || 'stud') &&
     a.point.every((v, i) => Math.abs(v - c.point[i]) < 0.001) &&
     a.normal.every((v, i) => Math.abs(v - c.normal[i]) < 0.001);
   return model.bricks.filter(
     (p) =>
-      ((p.step ?? 0) < (b.step ?? 0) || ((p.step ?? 0) === (b.step ?? 0) && p.id < b.id)) &&
-      (connectors(p).studs.some(c => ports.sockets.some(s => matches(s, c))) ||
-       connectors(p).sockets.some(s => ports.studs.some(c => matches(s, c)))),
+      ((p.step ?? 0) < (b.step ?? 0) ||
+        ((p.step ?? 0) === (b.step ?? 0) && p.id < b.id)) &&
+      (connectors(p).studs.some((c) =>
+        ports.sockets.some((s) => matches(s, c)),
+      ) ||
+        connectors(p).sockets.some((s) =>
+          ports.studs.some((c) => matches(s, c)),
+        )),
   );
 }
 export function connectionInstruction(model: Model, b: Brick) {
   const parents = connectedBelow(model, b);
   if (b.y === 0) return '在平面上按定位图摆放，随后用上层薄板连接。';
   if (!parents.length) return '未找到此前步骤中的连接零件，需要复核安装顺序。';
-  return `连接到已安装的 ${parents.map(p => `#${p.id}（${PARTS[p.part]}）`).join('、')}。`;
+  return `连接到已安装的 ${parents.map((p) => `#${p.id}（${PARTS[p.part]}）`).join('、')}。`;
 }
 const num = (v: number) => v.toFixed(1);
 function hull(points: number[][]) {
@@ -165,7 +175,12 @@ function sceneSVG(
   const normal = active
     ? transform(active.pose!.matrix, [0, -1, 0])
     : [0, -1, 0];
-  const lift = opts.placement && active && !isSpecialPart(active) ? 38 : 0;
+  const lift =
+    opts.placement && active && !isSpecialPart(active)
+      ? active.assemblyMove?.direction === 'up'
+        ? -38
+        : 38
+      : 0;
   const polys = bricks.flatMap((b) => {
     const current = b.id === activeId || !!opts.thumbnail;
     const moved =
@@ -227,7 +242,10 @@ function sceneSVG(
     points.map((p) => p.map(num).join(',')).join(' ');
   let marker = '';
   if (active && lift) {
-    const sockets = connectors(active).sockets;
+    const sockets =
+      active.assemblyMove?.direction === 'up'
+        ? connectors(active).studs
+        : connectors(active).sockets;
     const center = sockets.length
       ? (sockets
           .reduce((sum, s) => sum.map((v, i) => v + s.point[i]) as V3, [
@@ -257,16 +275,25 @@ function sceneSVG(
   const previousStuds = bricks
     .filter((b) => b.id !== activeId)
     .flatMap((b) => connectors(b).studs);
-  const previousSockets = bricks.filter(b => b.id !== activeId).flatMap(b => connectors(b).sockets);
-  const portMatches = (a: typeof previousStuds[number], b: typeof previousStuds[number]) =>
+  const previousSockets = bricks
+    .filter((b) => b.id !== activeId)
+    .flatMap((b) => connectors(b).sockets);
+  const portMatches = (
+    a: (typeof previousStuds)[number],
+    b: (typeof previousStuds)[number],
+  ) =>
     (a.type || 'stud') === (b.type || 'stud') &&
     a.point.every((v, i) => Math.abs(v - b.point[i]) < 0.001) &&
     a.normal.every((v, i) => Math.abs(v - b.normal[i]) < 0.001);
   const mounts =
     active && (lift || isSpecialPart(active))
       ? [
-          ...connectors(active).sockets.filter(s => previousStuds.some(c => portMatches(s, c))),
-          ...connectors(active).studs.filter(c => previousSockets.some(s => portMatches(s, c))),
+          ...connectors(active).sockets.filter((s) =>
+            previousStuds.some((c) => portMatches(s, c)),
+          ),
+          ...connectors(active).studs.filter((c) =>
+            previousSockets.some((s) => portMatches(s, c)),
+          ),
         ]
       : [];
   const rings = mounts

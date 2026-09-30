@@ -1,7 +1,13 @@
 import type { PlacementReport } from './placement-policy.ts';
 import { ASSEMBLY_PARTS, type Pose } from './assembly-catalog.ts';
 import { validateAssembly } from './assembly-validation.ts';
-import { scorePackingChoice, aestheticScore, type AestheticBreakdown } from './aesthetic-packing.ts';
+import {
+  scorePackingChoice,
+  aestheticScore,
+  type AestheticBreakdown,
+} from './aesthetic-packing.ts';
+import { connectUnsupportedGroups } from './support-design.ts';
+import { gridConnections, groundedIds } from './grid-connections.ts';
 export const PALETTE = [
   { name: '白色', hex: '#F4F4F4', ldraw: 15, lego: 1 },
   { name: '黑色', hex: '#242424', ldraw: 0, lego: 26 },
@@ -34,8 +40,16 @@ export type Brick = {
   pose?: Pose;
   section?: string;
   step?: number;
+  assemblyMove?: import('./connection-plan.ts').AssemblyMove;
 };
 export type Model = {
+  assemblyStrategy?: 'connector-graph';
+  supportDesign?: {
+    method: 'connector-groups';
+    initialGroups: number;
+    addedColumns: number;
+    addedCells: number;
+  };
   componentPlacement?: PlacementReport[];
   sceneElements?: import('./scene-elements.ts').SceneElementInstance[];
   sceneGroups?: import('./scene/scene-types.ts').SceneElementGroup[];
@@ -61,7 +75,14 @@ export type Model = {
   resolution: number;
   shape: 'sculpture' | 'relief';
   semanticDesign?: {
-    components: { id: string; name: string; kind: string; parts: number; templateId?: string; instanceId?: string }[];
+    components: {
+      id: string;
+      name: string;
+      kind: string;
+      parts: number;
+      templateId?: string;
+      instanceId?: string;
+    }[];
     removedCells: number;
     reviewRequired: true;
     autoPlaced?: boolean;
@@ -112,7 +133,12 @@ export type Model = {
     };
   };
 };
-export function isSemanticReservedCell(model: Model, x: number, y: number, z: number) {
+export function isSemanticReservedCell(
+  model: Model,
+  x: number,
+  y: number,
+  z: number,
+) {
   return model.semanticReservedCells?.includes(`${x},${y},${z}`) ?? false;
 }
 export type Raster = { width: number; height: number; data: ArrayLike<number> };
@@ -211,7 +237,7 @@ function pack(
   depth: number,
   fixed: Brick[] = [],
 ): Brick[] {
-  const bricks: Brick[] = fixed.map((b) => ({ ...b }));
+  const bricks: Brick[] = fixed.map((b, index) => ({ ...b, id: index + 1 }));
   const used = new Set<string>();
   const surface = new Set<string>();
   const topOwners = new Map<string, Set<Brick>>();
@@ -373,6 +399,7 @@ export function finishModel(
   baseColor = 0,
   blocked?: (x: number, y: number, z: number) => boolean,
   fixed: Brick[] = [],
+  strategy?: 'connector-graph',
 ): Model {
   for (let x = 0; x < width; x++)
     for (let z = 0; z < depth; z++)
@@ -384,9 +411,30 @@ export function finishModel(
     if (Number(k.split(',')[1]) >= 2) counts[c.color]++;
   });
   const coreColor = counts.indexOf(Math.max(...counts));
-  // Only add a column when a whole packed piece lacks a stud connection below.
-  // Anchor towards the centre of the model and prefer the shortest visible gap.
+  const supportDesign = {
+    method: 'connector-groups' as const,
+    initialGroups: 0,
+    addedColumns: 0,
+    addedCells: 0,
+  };
+  // Mesh designs repair disconnected groups; legacy reliefs retain their
+  // below-support policy. Neither policy proves joint strength.
   for (let pass = 0; pass < 8; pass++) {
+    if (strategy === 'connector-graph') {
+      const repair = connectUnsupportedGroups(
+        subject,
+        bricks,
+        depth,
+        coreColor,
+        blocked,
+      );
+      if (!pass) supportDesign.initialGroups = repair.groups;
+      supportDesign.addedColumns += repair.columns;
+      supportDesign.addedCells += repair.addedCells;
+      if (!repair.addedCells) break;
+      bricks = pack(subject, width, height, depth, fixed);
+      continue;
+    }
     let added = false;
     for (const b of bricks) {
       if (!b.y) continue;
@@ -427,6 +475,7 @@ export function finishModel(
     .sort((a, b) => a.y - b.y || a.z - b.z || a.x - b.x)
     .map((b, i) => ({ ...b, id: i + 1 }));
   const model: Model = {
+    ...(strategy ? { assemblyStrategy: strategy, supportDesign } : {}),
     name,
     bricks,
     width,
@@ -699,20 +748,27 @@ export function validateModel(model: Model) {
           occupied.set(k, b.id);
         }
   }
-  const links = new Map<number, Set<number>>();
-  model.bricks.forEach((b) => links.set(b.id, new Set()));
-  for (const b of model.bricks) {
-    let supported = b.y === 0;
-    for (let dx = 0; dx < b.w; dx++)
-      for (let dz = 0; dz < b.d; dz++) {
-        const below = occupied.get(key(b.x + dx, b.y - 1, b.z + dz));
-        if (below && below !== b.id) {
-          supported = true;
-          links.get(b.id)!.add(below);
-          links.get(below)!.add(b.id);
+  const links =
+    model.assemblyStrategy === 'connector-graph'
+      ? gridConnections(model.bricks)
+      : new Map<number, Set<number>>();
+  if (model.assemblyStrategy === 'connector-graph')
+    unsupported = model.bricks.length - groundedIds(model.bricks, links).size;
+  else {
+    model.bricks.forEach((b) => links.set(b.id, new Set()));
+    for (const b of model.bricks) {
+      let supported = b.y === 0;
+      for (let dx = 0; dx < b.w; dx++)
+        for (let dz = 0; dz < b.d; dz++) {
+          const below = occupied.get(key(b.x + dx, b.y - 1, b.z + dz));
+          if (below && below !== b.id) {
+            supported = true;
+            links.get(b.id)!.add(below);
+            links.get(below)!.add(b.id);
+          }
         }
-      }
-    if (!supported) unsupported++;
+      if (!supported) unsupported++;
+    }
   }
   const seen = new Set<number>(),
     queue = model.bricks.length ? [model.bricks[0].id] : [];

@@ -37,15 +37,28 @@ import { aestheticScore } from './aesthetic-packing.ts';
 import { optimizeAestheticPacking } from './aesthetic-packing.ts';
 import { applyRepresentationTransaction } from './composition/transaction.ts';
 import { removeSemanticCutRemnants } from './semantic-cut-cleanup.ts';
-import { connectedBelow } from './build-instructions.ts';
+import { connectedBelow, instructionModel } from './build-instructions.ts';
 import { connectors, validateAssembly } from './assembly-validation.ts';
-import { applyDesignPlanes, auditDesignGeometry, type DesignGeometry } from './design-geometry.ts';
+import {
+  applyDesignPlanes,
+  auditDesignGeometry,
+  type DesignGeometry,
+} from './design-geometry.ts';
 import { installCavityLintel } from './cavity-lintel.ts';
 import { brazierClearances } from './semantic-clearance.ts';
 import { enforceGroupConsistency } from './element-grouping.ts';
-import { applyPlatform, auditPlatform, fitPlatform, type PlatformDesign } from './platform-design.ts';
+import {
+  applyPlatform,
+  auditPlatform,
+  fitPlatform,
+  type PlatformDesign,
+} from './platform-design.ts';
+import { planGridAssembly } from './connection-plan.ts';
 import { routeStructureRepresentation } from './representation/representation-router.ts';
-import { applyAnchorResult, solveSurfaceAnchor } from './surface-anchor-solver.ts';
+import {
+  applyAnchorResult,
+  solveSurfaceAnchor,
+} from './surface-anchor-solver.ts';
 import {
   createModelView,
   createReferenceView,
@@ -80,7 +93,11 @@ export type PreservedRegion = {
   preserveDepthSeparation: boolean;
 };
 
-export function proceduralTowerCells(width: number, height: number, depth: number) {
+export function proceduralTowerCells(
+  width: number,
+  height: number,
+  depth: number,
+) {
   const cells = new Map<string, { color: number; support: boolean }>();
   // A complete third layer bonds the two base courses. The tower remains open
   // above this platform, while every perimeter base piece belongs to one graph.
@@ -91,7 +108,15 @@ export function proceduralTowerCells(width: number, height: number, depth: numbe
     for (let z = 0; z < depth; z++)
       cells.set(`${x},3,${z}`, { color: 7, support: false });
   const put = (x: number, y: number, z: number) => {
-    if (x < 1 || x >= width - 1 || z < 1 || z >= depth - 1 || y < 2 || y >= height - 1) return;
+    if (
+      x < 1 ||
+      x >= width - 1 ||
+      z < 1 ||
+      z >= depth - 1 ||
+      y < 2 ||
+      y >= height - 1
+    )
+      return;
     cells.set(`${x},${y},${z}`, { color: 7, support: false });
   };
   const top = Math.max(5, height - 5);
@@ -123,7 +148,8 @@ export function proceduralTowerCells(width: number, height: number, depth: numbe
     put(x, platform, Math.max(1, Math.floor(depth * 0.2)));
     put(x, platform, Math.max(1, depth - 2 - Math.floor(depth * 0.2)));
   }
-  for (let y = top; y < height - 1; y++) put(Math.floor(width / 2), y, Math.floor(depth / 2));
+  for (let y = top; y < height - 1; y++)
+    put(Math.floor(width / 2), y, Math.floor(depth / 2));
   return cells;
 }
 
@@ -153,7 +179,9 @@ function assembleProceduralStructure(
     .filter((brick) => brick.z + brick.d <= depth - 1)
     .map((brick, index) => ({ ...brick, id: index + 1 }));
   raw.supportCount = raw.bricks.filter((brick) => brick.support).length;
-  raw.levels = [...new Set(raw.bricks.map((brick) => brick.y))].sort((a, b) => a - b);
+  raw.levels = [...new Set(raw.bricks.map((brick) => brick.y))].sort(
+    (a, b) => a - b,
+  );
   optimizeAestheticPacking(raw, 256);
   const model = groupImageAssembly(raw);
   model.structureCategory = structure.category;
@@ -165,18 +193,34 @@ function assembleProceduralStructure(
     resolution,
     openRowFraction: volume.openRows / Math.max(1, volume.intersected),
   };
-  const structurePlan = routeStructureRepresentation(structure.category, structure.confidence);
-  model.representationPlans = [{
-    elementId: 'primary-structure',
-    kind: structurePlan.kind,
-    confidence: structurePlan.confidence,
-    reason: [...structure.evidence, ...structurePlan.reason, '结构路由使用开放式塔身、平台与尖塔模板'],
-  }];
+  const structurePlan = routeStructureRepresentation(
+    structure.category,
+    structure.confidence,
+  );
+  model.representationPlans = [
+    {
+      elementId: 'primary-structure',
+      kind: structurePlan.kind,
+      confidence: structurePlan.confidence,
+      reason: [
+        ...structure.evidence,
+        ...structurePlan.reason,
+        '结构路由使用开放式塔身、平台与尖塔模板',
+      ],
+    },
+  ];
   model.assembly!.reference = `结构分类为 ${structure.category}，使用程序化开放塔身表达；保留四腿、平台、收腰和尖塔轮廓。`;
   model.aesthetic = aestheticScore(model);
   const check = validateModel(model);
-  if (check.collisions || check.unsupported || check.invalidParts || !check.connected)
-    throw Error(`程序化结构未通过连接检查，请降低尺寸后重试（碰撞 ${check.collisions}，缺支撑 ${check.unsupported}，断开 ${check.connected ? 0 : 1}）。`);
+  if (
+    check.collisions ||
+    check.unsupported ||
+    check.invalidParts ||
+    !check.connected
+  )
+    throw Error(
+      `程序化结构未通过连接检查，请降低尺寸后重试（碰撞 ${check.collisions}，缺支撑 ${check.unsupported}，断开 ${check.connected ? 0 : 1}）。`,
+    );
   return model;
 }
 
@@ -210,27 +254,45 @@ function calibrateRegionAnchors(
 function anchorDebug(region: ComponentRegion) {
   const anchor = region.anchorResult;
   if (!anchor) return `${region.id} calibration=unavailable`;
-  const normal = anchor.surface.normal.map((value) => value.toFixed(2)).join(',');
-  const world = [anchor.worldAnchor.x, anchor.worldAnchor.y, anchor.worldAnchor.z]
-    .map((value) => value.toFixed(2)).join(',');
-  return `${region.kind.toUpperCase()} image=(${anchor.imageAnchor.x.toFixed(3)},${anchor.imageAnchor.y.toFixed(3)}) ` +
+  const normal = anchor.surface.normal
+    .map((value) => value.toFixed(2))
+    .join(',');
+  const world = [
+    anchor.worldAnchor.x,
+    anchor.worldAnchor.y,
+    anchor.worldAnchor.z,
+  ]
+    .map((value) => value.toFixed(2))
+    .join(',');
+  return (
+    `${region.kind.toUpperCase()} image=(${anchor.imageAnchor.x.toFixed(3)},${anchor.imageAnchor.y.toFixed(3)}) ` +
     `surface=${anchor.surfaceKind || 'unknown'} normal=(${normal}) world=(${world}) ` +
-    `attached=${anchor.attached} visible=${region.representationResult?.visibleFromReference ?? false}`;
+    `attached=${anchor.attached} visible=${region.representationResult?.visibleFromReference ?? false}`
+  );
 }
 
 function finalizeAnchor(model: Model, region: ComponentRegion, grid: V3) {
   if (!region.anchorResult) return;
   const section = `component-${region.id}`;
-  const base = model.bricks.find(brick => brick.section === section);
-  const support = base ? connectedBelow(model, base)
-    .filter(brick => brick.section !== section).map(brick => brick.id) : [];
+  const base = model.bricks.find((brick) => brick.section === section);
+  const support = base
+    ? connectedBelow(model, base)
+        .filter((brick) => brick.section !== section)
+        .map((brick) => brick.id)
+    : [];
   const sockets = base ? connectors(base).sockets : [];
-  const studs = model.bricks.filter(brick => support.includes(brick.id))
-    .flatMap(brick => connectors(brick).studs);
-  const fullySeated = sockets.length > 0 && sockets.every(socket =>
-    studs.some(stud => socket.point.every((v, i) => Math.abs(v - stud.point[i]) < 0.001) &&
-      socket.normal.every((v, i) => Math.abs(v - stud.normal[i]) < 0.001)),
-  );
+  const studs = model.bricks
+    .filter((brick) => support.includes(brick.id))
+    .flatMap((brick) => connectors(brick).studs);
+  const fullySeated =
+    sockets.length > 0 &&
+    sockets.every((socket) =>
+      studs.some(
+        (stud) =>
+          socket.point.every((v, i) => Math.abs(v - stud.point[i]) < 0.001) &&
+          socket.normal.every((v, i) => Math.abs(v - stud.normal[i]) < 0.001),
+      ),
+    );
   const [x, y, z] = mountingPoint(region, grid);
   region.anchorResult = {
     ...region.anchorResult,
@@ -239,21 +301,24 @@ function finalizeAnchor(model: Model, region: ComponentRegion, grid: V3) {
     surface: { ...region.anchorResult.surface, supportBrickIds: support },
     attached: support.length > 0 && (region.kind !== 'brazier' || fullySeated),
   };
-  if (region.sceneElement) region.sceneElement = {
-    ...region.sceneElement,
-    worldAnchor: [...region.anchor],
-    anchorResult: region.anchorResult,
-  };
+  if (region.sceneElement)
+    region.sceneElement = {
+      ...region.sceneElement,
+      worldAnchor: [...region.anchor],
+      anchorResult: region.anchorResult,
+    };
 }
 
 function ensureSceneElement(region: ComponentRegion): ComponentRegion {
   if (region.sceneElement) {
-    if (region.placementMode || region.sceneElement.placementMode) return region;
-    const placementMode = region.kind === 'brazier'
-      ? 'wall-mounted' as const
-      : region.kind === 'statue'
-        ? 'pedestal-mounted' as const
-        : 'cavity-contained' as const;
+    if (region.placementMode || region.sceneElement.placementMode)
+      return region;
+    const placementMode =
+      region.kind === 'brazier'
+        ? ('wall-mounted' as const)
+        : region.kind === 'statue'
+          ? ('pedestal-mounted' as const)
+          : ('cavity-contained' as const);
     return {
       ...region,
       placementMode,
@@ -275,21 +340,30 @@ function ensureSceneElement(region: ComponentRegion): ComponentRegion {
     importance: category === 'statue' ? 'primary' : 'secondary',
     importanceScore: category === 'statue' ? 1 : 0.5,
     mustRepresent: category === 'statue',
-    detectionSource: region.source === 'vision' ? 'vision' : region.source === 'color' ? 'color' : 'heuristic',
+    detectionSource:
+      region.source === 'vision'
+        ? 'vision'
+        : region.source === 'color'
+          ? 'color'
+          : 'heuristic',
     anchorKind: category === 'statue' ? 'surface' : 'ground',
     evidence: ['legacy region promoted to a scene instance'],
-    placementMode: category === 'brazier'
-      ? 'wall-mounted'
-      : category === 'statue'
-        ? 'pedestal-mounted'
-        : 'cavity-contained',
+    placementMode:
+      category === 'brazier'
+        ? 'wall-mounted'
+        : category === 'statue'
+          ? 'pedestal-mounted'
+          : 'cavity-contained',
   };
   return { ...region, sceneElement, placementMode: sceneElement.placementMode };
 }
 
 function anchorPlacementScore(region: ComponentRegion) {
-  return region.placementScore ?? region.anchorResult?.placementScore ??
-    (region.anchorResult?.attached ? 1 : 0.35);
+  return (
+    region.placementScore ??
+    region.anchorResult?.placementScore ??
+    (region.anchorResult?.attached ? 1 : 0.35)
+  );
 }
 
 function requiresHardWallAttachment(region: ComponentRegion) {
@@ -297,10 +371,11 @@ function requiresHardWallAttachment(region: ComponentRegion) {
 }
 
 function attachmentFailures(regions: ComponentRegion[]) {
-  return regions.filter((region) =>
-    requiresHardWallAttachment(region) &&
-    region.anchorResult &&
-    !region.anchorResult.attached,
+  return regions.filter(
+    (region) =>
+      requiresHardWallAttachment(region) &&
+      region.anchorResult &&
+      !region.anchorResult.attached,
   );
 }
 
@@ -312,7 +387,12 @@ function visibilityView(
 ): ReferenceView {
   if (context?.image) {
     try {
-      return createReferenceView(mesh, context.image, resolution, context.camera);
+      return createReferenceView(
+        mesh,
+        context.image,
+        resolution,
+        context.camera,
+      );
     } catch {
       // A missing or invalid reference cannot make a valid component disappear.
     }
@@ -356,14 +436,28 @@ function reserveCommittedGeometry(model: Model) {
         .filter((brick) => ids.has(brick.id))
         .flatMap((brick) => {
           const cells: string[] = [];
-          for (let x = Math.floor(brick.x); x < Math.ceil(brick.x + brick.w); x++)
-            for (let y = Math.floor(brick.y); y < Math.ceil(brick.y + brick.h); y++)
-              for (let z = Math.floor(brick.z); z < Math.ceil(brick.z + brick.d); z++)
+          for (
+            let x = Math.floor(brick.x);
+            x < Math.ceil(brick.x + brick.w);
+            x++
+          )
+            for (
+              let y = Math.floor(brick.y);
+              y < Math.ceil(brick.y + brick.h);
+              y++
+            )
+              for (
+                let z = Math.floor(brick.z);
+                z < Math.ceil(brick.z + brick.d);
+                z++
+              )
                 cells.push(`${x},${y},${z}`);
           return cells;
         });
     });
-  model.semanticReservedCells = [...new Set([...(model.semanticReservedCells || []), ...componentCells])];
+  model.semanticReservedCells = [
+    ...new Set([...(model.semanticReservedCells || []), ...componentCells]),
+  ];
 }
 
 function focalFallbackCandidates(region: ComponentRegion): ComponentRegion[] {
@@ -377,19 +471,21 @@ function focalFallbackCandidates(region: ComponentRegion): ComponentRegion[] {
   const candidates: ComponentRegion[] = ids.flatMap((id) => {
     const template = componentTemplate(id);
     if (!template) return [];
-    return [{
-      ...region,
-      templateId: id,
-      representation:
-        id === 'statue-relief'
-          ? 'relief' as const
-          : id === 'statue-forced-voxel-silhouette'
-            ? 'voxel' as const
-            : 'semantic-template' as const,
-      width: template.bboxStuds.width,
-      depth: template.bboxStuds.depth,
-      height: template.bboxStuds.height,
-    }];
+    return [
+      {
+        ...region,
+        templateId: id,
+        representation:
+          id === 'statue-relief'
+            ? ('relief' as const)
+            : id === 'statue-forced-voxel-silhouette'
+              ? ('voxel' as const)
+              : ('semantic-template' as const),
+        width: template.bboxStuds.width,
+        depth: template.bboxStuds.depth,
+        height: template.bboxStuds.height,
+      },
+    ];
   });
   return candidates;
 }
@@ -598,35 +694,59 @@ function assembleVolume(
   const platform = volume.platform ? { ...volume.platform } : undefined;
   const adjustedPlatformCells = platform ? applyPlatform(cells, platform) : 0;
   if (platform) platform.adjustedColumns = adjustedPlatformCells;
-  const geometries = regions.flatMap(r => r.anchorResult?.designGeometry ? [r.anchorResult.designGeometry] : []);
-  const designGeometry: DesignGeometry = { version: 1, coordinates: 'brick-grid',
-    planes: geometries.flatMap(g => g.planes), openings: geometries.flatMap(g => g.openings),
-    warnings: [...new Set(geometries.flatMap(g => g.warnings))] };
+  const geometries = regions.flatMap((r) =>
+    r.anchorResult?.designGeometry ? [r.anchorResult.designGeometry] : [],
+  );
+  const designGeometry: DesignGeometry = {
+    version: 1,
+    coordinates: 'brick-grid',
+    planes: geometries.flatMap((g) => g.planes),
+    openings: geometries.flatMap((g) => g.openings),
+    warnings: [...new Set(geometries.flatMap((g) => g.warnings))],
+  };
   applyDesignPlanes(cells, designGeometry);
   validateRegions(regions, [w, h, d]);
   const placements = regions.map((r) => regionPlacement(r, [w, h, d]));
   const flameClearances = brazierClearances(regions, [w, h, d]);
-  const openings = [...regions.flatMap(r => r.anchorResult?.clearanceVolume ? [r.anchorResult.clearanceVolume] : []), ...flameClearances];
+  const openings = [
+    ...regions.flatMap((r) =>
+      r.anchorResult?.clearanceVolume ? [r.anchorResult.clearanceVolume] : [],
+    ),
+    ...flameClearances,
+  ];
   const cuts = [...placements, ...openings];
-  const sources = regions.map((r) => regionPlacement({
-    ...r, anchor: r.sourceAnchor || r.referenceAnchor || r.anchor,
-  }, [w, h, d]));
+  const sources = regions.map((r) =>
+    regionPlacement(
+      {
+        ...r,
+        anchor: r.sourceAnchor || r.referenceAnchor || r.anchor,
+      },
+      [w, h, d],
+    ),
+  );
   let removedCells = 0;
   for (const key of cells.keys()) {
     const p = key.split(',').map(Number) as [number, number, number];
     if (cuts.some((r) => insideRegion(p, r))) {
       cells.delete(key);
       removedCells++;
-    } else if (regions.some((r, i) => {
-      if (r.kind !== 'brazier' || !r.autoRefinement || !r.sourceAnchor) return false;
-      const source = sources[i];
-      // Reference projection can paint a flame onto the masonry behind it.
-      // The flame component replaces those accents even after its mount moves
-      // out from the wall. Retain the wall's volume with its material colour.
-      return [2, 3, 6].includes(cells.get(key)!.color) &&
-        Math.abs(p[0] - source.x) <= 2 && Math.abs(p[2] - source.z) <= 3 &&
-        p[1] >= source.y - 4 && p[1] < source.y + r.height;
-    })) {
+    } else if (
+      regions.some((r, i) => {
+        if (r.kind !== 'brazier' || !r.autoRefinement || !r.sourceAnchor)
+          return false;
+        const source = sources[i];
+        // Reference projection can paint a flame onto the masonry behind it.
+        // The flame component replaces those accents even after its mount moves
+        // out from the wall. Retain the wall's volume with its material colour.
+        return (
+          [2, 3, 6].includes(cells.get(key)!.color) &&
+          Math.abs(p[0] - source.x) <= 2 &&
+          Math.abs(p[2] - source.z) <= 3 &&
+          p[1] >= source.y - 4 &&
+          p[1] < source.y + r.height
+        );
+      })
+    ) {
       cells.set(key, { ...cells.get(key)!, color: dominant });
     }
   }
@@ -724,16 +844,28 @@ function assembleVolume(
   }
   for (const region of regions) {
     const box = region.anchorResult?.clearanceVolume;
-    if (box) bridges.push(...installCavityLintel(cells, volume.cells, box, region.anchorResult!.clearanceAxis ?? 2, dominant,
-      (x, y, z) => flameClearances.some(cut => insideRegion([x, y, z], cut))));
+    if (box)
+      bridges.push(
+        ...installCavityLintel(
+          cells,
+          volume.cells,
+          box,
+          region.anchorResult!.clearanceAxis ?? 2,
+          dominant,
+          (x, y, z) =>
+            flameClearances.some((cut) => insideRegion([x, y, z], cut)),
+        ),
+      );
   }
   const floorColumns = new Set(platform?.columns);
   const excludedFloorColumns = new Set<string>();
   if (platform) {
     const tops = new Map<string, number>();
     for (const key of cells.keys()) {
-      const [x, y, z] = key.split(',').map(Number), column = `${x},${z}`;
-      if (floorColumns.has(column)) tops.set(column, Math.max(tops.get(column) ?? -1, y));
+      const [x, y, z] = key.split(',').map(Number),
+        column = `${x},${z}`;
+      if (floorColumns.has(column))
+        tops.set(column, Math.max(tops.get(column) ?? -1, y));
     }
     for (const column of floorColumns)
       if (tops.get(column) !== platform.topY) excludedFloorColumns.add(column);
@@ -758,23 +890,37 @@ function assembleVolume(
           protectedCells.has(`${x},${y},${z}`) ||
           cuts.some((r) => insideRegion([x, y, z], r))
       : undefined,
-    [...bridges, ...(() => {
-      const structure = classifyStructure(mesh);
-      if ((structure.category !== 'lattice-tower' && structure.category !== 'tower') || structure.confidence < 0.7)
-        return [];
-      return generateLatticeTowerScaffold(
-        w + 2,
-        h + 2,
-        d + 2,
-        (x, y, z) => y < 2 || cells.has(`${x},${y},${z}`),
-        dominant,
-      );
-    })()],
+    [
+      ...bridges,
+      ...(() => {
+        const structure = classifyStructure(mesh);
+        if (
+          (structure.category !== 'lattice-tower' &&
+            structure.category !== 'tower') ||
+          structure.confidence < 0.7
+        )
+          return [];
+        return generateLatticeTowerScaffold(
+          w + 2,
+          h + 2,
+          d + 2,
+          (x, y, z) => y < 2 || cells.has(`${x},${y},${z}`),
+          dominant,
+        );
+      })(),
+    ],
+    'connector-graph',
   );
   // Preserve the occupied volume and full-width bridging plates. An exposed
   // brick becomes two full plates with a tiled top at the original height.
   // Only unused studs are removed; attachment surfaces stay intact.
   let smoothTiles = 0;
+  const connectionPlan = planGridAssembly(raw.bricks);
+  const hangingParents = new Set(
+    connectionPlan.ordered
+      .filter((p) => p.move.direction === 'up')
+      .flatMap((p) => p.move.parentIds),
+  );
   const tiles: Record<string, string> = {
     '3022': '3068b',
     '3023': '3069b',
@@ -789,11 +935,19 @@ function assembleVolume(
   };
   const finished: typeof raw.bricks = [];
   for (const b of raw.bricks) {
-    const supportOnFloor = !!b.support && platform && b.y + b.h === platform.topY + 1 &&
-      Array.from({ length: b.w }, (_, dx) => dx).some(dx =>
-        Array.from({ length: b.d }, (_, dz) => dz).some(dz =>
-          floorColumns.has(`${b.x + dx},${b.z + dz}`) && !excludedFloorColumns.has(`${b.x + dx},${b.z + dz}`)));
+    const supportOnFloor =
+      !!b.support &&
+      platform &&
+      b.y + b.h === platform.topY + 1 &&
+      Array.from({ length: b.w }, (_, dx) => dx).some((dx) =>
+        Array.from({ length: b.d }, (_, dz) => dz).some(
+          (dz) =>
+            floorColumns.has(`${b.x + dx},${b.z + dz}`) &&
+            !excludedFloorColumns.has(`${b.x + dx},${b.z + dz}`),
+        ),
+      );
     const protectedTop =
+      (b.h === 1 && hangingParents.has(b.id)) ||
       (!!b.support && !supportOnFloor) ||
       b.y < 2 ||
       placements.some(
@@ -807,25 +961,48 @@ function assembleVolume(
     const coveredCells = new Set<string>();
     for (let x = b.x; x < b.x + b.w; x++)
       for (let z = b.z; z < b.z + b.d; z++)
-        if (cells.has(`${x},${b.y + b.h},${z}`) ||
-          (supportOnFloor && (!floorColumns.has(`${x},${z}`) || excludedFloorColumns.has(`${x},${z}`))))
+        if (
+          cells.has(`${x},${b.y + b.h},${z}`) ||
+          (supportOnFloor &&
+            (!floorColumns.has(`${x},${z}`) ||
+              excludedFloorColumns.has(`${x},${z}`)))
+        )
           coveredCells.add(`${x},${z}`);
     if (protectedTop || coveredCells.size === b.w * b.d) {
       finished.push(b);
       continue;
     }
-    if (coveredCells.size && (plates[b.part] || tiles[b.part] || b.part === '3020' || b.part === '3710')) {
-      const top: typeof raw.bricks = [], used = new Set<string>();
+    if (
+      coveredCells.size &&
+      (plates[b.part] ||
+        tiles[b.part] ||
+        b.part === '3020' ||
+        b.part === '3710')
+    ) {
+      const top: typeof raw.bricks = [],
+        used = new Set<string>();
       let supported = true;
       for (let x = b.x; x < b.x + b.w; x++)
         for (let z = b.z; z < b.z + b.d; z++) {
           if (used.has(`${x},${z}`)) continue;
           const covered = coveredCells.has(`${x},${z}`);
-          const [w, d] = [[2, 2], [2, 1], [1, 2], [1, 1]].find(([ww, dd]) =>
-            x + ww <= b.x + b.w && z + dd <= b.z + b.d &&
-            Array.from({ length: ww }, (_, dx) => dx).every(dx =>
-              Array.from({ length: dd }, (_, dz) => dz).every(dz =>
-                !used.has(`${x + dx},${z + dz}`) && coveredCells.has(`${x + dx},${z + dz}`) === covered)))!;
+          const [w, d] = [
+            [2, 2],
+            [2, 1],
+            [1, 2],
+            [1, 1],
+          ].find(
+            ([ww, dd]) =>
+              x + ww <= b.x + b.w &&
+              z + dd <= b.z + b.d &&
+              Array.from({ length: ww }, (_, dx) => dx).every((dx) =>
+                Array.from({ length: dd }, (_, dz) => dz).every(
+                  (dz) =>
+                    !used.has(`${x + dx},${z + dz}`) &&
+                    coveredCells.has(`${x + dx},${z + dz}`) === covered,
+                ),
+              ),
+          )!;
           let contact = b.h === 3;
           for (let xx = x; xx < x + w; xx++)
             for (let zz = z; zz < z + d; zz++) {
@@ -834,17 +1011,31 @@ function assembleVolume(
             }
           if (!contact) supported = false;
           const part = covered
-            ? (w * d === 4 ? '3022' : w * d === 2 ? '3023' : '3024')
-            : (w * d === 4 ? '3068b' : w * d === 2 ? '3069b' : '3070b');
+            ? w * d === 4
+              ? '3022'
+              : w * d === 2
+                ? '3023'
+                : '3024'
+            : w * d === 4
+              ? '3068b'
+              : w * d === 2
+                ? '3069b'
+                : '3070b';
           top.push({ ...b, x, z, w, d, h: 1, y: b.y + b.h - 1, part });
         }
-      if (!supported) { finished.push(b); continue; }
-      if (b.h === 3) finished.push(
-        { ...b, part: plates[b.part], h: 1 },
-        { ...b, part: plates[b.part], y: b.y + 1, h: 1 },
-      );
+      if (!supported) {
+        finished.push(b);
+        continue;
+      }
+      if (b.h === 3)
+        finished.push(
+          { ...b, part: plates[b.part], h: 1 },
+          { ...b, part: plates[b.part], y: b.y + 1, h: 1 },
+        );
       finished.push(...top);
-      smoothTiles += top.filter(t => ['3068b', '3069b', '3070b'].includes(t.part)).length;
+      smoothTiles += top.filter((t) =>
+        ['3068b', '3069b', '3070b'].includes(t.part),
+      ).length;
       continue;
     }
     if (tiles[b.part]) {
@@ -898,7 +1089,20 @@ function assembleVolume(
   if (raw.bricks.length > 14000)
     throw Error('此尺寸超过 14000 块零件，请降低积木尺寸后再转换。');
   const packing = optimizeAestheticPacking(raw, 192);
-  const model = groupImageAssembly(raw);
+  const prepared = instructionModel(raw);
+  for (const b of prepared.bricks)
+    b.section = b.y < 2 ? 'base' : b.support ? 'supports' : 'subject';
+  // Clear disconnected cut remnants before asking for a complete insertion
+  // plan. Their absence must not authorize filling the observed cavity.
+  removeSemanticCutRemnants(prepared, [
+    ...placements.filter(
+      (_, i) =>
+        regions[i].kind === 'statue' ||
+        (regions[i].kind === 'brazier' && regions[i].autoRefinement),
+    ),
+    ...openings,
+  ]);
+  const model = groupImageAssembly(prepared);
   model.clearanceVolumes = openings;
   if (platform) model.platformDesign = platform;
   if (designGeometry.planes.length) model.designGeometry = designGeometry;
@@ -912,10 +1116,10 @@ function assembleVolume(
     openRowFraction: openRows / Math.max(1, intersected),
   };
   model.assembly!.reference = `按三维网格体积生成；保留网格中的前后布局和孔洞。新增辅助支撑 ${model.supportCount} 块，已计入清单。网格可能含 AI 推测，连接检查不代表外观还原或实物稳定性已验证。`;
-  removeSemanticCutRemnants(model, [...placements.filter((_, i) =>
-    regions[i].kind === 'statue' || (regions[i].kind === 'brazier' && regions[i].autoRefinement)), ...openings]);
 
-  if (model.designGeometry) model.assembly!.reference += ' 入口后墙按参考区域拟合为平面，局部阴影配色已合并；隐藏墙体与跨梁承重仍需复核。';
+  if (model.designGeometry)
+    model.assembly!.reference +=
+      ' 入口后墙按参考区域拟合为平面，局部阴影配色已合并；隐藏墙体与跨梁承重仍需复核。';
   if (packing.removed)
     model.assembly!.reference += ` 美学后处理移除冗余隐藏支撑 ${packing.removed} 块，保留连接与连通性。`;
   if (mesh.statueFallback?.cells.length)
@@ -939,30 +1143,55 @@ function assembleVolume(
       '所选区域上方仍有结构需要支撑，请缩小清除范围，避开墙体或屋顶。',
     );
   addComponents(model, regions, [w, h, d], removedCells);
-  const occupiedOpening = model.bricks.find(b => !b.section?.startsWith('component-') && openings.some(box =>
-    [0, 1, 2].every(axis =>
-      [b.x, b.y, b.z][axis] < box.max[axis] &&
-      [b.x + b.w, b.y + b.h, b.z + b.d][axis] > box.min[axis],
-    ),
-  ));
-  if (occupiedOpening) throw Error(`空腔被积木占用 (${occupiedOpening.x},${occupiedOpening.y},${occupiedOpening.z})，无法提交此安装方案。`);
+  const occupiedOpening = model.bricks.find(
+    (b) =>
+      !b.section?.startsWith('component-') &&
+      openings.some((box) =>
+        [0, 1, 2].every(
+          (axis) =>
+            [b.x, b.y, b.z][axis] < box.max[axis] &&
+            [b.x + b.w, b.y + b.h, b.z + b.d][axis] > box.min[axis],
+        ),
+      ),
+  );
+  if (occupiedOpening)
+    throw Error(
+      `空腔被积木占用 (${occupiedOpening.x},${occupiedOpening.y},${occupiedOpening.z})，无法提交此安装方案。`,
+    );
   if (model.designGeometry) {
-    model.designGeometry.validation = auditDesignGeometry(model, model.designGeometry);
+    model.designGeometry.validation = auditDesignGeometry(
+      model,
+      model.designGeometry,
+    );
     if (!model.designGeometry.validation.passed)
       throw Error('结构化墙面在排砖后出现缺口或材质混用，无法提交此几何方案。');
   }
   if (platform) {
     platform.validation = auditPlatform(model, platform, excludedFloorColumns);
     if (!platform.validation.passed)
-      throw Error(`平台铺面未满足设计约束：缺口 ${platform.validation.missing}，高差 ${platform.validation.uneven}，裸露凸点 ${platform.validation.exposedStuds}。`);
-    model.assembly!.reference += ' 大面积低位水平网格已拟合为连续光面铺面；保留台阶、孔洞与组件安装区。平台为设计近似，材质与实物承重仍需复核。';
+      throw Error(
+        `平台铺面未满足设计约束：缺口 ${platform.validation.missing}，高差 ${platform.validation.uneven}，裸露凸点 ${platform.validation.exposedStuds}。`,
+      );
+    model.assembly!.reference +=
+      ' 大面积低位水平网格已拟合为连续光面铺面；保留台阶、孔洞与组件安装区。平台为设计近似，材质与实物承重仍需复核。';
   }
   const check = validateAssembly(model);
 
-  if (check.collisions || check.unsupported || check.invalidParts || !check.connected)
+  if (
+    check.collisions ||
+    check.unsupported ||
+    check.invalidParts ||
+    !check.connected
+  )
     throw Error(
       regions.length
-        ? `组件安装检查失败：碰撞 ${check.collisions}，缺少连接 ${check.unsupported}，整体断开 ${check.connected ? 0 : 1}。${check.badIds.slice(0, 4).map(id => { const b = model.bricks.find(b => b.id === id)!; return ` ${b.part}@(${b.x},${b.y},${b.z})`; }).join('')}`
+        ? `组件安装检查失败：碰撞 ${check.collisions}，缺少连接 ${check.unsupported}，整体断开 ${check.connected ? 0 : 1}。${check.badIds
+            .slice(0, 4)
+            .map((id) => {
+              const b = model.bricks.find((b) => b.id === id)!;
+              return ` ${b.part}@(${b.x},${b.y},${b.z})`;
+            })
+            .join('')}`
         : '积木结构未通过连接检查，请降低尺寸后重试。',
     );
   return model;
@@ -980,7 +1209,13 @@ export function meshToDesign(
   if (visibility?.image && regions.length) {
     try {
       const baseline = assembleVolume(mesh, volume, resolution, []);
-      regions = calibrateRegionAnchors(mesh, resolution, regions, baseline, visibility);
+      regions = calibrateRegionAnchors(
+        mesh,
+        resolution,
+        regions,
+        baseline,
+        visibility,
+      );
     } catch {
       // Keep manual conversion available when the source mesh itself cannot
       // produce an anchor surface; the anchor result will explain the failure.
@@ -993,20 +1228,23 @@ export function meshToDesign(
       (r.source === 'manual' || r.confirmed === true || !r.source),
   );
   const structure = classifyStructure(mesh);
-  if (!eligible.length && (structure.category === 'lattice-tower' || structure.category === 'tower') && structure.confidence >= 0.62)
+  if (
+    !eligible.length &&
+    (structure.category === 'lattice-tower' ||
+      structure.category === 'tower') &&
+    structure.confidence >= 0.62
+  )
     return assembleProceduralStructure(mesh, resolution, structure);
-  const model = assembleVolume(
-    mesh,
-    volume,
-    resolution,
-    eligible,
-  );
+  const model = assembleVolume(mesh, volume, resolution, eligible);
   model.structureCategory = structure.category;
   model.structureConfidence = structure.confidence;
   const view = visibilityView(mesh, model, resolution, visibility);
   const applied = eligible.filter((r) => r.sceneElement);
-  for (const region of applied) finalizeAnchor(model, region, [volume.w, volume.h, volume.d]);
-  model.representationResults = applied.map((r) => auditRepresentation(model, r, view, 0));
+  for (const region of applied)
+    finalizeAnchor(model, region, [volume.w, volume.h, volume.d]);
+  model.representationResults = applied.map((r) =>
+    auditRepresentation(model, r, view, 0),
+  );
   reserveCommittedGeometry(model);
   model.sceneElements = applied.map((r) => ({
     ...r.sceneElement!,
@@ -1024,7 +1262,11 @@ export function meshToDesign(
   }));
   if (model.assembly && regions.some((region) => region.anchorResult))
     model.assembly.reference +=
-      ' 语义锚点校准：' + regions.filter((region) => region.anchorResult).map(anchorDebug).join('；');
+      ' 语义锚点校准：' +
+      regions
+        .filter((region) => region.anchorResult)
+        .map(anchorDebug)
+        .join('；');
   return model;
 }
 export type AutoComponentResult = {
@@ -1047,7 +1289,13 @@ export function meshToDesignAuto(
   if (visibility?.image && regions.length) {
     try {
       const baseline = assembleVolume(mesh, volume, resolution, []);
-      regions = calibrateRegionAnchors(mesh, resolution, regions, baseline, visibility);
+      regions = calibrateRegionAnchors(
+        mesh,
+        resolution,
+        regions,
+        baseline,
+        visibility,
+      );
     } catch {
       // A failed baseline surface is reported by the later placement result;
       // it must not silently invent a new anchor.
@@ -1056,25 +1304,40 @@ export function meshToDesignAuto(
   enforceGroupConsistency(regions);
   // Manual overrides and sufficiently confident automatic proposals can enter
   // a trial. Automatic confirmation happens only after the trial commits.
-  const eligible = regions.filter(
-    (r) =>
-      r.placementStatus !== 'rejected' &&
-      (r.source === 'manual' ||
-        (!r.autoRefinement && (r.confirmed === true || !r.source)) ||
-        (r.autoRefinement === true &&
-          r.source === 'vision' && r.sceneElement?.category === r.kind && hasVerifiedIdentity(r.sceneElement) &&
-          (r.kind !== 'statue' ||
-            r.templateId === 'statue-relief' ||
-            r.templateId === 'statue-simplified' ||
-            (r.templateId === 'statue-standing' &&
-              r.sceneElement?.mustRepresent === true &&
-              (r.sceneElement.anchorConfidence ?? 0) >= 0.8)) &&
-          automaticReplacementScore(r) >= AUTO_REPLACEMENT_THRESHOLD)),
-  ).sort((a, b) => anchorPlacementScore(b) - anchorPlacementScore(a));
+  const eligible = regions
+    .filter(
+      (r) =>
+        r.placementStatus !== 'rejected' &&
+        (r.source === 'manual' ||
+          (!r.autoRefinement && (r.confirmed === true || !r.source)) ||
+          (r.autoRefinement === true &&
+            r.source === 'vision' &&
+            r.sceneElement?.category === r.kind &&
+            hasVerifiedIdentity(r.sceneElement) &&
+            (r.kind !== 'statue' ||
+              r.templateId === 'statue-relief' ||
+              r.templateId === 'statue-simplified' ||
+              (r.templateId === 'statue-standing' &&
+                r.sceneElement?.mustRepresent === true &&
+                (r.sceneElement.anchorConfidence ?? 0) >= 0.8)) &&
+            automaticReplacementScore(r) >= AUTO_REPLACEMENT_THRESHOLD)),
+    )
+    .sort((a, b) => anchorPlacementScore(b) - anchorPlacementScore(a));
   const unconfirmed = regions.filter((r) => !eligible.includes(r));
   const classified = classifyStructure(mesh);
-  if (!regions.length && (classified.category === 'lattice-tower' || classified.category === 'tower') && classified.confidence >= 0.62)
-    return { model: assembleProceduralStructure(mesh, resolution, classified), applied: [], dropped: [], reports: [], attempts: 0 };
+  if (
+    !regions.length &&
+    (classified.category === 'lattice-tower' ||
+      classified.category === 'tower') &&
+    classified.confidence >= 0.62
+  )
+    return {
+      model: assembleProceduralStructure(mesh, resolution, classified),
+      applied: [],
+      dropped: [],
+      reports: [],
+      attempts: 0,
+    };
   const grid: V3 = [volume.w, volume.h, volume.d];
   const limit = Math.max(
     0,
@@ -1099,18 +1362,22 @@ export function meshToDesignAuto(
       addRepresentation: (trial, plan) => {
         trial.regions.push(...plan);
         trialModel = assembleVolume(mesh, volume, resolution, trial.regions);
-        for (const region of trial.regions) finalizeAnchor(trialModel, region, grid);
+        for (const region of trial.regions)
+          finalizeAnchor(trialModel, region, grid);
       },
       validate: () => ({
-        acceptable: trialModel !== null && attachmentFailures(list).length === 0,
-        reasons: attachmentFailures(list)
-          .flatMap((region) => region.anchorResult!.failureReasons),
+        acceptable:
+          trialModel !== null && attachmentFailures(list).length === 0,
+        reasons: attachmentFailures(list).flatMap(
+          (region) => region.anchorResult!.failureReasons,
+        ),
       }),
     });
     if (!transaction.committed)
       for (const region of list) {
         const reasons = failureReasons.get(region.id) || new Set<string>();
-        for (const reason of transaction.validation.reasons || []) reasons.add(reason);
+        for (const reason of transaction.validation.reasons || [])
+          reasons.add(reason);
         failureReasons.set(region.id, reasons);
       }
     return transaction.committed ? trialModel : null;
@@ -1142,7 +1409,8 @@ export function meshToDesignAuto(
       const partner = eligible.findIndex(
         (r, j) =>
           j > i &&
-          !r.autoRefinement && !eligible[i].autoRefinement &&
+          !r.autoRefinement &&
+          !eligible[i].autoRefinement &&
           !visited.has(j) &&
           r.placed !== false &&
           eligible[i].placed !== false &&
@@ -1164,12 +1432,23 @@ export function meshToDesignAuto(
         if (id === eligible[i].templateId) continue;
         const template = componentTemplate(id);
         if (!template || template.category !== eligible[i].kind) continue;
-        variants.push({...eligible[i], templateId:id, representation:template.representation === 'component' ? 'component' : 'semantic-template',
-          width:template.bboxStuds.width,depth:template.bboxStuds.depth,height:template.bboxStuds.height});
+        variants.push({
+          ...eligible[i],
+          templateId: id,
+          representation:
+            template.representation === 'component'
+              ? 'component'
+              : 'semantic-template',
+          width: template.bboxStuds.width,
+          depth: template.bboxStuds.depth,
+          height: template.bboxStuds.height,
+        });
       }
       // Try each expression at the original anchor before spending budget on
       // movement. A failing large tree cannot starve its small-tree fallback.
-      const options = variants.flatMap(r => placementCandidates(r,grid).slice(0,1));
+      const options = variants.flatMap((r) =>
+        placementCandidates(r, grid).slice(0, 1),
+      );
       options.push(...candidates[i].slice(1));
       for (const first of options) {
         if (attempts >= stop) break;
@@ -1207,9 +1486,12 @@ export function meshToDesignAuto(
   // committed bricks from the reference view, then transactionally try the
   // ordered fallback chain until a visible representation is committed.
   const view = visibilityView(mesh, model, resolution, visibility);
-  const focalRegions = [...applied, ...dropped].filter((r) =>
-    requiresFocalPreservation(r.sceneElement) &&
-    (!r.autoRefinement || (r.sceneElement?.category === r.kind && hasVerifiedIdentity(r.sceneElement))),
+  const focalRegions = [...applied, ...dropped].filter(
+    (r) =>
+      requiresFocalPreservation(r.sceneElement) &&
+      (!r.autoRefinement ||
+        (r.sceneElement?.category === r.kind &&
+          hasVerifiedIdentity(r.sceneElement))),
   );
   for (const focal of focalRegions) {
     const current = applied.find((r) => r.id === focal.id);
@@ -1219,13 +1501,21 @@ export function meshToDesignAuto(
     const fallbacks = focalFallbackCandidates(focal);
     for (let level = 1; level <= fallbacks.length && !committed; level++) {
       const fallback = fallbacks[level - 1];
-      const candidatesForFallback = placementCandidates(fallback, grid).slice(0, 9);
+      const candidatesForFallback = placementCandidates(fallback, grid).slice(
+        0,
+        9,
+      );
       for (const candidate of candidatesForFallback) {
         if (attempts >= limit) break;
         const trialApplied = applied.filter((r) => r.id !== focal.id);
         const trial = attempt([...trialApplied, candidate]);
         if (!trial) continue;
-        const checked = auditRepresentation(trial, candidate, visibilityView(mesh, trial, resolution, visibility), level);
+        const checked = auditRepresentation(
+          trial,
+          candidate,
+          visibilityView(mesh, trial, resolution, visibility),
+          level,
+        );
         if (!checked.committed) continue;
         model = trial;
         const index = applied.findIndex((r) => r.id === focal.id);
@@ -1239,7 +1529,10 @@ export function meshToDesignAuto(
     }
     if (!committed && current) {
       const failed = current.representationResult;
-      if (failed) failed.failureReasons.push('all focal fallbacks failed visibility validation');
+      if (failed)
+        failed.failureReasons.push(
+          'all focal fallbacks failed visibility validation',
+        );
     }
   }
   for (const r of regions)
@@ -1253,9 +1546,10 @@ export function meshToDesignAuto(
       ),
     );
   for (const report of reports) {
-    if (applied.some(region => region.id === report.id)) continue;
+    if (applied.some((region) => region.id === report.id)) continue;
     const reasons = [...(failureReasons.get(report.id) || [])];
-    if (reasons.length) report.message = `未替换，已保留原始几何；保留原网格继续生成。安装尝试：${reasons.slice(-3).join('；')}`;
+    if (reasons.length)
+      report.message = `未替换，已保留原始几何；保留原网格继续生成。安装尝试：${reasons.slice(-3).join('；')}`;
   }
   for (const r of applied) {
     r.placementStatus = reports.find((v) => v.id === r.id)!.status;
@@ -1273,16 +1567,28 @@ export function meshToDesignAuto(
   for (const appliedRegion of applied) {
     finalizeAnchor(model, appliedRegion, grid);
     // Later replacements can renumber bricks. Always audit the final model.
-    auditRepresentation(model, appliedRegion, finalView, appliedRegion.representationResult?.fallbackLevel || 0);
+    auditRepresentation(
+      model,
+      appliedRegion,
+      finalView,
+      appliedRegion.representationResult?.fallbackLevel || 0,
+    );
   }
-  model.sceneElements = regions.filter(r=>r.sceneElement).map(r=>{
-    const committed=applied.find(a=>a.id===r.id);
-    return {...(committed?.sceneElement || r.sceneElement!),chosenRepresentation:committed?.representation ?? r.representation ?? 'voxel',
-      chosenTemplateId:committed?.templateId,outcome:committed?'committed':'preserved',
-      representationResult:committed?.representationResult,
-      reason:reports.find(p=>p.id===r.id)?.message};
-  });
-  model.repeatedGroups=repeatedGroups(model.sceneElements);
+  model.sceneElements = regions
+    .filter((r) => r.sceneElement)
+    .map((r) => {
+      const committed = applied.find((a) => a.id === r.id);
+      return {
+        ...(committed?.sceneElement || r.sceneElement!),
+        chosenRepresentation:
+          committed?.representation ?? r.representation ?? 'voxel',
+        chosenTemplateId: committed?.templateId,
+        outcome: committed ? 'committed' : 'preserved',
+        representationResult: committed?.representationResult,
+        reason: reports.find((p) => p.id === r.id)?.message,
+      };
+    });
+  model.repeatedGroups = repeatedGroups(model.sceneElements);
   model.sceneGroups = model.repeatedGroups;
   model.representationPlans = model.sceneElements.map((element) => ({
     elementId: element.id,
@@ -1292,8 +1598,10 @@ export function meshToDesignAuto(
     reason: element.reason ? [element.reason] : ['preserved source geometry'],
   }));
   model.representationResults = [...applied, ...regions]
-    .filter((r, index, all) =>
-      r.representationResult && all.findIndex((candidate) => candidate.id === r.id) === index,
+    .filter(
+      (r, index, all) =>
+        r.representationResult &&
+        all.findIndex((candidate) => candidate.id === r.id) === index,
     )
     .map((r) => r.representationResult!);
   reserveCommittedGeometry(model);
@@ -1301,16 +1609,24 @@ export function meshToDesignAuto(
     model.assembly.reference +=
       ' 表达验证：' +
       model.representationResults
-        .map((result) =>
-          `${result.elementId} brickCount=${result.brickCount} ` +
-          `bbox=${result.bbox3d ? 'valid' : 'invalid'} ` +
-          `visibleFromReference=${result.visibleFromReference} ` +
-          `fallbackLevel=${result.fallbackLevel}`,
+        .map(
+          (result) =>
+            `${result.elementId} brickCount=${result.brickCount} ` +
+            `bbox=${result.bbox3d ? 'valid' : 'invalid'} ` +
+            `visibleFromReference=${result.visibleFromReference} ` +
+            `fallbackLevel=${result.fallbackLevel}`,
         )
         .join('；');
   if (model.assembly && regions.some((region) => region.anchorResult))
     model.assembly.reference +=
-      ' 语义锚点校准：' + regions.map(region => applied.find(item => item.id === region.id) || region).filter((region) => region.anchorResult).map(anchorDebug).join('；');
+      ' 语义锚点校准：' +
+      regions
+        .map(
+          (region) => applied.find((item) => item.id === region.id) || region,
+        )
+        .filter((region) => region.anchorResult)
+        .map(anchorDebug)
+        .join('；');
   model.aesthetic = aestheticScore(model);
   model.componentPlacement = reports;
   if (reports.length && model.assembly)

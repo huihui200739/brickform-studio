@@ -131,9 +131,9 @@ void test('detection separates foliage and flames from sand, grey and white bric
   );
   assert.equal(auto.applied.length + auto.dropped.length, hints.length);
 });
-void test('a colour centroid that cannot be seated is nudged to a working bottom position', () => {
-  // A thin partition splits the floor: cutting into it leaves the wall above
-  // unsupported, so the raw centroid fails while a nearby position succeeds.
+void test('a partition that remains connected above a cut keeps the original mounting point', () => {
+  // The old below-only support test rejected this cut. Its upper partition
+  // remains attached through the wall graph and can be installed from below.
   const mesh = shapes([
     { box: [0, 0, 0, 20, 1, 20], color: SAND },
     { box: [9, 1, 4, 2, 10, 12], color: SAND },
@@ -146,18 +146,22 @@ void test('a colour centroid that cannot be seated is nudged to a working bottom
     ...COMPONENT_SIZES.brazier,
     rotation: 0,
   };
-  assert.throws(
-    () => meshToDesign(mesh, 20, [region]),
-    /干涉|连接/,
-    'the raw centroid really is rejected by the strict conversion',
+  const strict = meshToDesign(mesh, 20, [region]);
+  assert.equal(validateModel(strict).unsupported, 0);
+  assert.equal(validateModel(strict).connected, true);
+  assert.ok(
+    strict.bricks.some(
+      (b) => b.y > 15 && b.x >= 9 && b.x < 13 && b.z >= 5 && b.z < 15,
+    ),
+    'the partition above the cut must survive',
   );
   const auto = meshToDesignAuto(mesh, 20, [region]);
   assert.equal(auto.applied.length, 1, 'the component is still placed');
   assert.equal(auto.dropped.length, 0);
-  assert.notDeepEqual(
+  assert.deepEqual(
     auto.applied[0].anchor,
     region.anchor,
-    'the placed anchor moved away from the failing centroid',
+    'the valid original anchor must not move merely because the parent is above',
   );
   assert.equal(auto.applied[0].placed, true);
   assert.equal(auto.model.semanticDesign!.autoPlaced, true);

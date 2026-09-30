@@ -6,6 +6,7 @@ import {
   type Raster,
 } from './brick-engine.ts';
 import { instructionModel } from './build-instructions.ts';
+import { planGridAssembly } from './connection-plan.ts';
 
 export type ImageDesignOptions = Options & {
   mode: 'auto' | 'sculpture' | 'relief';
@@ -118,6 +119,69 @@ export function generateImageDesign(
 export function groupImageAssembly(raw: Model): Model {
   const model = instructionModel(raw);
   const steps: NonNullable<Model['assembly']>['steps'] = [];
+  if (raw.assemblyStrategy === 'connector-graph') {
+    const plan = planGridAssembly(model.bricks);
+    if (plan.unresolved.length)
+      throw Error(
+        `无法规划 ${plan.unresolved.length} 块零件的连接与最终装入动作，请检查悬挑结构或降低尺寸。${plan.unresolved
+          .slice(0, 4)
+          .map((id) => {
+            const b = model.bricks.find((b) => b.id === id)!;
+            return ` ${b.part}@(${b.x},${b.y},${b.z})`;
+          })
+          .join('')}`,
+      );
+    const remap = new Map(
+      plan.ordered.map(({ brick }, index) => [brick.id, index + 1]),
+    );
+    model.bricks = plan.ordered.map(({ brick, move }) => ({
+      ...brick,
+      id: remap.get(brick.id)!,
+      assemblyMove: {
+        ...move,
+        parentIds: move.parentIds.map((id) => remap.get(id)!),
+      },
+      section: brick.y < 2 ? 'base' : brick.support ? 'supports' : 'subject',
+    }));
+    for (let i = 0; i < model.bricks.length;) {
+      const first = model.bricks[i],
+        batch = [first];
+      while (batch.length < 12 && i + batch.length < model.bricks.length) {
+        const next = model.bricks[i + batch.length];
+        if (
+          next.section !== first.section ||
+          next.assemblyMove!.direction !== first.assemblyMove!.direction
+        )
+          break;
+        batch.push(next);
+      }
+      for (const brick of batch) brick.step = steps.length;
+      steps.push({
+        name:
+          first.section === 'base'
+            ? '底座'
+            : first.assemblyMove!.direction === 'up'
+              ? '下方扣接'
+              : first.support
+                ? '辅助支撑'
+                : '主体连接',
+        description:
+          first.assemblyMove!.direction === 'up'
+            ? '凸点朝上，从下方对准已装零件的底孔，向上按紧。'
+            : '对照定位图，连接到已装零件。',
+        section: first.section!,
+      });
+      i += batch.length;
+    }
+    model.levels = steps.map((_, i) => i);
+    model.assembly!.steps = steps;
+    model.assembly!.sections = [
+      { id: 'subject', name: '图片主体' },
+      { id: 'base', name: '底座' },
+      ...(model.supportCount ? [{ id: 'supports', name: '辅助支撑' }] : []),
+    ];
+    return model;
+  }
   // Keep height dependencies, and split long layers into small pick-and-place
   // groups. Every placement has the same id and pose in preview and exports.
   for (const y of raw.levels) {
