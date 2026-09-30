@@ -12,6 +12,7 @@ import type { ComponentRegion } from '@/lib/semantic-components';
 import { mergeRefinementRegions } from '@/lib/semantic-refinement';
 import { VIEW_LABELS, type ViewAxis } from '@/lib/multiview';
 import { estimatePitch } from '@/lib/brick-reader';
+import { outline, type MultiViewReconstruction } from '@/lib/multiview';
 import { referenceMask } from '@/lib/reference-colors';
 import MeshDraftViewer from './mesh-draft-viewer';
 // oxlint-disable-next-line import/default -- Vite exports the public worker asset URL.
@@ -34,12 +35,14 @@ export default function ReconstructionPanel({
   name,
   resolution,
   onModel,
+  onInputsChange,
 }: {
   active?: boolean;
   image?: string;
   name: string;
   resolution: number;
   onModel: (model: Model) => void;
+  onInputsChange?: () => void;
 }) {
   const [regions, setRegions] = useState<ComponentRegion[]>([]),
     [selected, setSelected] = useState(''),
@@ -72,11 +75,41 @@ export default function ReconstructionPanel({
             preview: string;
             coverage: number;
             mirrored: boolean;
+            flippedVertical: boolean;
           }
         >
       >
     >({}),
-    [viewError, setViewError] = useState('');
+    [viewError, setViewError] = useState(''),
+    [viewDraft, setViewDraft] = useState<MultiViewReconstruction | null>(null),
+    [viewProjection, setViewProjection] = useState<
+      'orthographic' | 'perspective'
+    >('orthographic'),
+    [viewLoading, setViewLoading] = useState<
+      Partial<Record<ViewAxis, boolean>>
+    >({});
+  const onInputsChangeRef = useRef(onInputsChange);
+  onInputsChangeRef.current = onInputsChange;
+  const viewGeneration = useRef(0),
+    viewLoadTokens = useRef<Record<ViewAxis, number>>({
+      front: 0,
+      side: 0,
+      top: 0,
+    });
+  useEffect(() => {
+    viewGeneration.current++;
+    setViewDraft(null);
+    setViewError('');
+    setPhase('');
+    if (inputMode === 'views') onInputsChangeRef.current?.();
+  }, [views, resolution, viewProjection, inputMode]);
+  useEffect(
+    () => () => {
+      for (const view of Object.values(viewsRef.current))
+        URL.revokeObjectURL(view.url);
+    },
+    [],
+  );
   const faceInput = useRef<HTMLInputElement | null>(null),
     viewFiles = useRef<Partial<Record<ViewAxis, HTMLInputElement | null>>>({}),
     viewsRef = useRef(views);
@@ -289,7 +322,10 @@ export default function ReconstructionPanel({
       w.onmessage = (event) => {
         cleanup();
         const data = event.data as Record<string, unknown>;
-        if (data.error) reject(Error(String(data.error)));
+        if (data.error)
+          reject(
+            Error(typeof data.error === 'string' ? data.error : '转换失败。'),
+          );
         else resolve(data);
       };
       w.onerror = () => {
@@ -466,13 +502,21 @@ export default function ReconstructionPanel({
   async function loadView(axis: ViewAxis, file?: File) {
     if (!file) return;
     setViewError('');
+    const token = ++viewLoadTokens.current[axis];
+    setViewLoading((current) => ({ ...current, [axis]: true }));
+    let url = '';
     try {
-      if (!file.type.startsWith('image/'))
+      if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type))
         throw Error('请选择 PNG、JPG 或 WebP 图片。');
-      const url = URL.createObjectURL(file),
-        img = new Image();
+      if (file.size > 10 * 1024 * 1024)
+        throw Error('每张图片请控制在 10 MB 以内。');
+      url = URL.createObjectURL(file);
+      const img = new Image();
       img.src = url;
       await img.decode();
+      if (img.width * img.height > 40_000_000)
+        throw Error('图片像素过大，请缩小到 4000 万像素以内。');
+      if (!alive.current || token !== viewLoadTokens.current[axis]) return;
       const scale = Math.min(1, 480 / Math.max(img.width, img.height)),
         canvas = document.createElement('canvas');
       canvas.width = Math.max(1, Math.round(img.width * scale));
@@ -487,7 +531,7 @@ export default function ReconstructionPanel({
       };
       // What the carver will treat as the object, drawn over the picture, so a
       // shadow or a background that was not separated is visible straight away.
-      const { mask } = referenceMask(raster);
+      const { mask } = outline({ axis, image: raster });
       let subject = 0;
       for (let i = 0; i < mask.length; i++) if (mask[i]) subject++;
       const overlay = ctx.getImageData(0, 0, canvas.width, canvas.height),
@@ -500,6 +544,8 @@ export default function ReconstructionPanel({
         }
       ctx.putImageData(overlay, 0, 0);
       const preview = canvas.toDataURL('image/png');
+      const readyUrl = url;
+      url = '';
       setViews((current) => {
         const previous = current[axis];
         if (previous) URL.revokeObjectURL(previous.url);
@@ -507,19 +553,26 @@ export default function ReconstructionPanel({
           ...current,
           [axis]: {
             raster,
-            url,
+            url: readyUrl,
             preview,
             coverage: subject / mask.length,
             mirrored: previous?.mirrored || false,
+            flippedVertical: previous?.flippedVertical || false,
           },
         };
       });
     } catch (e) {
-      if (alive.current)
+      if (alive.current && token === viewLoadTokens.current[axis])
         setViewError(e instanceof Error ? e.message : '无法读取这张图片。');
+    } finally {
+      if (url) URL.revokeObjectURL(url);
+      if (alive.current && token === viewLoadTokens.current[axis])
+        setViewLoading((current) => ({ ...current, [axis]: false }));
     }
   }
   function removeView(axis: ViewAxis) {
+    viewLoadTokens.current[axis]++;
+    setViewLoading((current) => ({ ...current, [axis]: false }));
     setViews((current) => {
       const view = current[axis];
       if (view) URL.revokeObjectURL(view.url);
@@ -529,38 +582,73 @@ export default function ReconstructionPanel({
     });
     setViewError('');
   }
-  async function carveViews() {
+  async function carveViews(convertToBricks = false) {
+    const generation = ++viewGeneration.current;
     const list = (['front', 'side', 'top'] as ViewAxis[])
       .filter((axis) => views[axis])
       .map((axis) => ({
         axis,
         image: views[axis]!.raster,
         mirrored: views[axis]!.mirrored,
+        flippedVertical: views[axis]!.flippedVertical,
       }));
     setBusy(true);
     setViewError('');
+    setPhase(
+      convertToBricks
+        ? '正在按已检查的体积生成零件与步骤'
+        : '正在本地重建三维体积',
+    );
     try {
-      if (list.length < 2)
-        throw Error('请至少上传正视图和侧视图：一个方向的轮廓无法确定体积。');
+      if (list.length !== 3)
+        throw Error('请上传同一模型的正面、侧面、俯视三张图片。');
+      if (viewProjection !== 'orthographic')
+        throw Error('普通透视照片还需要相机校准；当前入口仅支持正交视图。');
+      if (convertToBricks && !viewDraft)
+        throw Error('请先生成并检查三维草稿。');
       const data = await runWorkerMessage({
-        action: 'views',
+        action: convertToBricks ? 'views' : 'views-draft',
         views: list,
+        volume: convertToBricks ? viewDraft!.volume : undefined,
         options: { resolution },
         name: '三视图积木',
       });
-      const model = data.model as Model;
-      if (alive.current) {
+      if (!alive.current || generation !== viewGeneration.current) return;
+      if (convertToBricks) {
+        const model = data.model as Model;
         onModel(model);
         setPhase(
-          `三视图雕刻完成：${model.bricks.length} 块零件，体积由轮廓相交得到，没有经过生成式推测。`,
+          `积木已生成：${model.bricks.length} 块零件，${model.levels.length} 组步骤。`,
         );
+      } else {
+        setViewDraft(data.reconstruction as MultiViewReconstruction);
+        setPhase('三维草稿已生成，请旋转检查侧面、背面和开口，再转换为积木。');
       }
     } catch (e) {
-      if (alive.current)
+      if (alive.current && generation === viewGeneration.current) {
+        setPhase('');
         setViewError(e instanceof Error ? e.message : '三视图转换失败。');
+      }
     } finally {
       if (alive.current) setBusy(false);
     }
+  }
+  function exportViewDraft() {
+    if (!viewDraft) return;
+    const { positions } = viewDraft.mesh;
+    const lines = ['# Brickform local three-view reconstruction; units: studs'];
+    for (let i = 0; i < positions.length; i += 3)
+      lines.push(`v ${positions[i]} ${positions[i + 1]} ${positions[i + 2]}`);
+    for (let i = 0; i < positions.length / 3; i += 3)
+      lines.push(`f ${i + 1} ${i + 2} ${i + 3}`);
+    const url = URL.createObjectURL(
+      new Blob([lines.join('\n')], { type: 'text/plain' }),
+    );
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'brickform-three-view.obj';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   async function loadFace(file?: File) {
     if (!file) return;
@@ -658,6 +746,7 @@ export default function ReconstructionPanel({
     <div className="reconstruction-actions input-mode-switch">
       <button
         className={inputMode === 'single' ? 'primary' : ''}
+        disabled={busy}
         aria-pressed={inputMode === 'single'}
         onClick={() => setInputMode('single')}
       >
@@ -665,6 +754,7 @@ export default function ReconstructionPanel({
       </button>
       <button
         className={inputMode === 'views' ? 'primary' : ''}
+        disabled={busy}
         aria-pressed={inputMode === 'views'}
         onClick={() => setInputMode('views')}
       >
@@ -672,6 +762,7 @@ export default function ReconstructionPanel({
       </button>
       <button
         className={inputMode === 'face' ? 'primary' : ''}
+        disabled={busy}
         aria-pressed={inputMode === 'face'}
         onClick={() => setInputMode('face')}
       >
@@ -679,7 +770,7 @@ export default function ReconstructionPanel({
       </button>
       <span>
         {inputMode === 'views'
-          ? '正交轮廓相交求体积：不做 AI 推测，也不会因相机拟合而错位。'
+          ? '三张图 → 本地三维草稿 → 零件与拼装步骤'
           : inputMode === 'face'
             ? '参考图本身就是乐高模型时，直接读出砖块排布。'
             : '一张图重建三维草稿，背面与配色为推测。'}
@@ -811,20 +902,38 @@ export default function ReconstructionPanel({
           </div>
         </div>
         {modeSwitch}
-        <p className="field-hint">
-          三张图必须是<strong>同一个模型</strong>
-          的正交投影，不是分别画出来的三张插画： 可以用同一个三维模型导出正交正
-          / 侧 / 俯视图，或让图像工具生成时明确要求
-          「正交投影、无透视、无光影、纯色背景、同一模型同一比例」。
-          侧视图按「从右侧看」：物体正面在画面左边；俯视图按「从上方看」：物体正面在画面下方，
-          方向不对时点「左右翻转」。
-        </p>
-        <p className="field-hint">
-          俯视图可选，而且只有<strong>真正的平面图</strong>
-          才有用：如果俯视图还能看到塔的竖直侧面，
-          那是鸟瞰透视图，会把体积撑大，请直接不要上传它，只用正视 + 侧视。
-          三张图的比例对不上时（宽深比差 15% 以上）会直接报错并给出数字。
-        </p>
+        <label className="view-projection-field">
+          图片类型
+          <select
+            value={viewProjection}
+            disabled={busy}
+            onChange={(event) =>
+              setViewProjection(
+                event.target.value as 'orthographic' | 'perspective',
+              )
+            }
+          >
+            <option value="orthographic">
+              同一模型的正交渲染图 / 无透视三视图
+            </option>
+            <option value="perspective">
+              同一模型的普通实拍照片 / 透视渲染图
+            </option>
+          </select>
+        </label>
+        {viewProjection === 'perspective' ? (
+          <output className="reconstruction-message">
+            普通照片有透视，不能直接把三个轮廓当成正交三视图。
+            当前本地流程尚未接入照片的相机校准与多视角立体重建。
+            可先用同一三维模型导出无透视的正面、右侧、俯视图；实拍重建通常还需要更多相邻角度的重叠照片。
+          </output>
+        ) : (
+          <p className="field-hint">
+            三张图必须来自同一个模型，并完整包含主体。优先用纯色或透明背景，避免投影阴影。
+            正面：正常朝向；右侧：物体正面在画面左边；俯视：物体正面在画面下方。
+            红色遮罩表示已排除的背景，请先检查是否误删主体。
+          </p>
+        )}
         <div className="view-slots">
           {(['front', 'side', 'top'] as ViewAxis[]).map((axis) => (
             <div
@@ -833,12 +942,14 @@ export default function ReconstructionPanel({
             >
               <strong>
                 {VIEW_LABELS[axis]}
-                <small>{axis === 'top' ? '可选' : '必填'}</small>
+                <small>必填</small>
               </strong>
               {views[axis] ? (
                 <>
                   <img
-                    className={views[axis]!.mirrored ? 'mirrored' : ''}
+                    style={{
+                      transform: `scale(${views[axis]!.mirrored ? -1 : 1}, ${views[axis]!.flippedVertical ? -1 : 1})`,
+                    }}
                     src={views[axis]!.preview}
                     alt={`${VIEW_LABELS[axis]}参考图与识别到的主体`}
                   />
@@ -853,12 +964,20 @@ export default function ReconstructionPanel({
                 <span className="view-slot-empty">还没有图片</span>
               )}
               <div className="view-slot-actions">
-                <button onClick={() => viewFiles.current[axis]?.click()}>
-                  {views[axis] ? '换一张' : '选择图片'}
+                <button
+                  disabled={busy || viewLoading[axis]}
+                  onClick={() => viewFiles.current[axis]?.click()}
+                >
+                  {viewLoading[axis]
+                    ? '正在读图'
+                    : views[axis]
+                      ? '换一张'
+                      : '选择图片'}
                 </button>
                 {views[axis] && (
                   <>
                     <button
+                      disabled={busy || viewLoading[axis]}
                       className={views[axis]!.mirrored ? 'active' : ''}
                       onClick={() =>
                         setViews((current) => ({
@@ -872,7 +991,24 @@ export default function ReconstructionPanel({
                     >
                       左右翻转
                     </button>
-                    <button onClick={() => removeView(axis)}>移除</button>
+                    <button
+                      disabled={busy || viewLoading[axis]}
+                      className={views[axis]!.flippedVertical ? 'active' : ''}
+                      onClick={() =>
+                        setViews((current) => ({
+                          ...current,
+                          [axis]: {
+                            ...current[axis]!,
+                            flippedVertical: !current[axis]!.flippedVertical,
+                          },
+                        }))
+                      }
+                    >
+                      上下翻转
+                    </button>
+                    <button disabled={busy} onClick={() => removeView(axis)}>
+                      移除
+                    </button>
                   </>
                 )}
               </div>
@@ -882,7 +1018,8 @@ export default function ReconstructionPanel({
                 }}
                 className="sr-only"
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/webp"
+                disabled={busy}
                 aria-label={`上传${VIEW_LABELS[axis]}图片`}
                 onChange={(e) => {
                   void loadView(axis, e.target.files?.[0]);
@@ -895,19 +1032,45 @@ export default function ReconstructionPanel({
         <div className="reconstruction-actions convert-actions">
           <button
             className="primary"
-            disabled={busy || Object.keys(views).length < 2}
+            disabled={
+              busy ||
+              Object.values(viewLoading).some(Boolean) ||
+              Object.keys(views).length !== 3 ||
+              viewProjection !== 'orthographic'
+            }
             onClick={() => void carveViews()}
           >
             {busy ? <LoaderCircle size={17} className="spin" /> : null}
-            生成积木成品 →
+            1. 生成本地三维草稿
           </button>
           <span>
-            {resolution} 凸点精度 ·{' '}
-            {Object.keys(views).length < 2
-              ? '至少需要正视与侧视'
-              : `已上传 ${Object.keys(views).length} 个视图`}
+            {resolution} 凸点精度 · 已上传 {Object.keys(views).length} / 3
+            个视图
           </span>
         </div>
+        {viewDraft && (
+          <div className="view-draft-result">
+            <MeshDraftViewer mesh={viewDraft.mesh} resolution={resolution} />
+            <p className="field-hint">
+              体积尺寸 {(viewDraft.volume.width * 0.8).toFixed(1)} ×{' '}
+              {(viewDraft.volume.depth * 0.8).toFixed(1)} ×{' '}
+              {(viewDraft.volume.height * 0.32).toFixed(1)} cm（宽 × 深 ×
+              高，不含积木底板）。 草稿显示轮廓相交的体积，尚未选择零件。
+            </p>
+            <div className="reconstruction-actions">
+              <button
+                className="primary"
+                disabled={busy}
+                onClick={() => void carveViews(true)}
+              >
+                2. 转换为积木与拼装步骤
+              </button>
+              <button disabled={busy} onClick={exportViewDraft}>
+                导出三维草稿 OBJ
+              </button>
+            </div>
+          </div>
+        )}
         {phase && <output className="reconstruction-status">{phase}</output>}
         {viewError && (
           <p className="reconstruction-error" role="alert">

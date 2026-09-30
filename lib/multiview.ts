@@ -8,6 +8,7 @@ import {
 } from './brick-engine.ts';
 import { groupImageAssembly } from './image-design.ts';
 import { referenceMask } from './reference-colors.ts';
+import type { TriangleMesh } from './mesh-types.ts';
 
 // Silhouette carving. Every voxel must fall inside the outline of every view it
 // has, so the volume is the intersection of the outlines: no generative guess,
@@ -24,6 +25,7 @@ export type MultiView = {
   // Mirrored pictures (a left-side view, or a plan drawn the other way round)
   // are flipped horizontally before they are intersected.
   mirrored?: boolean;
+  flippedVertical?: boolean;
 };
 type Silhouette = {
   axis: ViewAxis;
@@ -39,6 +41,7 @@ type Silhouette = {
   top: number;
   bottom: number;
   mirrored: boolean;
+  flippedVertical: boolean;
 };
 export function outline(view: MultiView): Silhouette {
   const { mask: raw } = referenceMask(view.image),
@@ -91,6 +94,7 @@ export function outline(view: MultiView): Silhouette {
     top,
     bottom,
     mirrored: !!view.mirrored,
+    flippedVertical: !!view.flippedVertical,
   };
 }
 function largestBody(raw: Uint8Array, width: number, height: number) {
@@ -127,11 +131,26 @@ const size = (s: Silhouette) => ({
   x: s.right - s.left + 1,
   y: s.bottom - s.top + 1,
 });
-export function carveMultiView(
+export type MultiViewVolume = {
+  width: number;
+  height: number;
+  depth: number;
+  resolution: number;
+  solid: Uint8Array;
+  colours: Uint8Array;
+  dominant: number;
+  views: ViewAxis[];
+};
+export type MultiViewReconstruction = {
+  volume: MultiViewVolume;
+  mesh: TriangleMesh;
+};
+// Keep this occupied grid as the source of both the preview and brick packing.
+// Re-voxelising a surface mesh would introduce a second, different volume.
+export function buildMultiViewVolume(
   views: MultiView[],
   resolution = 36,
-  name = '三视图积木',
-): Model {
+): MultiViewVolume {
   if (![20, 28, 36, 48].includes(resolution))
     throw Error('三视图只支持 20 / 28 / 36 / 48 凸点尺寸。');
   const axes = new Set<ViewAxis>();
@@ -184,8 +203,9 @@ export function carveMultiView(
   const column = (s: Silhouette, u: number, v: number) => {
     const span = size(s),
       uu = s.mirrored ? 1 - u : u,
+      vv = s.flippedVertical ? 1 - v : v,
       x = s.left + Math.min(span.x - 1, Math.max(0, Math.floor(uu * span.x))),
-      y = s.bottom - Math.min(span.y - 1, Math.max(0, Math.floor(v * span.y)));
+      y = s.bottom - Math.min(span.y - 1, Math.max(0, Math.floor(vv * span.y)));
     return y * s.width + x;
   };
   const inside = (s: Silhouette, u: number, v: number) =>
@@ -193,8 +213,9 @@ export function carveMultiView(
   const sample = (s: Silhouette, u: number, v: number) => {
     const span = size(s),
       uu = s.mirrored ? 1 - u : u,
+      vv = s.flippedVertical ? 1 - v : v,
       cx = s.left + Math.floor(uu * span.x),
-      cy = s.bottom - Math.floor(v * span.y),
+      cy = s.bottom - Math.floor(vv * span.y),
       votes = new Uint32Array(PALETTE.length);
     for (let dy = -1; dy <= 1; dy++)
       for (let dx = -1; dx <= 1; dx++) {
@@ -204,7 +225,12 @@ export function carveMultiView(
         if (!s.core[p]) continue;
         const i = p * 4;
         votes[
-          nearestColor(s.image.data[i], s.image.data[i + 1], s.image.data[i + 2], true)
+          nearestColor(
+            s.image.data[i],
+            s.image.data[i + 1],
+            s.image.data[i + 2],
+            true,
+          )
         ]++;
       }
     let best = -1;
@@ -226,8 +252,8 @@ export function carveMultiView(
             s.axis === 'front'
               ? inside(s, ux, vy)
               : s.axis === 'side'
-                ? inside(s, uz, vy)
-                : inside(s, ux, uz);
+                ? inside(s, 1 - uz, vy)
+                : inside(s, ux, 1 - uz);
           if (!seen) {
             keep = false;
             break;
@@ -254,10 +280,10 @@ export function carveMultiView(
           directions: [ViewAxis, number, number][] = [];
         if (!exposed(x, y, z + 1)) directions.push(['front', ux, vy]);
         if (!exposed(x, y, z - 1)) directions.push(['front', ux, vy]);
-        if (!exposed(x + 1, y, z)) directions.push(['side', uz, vy]);
-        if (!exposed(x - 1, y, z)) directions.push(['side', uz, vy]);
-        if (!exposed(x, y + 1, z)) directions.push(['top', ux, uz]);
-        if (!exposed(x, y - 1, z)) directions.push(['top', ux, uz]);
+        if (!exposed(x + 1, y, z)) directions.push(['side', 1 - uz, vy]);
+        if (!exposed(x - 1, y, z)) directions.push(['side', 1 - uz, vy]);
+        if (!exposed(x, y + 1, z)) directions.push(['top', ux, 1 - uz]);
+        if (!exposed(x, y - 1, z)) directions.push(['top', ux, 1 - uz]);
         const votes = new Uint32Array(PALETTE.length);
         for (const [axis, u, v] of directions)
           for (const s of shaped) {
@@ -277,6 +303,146 @@ export function carveMultiView(
     0,
     counts.indexOf(Math.max(...Array.from(counts), 1)),
   );
+  if (!solid.some(Boolean))
+    throw Error('三个轮廓相交后没有体积，请检查主体分离和视图方向。');
+  for (let i = 0; i < colours.length; i++)
+    if (colours[i] === 255) colours[i] = dominant;
+  return {
+    width: w,
+    height: h,
+    depth: d,
+    resolution,
+    solid,
+    colours,
+    dominant,
+    views: shaped.map((s) => s.axis),
+  };
+}
+
+export function multiViewMesh(
+  volume: MultiViewVolume,
+  name = '三视图三维草稿',
+): TriangleMesh {
+  const { width: w, height: h, depth: d, solid, colours } = volume;
+  const positions: number[] = [],
+    colors: number[] = [];
+  const at = (x: number, y: number, z: number) => (y * d + z) * w + x;
+  const occupied = (x: number, y: number, z: number) =>
+    x >= 0 && y >= 0 && z >= 0 && x < w && y < h && z < d && solid[at(x, y, z)];
+  // Outward winding, front at +Z, physical plate height = 0.4 stud.
+  const faces = [
+    {
+      normal: [1, 0, 0],
+      corners: [
+        [1, 0, 0],
+        [1, 1, 0],
+        [1, 1, 1],
+        [1, 0, 1],
+      ],
+    },
+    {
+      normal: [-1, 0, 0],
+      corners: [
+        [0, 0, 1],
+        [0, 1, 1],
+        [0, 1, 0],
+        [0, 0, 0],
+      ],
+    },
+    {
+      normal: [0, 1, 0],
+      corners: [
+        [0, 1, 1],
+        [1, 1, 1],
+        [1, 1, 0],
+        [0, 1, 0],
+      ],
+    },
+    {
+      normal: [0, -1, 0],
+      corners: [
+        [0, 0, 0],
+        [1, 0, 0],
+        [1, 0, 1],
+        [0, 0, 1],
+      ],
+    },
+    {
+      normal: [0, 0, 1],
+      corners: [
+        [0, 0, 1],
+        [1, 0, 1],
+        [1, 1, 1],
+        [0, 1, 1],
+      ],
+    },
+    {
+      normal: [0, 0, -1],
+      corners: [
+        [1, 0, 0],
+        [0, 0, 0],
+        [0, 1, 0],
+        [1, 1, 0],
+      ],
+    },
+  ];
+  for (let y = 0; y < h; y++)
+    for (let z = 0; z < d; z++)
+      for (let x = 0; x < w; x++) {
+        if (!occupied(x, y, z)) continue;
+        const hex = PALETTE[colours[at(x, y, z)]].hex;
+        const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+        for (const {
+          normal: [nx, ny, nz],
+          corners,
+        } of faces) {
+          if (occupied(x + nx, y + ny, z + nz)) continue;
+          for (const index of [0, 1, 2, 0, 2, 3]) {
+            const [cx, cy, cz] = corners[index];
+            positions.push(x + cx, (y + cy) * 0.4, z + cz);
+          }
+          colors.push(...rgb, ...rgb);
+        }
+      }
+  return {
+    name,
+    positions: new Float32Array(positions),
+    colors: new Uint8Array(colors),
+  };
+}
+
+export function reconstructMultiView(
+  views: MultiView[],
+  resolution = 36,
+  name = '三视图三维草稿',
+): MultiViewReconstruction {
+  const volume = buildMultiViewVolume(views, resolution);
+  return { volume, mesh: multiViewMesh(volume, name) };
+}
+
+export function carveMultiView(
+  views: MultiView[],
+  resolution = 36,
+  name = '三视图积木',
+): Model {
+  return multiViewToModel(buildMultiViewVolume(views, resolution), name);
+}
+
+export function multiViewToModel(
+  volume: MultiViewVolume,
+  name = '三视图积木',
+): Model {
+  const {
+    width: w,
+    height: h,
+    depth: d,
+    solid,
+    colours,
+    dominant,
+    resolution,
+    views,
+  } = volume;
+  const at = (x: number, y: number, z: number) => (y * d + z) * w + x;
   const cells = new Map<string, { color: number; support: boolean }>();
   for (let y = 0; y < h; y++)
     for (let x = 0; x < w; x++)
@@ -290,6 +456,7 @@ export function carveMultiView(
       }
   // The carved volume covers its own whole footprint, so the model gets no
   // extra base plate ring: an overhanging ring would not be joined to anything.
+  const sourceCellCount = cells.size;
   const raw = finishModel(
     cells,
     w,
@@ -306,15 +473,22 @@ export function carveMultiView(
   const model = groupImageAssembly(raw);
   model.viewsDesign = {
     method: 'silhouette-carving',
-    views: shaped.map((s) => s.axis),
+    views,
     resolution,
-    cells: cells.size,
+    cells: sourceCellCount,
   };
-  model.assembly!.reference = `按 ${shaped
-    .map((s) => VIEW_LABELS[s.axis])
-    .join(' / ')}轮廓做空间雕刻：体积完全由轮廓相交得到，不含生成式推测。被遮挡的凹面与任一视图都看不到的内部结构仍无法恢复；未做实物拼装验证。`;
+  model.assembly!.reference = `按 ${views
+    .map((axis) => VIEW_LABELS[axis])
+    .join(
+      ' / ',
+    )}轮廓做空间雕刻：体积完全由轮廓相交得到，不含生成式推测。被遮挡的凹面与任一视图都看不到的内部结构仍无法恢复；未做实物拼装验证。`;
   const check = validateModel(model);
-  if (check.collisions || check.unsupported || check.invalidParts || !check.connected)
+  if (
+    check.collisions ||
+    check.unsupported ||
+    check.invalidParts ||
+    !check.connected
+  )
     throw Error(
       `轮廓雕刻的模型未通过连接检查（重叠 ${check.collisions} · 缺支撑 ${check.unsupported} · 非法零件 ${check.invalidParts} · 连通 ${check.connected ? '是' : '否'}），请换更干净、互相对齐的正交视图，或降低尺寸。`,
     );

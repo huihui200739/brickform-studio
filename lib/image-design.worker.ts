@@ -8,7 +8,13 @@ import {
   type ImageDesignOptions,
 } from './image-design.ts';
 import { meshToDesign, meshToDesignAuto } from './mesh-design.ts';
-import { carveMultiView, type MultiView } from './multiview.ts';
+import {
+  carveMultiView,
+  reconstructMultiView,
+  multiViewToModel,
+  type MultiViewVolume,
+  type MultiView,
+} from './multiview.ts';
 import { blueprintToModel, readFront } from './brick-reader.ts';
 import { colorFromReference } from './reference-colors.ts';
 import type { TriangleMesh } from './mesh-types.ts';
@@ -18,10 +24,11 @@ self.onmessage = async (
     mesh?: TriangleMesh;
     regions?: ComponentRegion[];
     views?: MultiView[];
+    volume?: MultiViewVolume;
     raster: Raster;
     options: ImageDesignOptions;
     name: string;
-    action?: 'color' | 'components' | 'views' | 'blueprint';
+    action?: 'color' | 'components' | 'views' | 'views-draft' | 'blueprint';
     pitch?: number;
     depth?: number;
     softenShadows?: boolean;
@@ -30,7 +37,7 @@ self.onmessage = async (
   }>,
 ) => {
   try {
-    let { raster, options, name, mesh, regions = [] } = event.data;
+    const { raster, options, name, mesh, regions = [] } = event.data;
     if (event.data.action === 'color' && mesh) {
       self.postMessage({
         mesh: colorFromReference(
@@ -42,11 +49,22 @@ self.onmessage = async (
       });
       return;
     }
-    // Three-view mode: the volume is the intersection of the outlines, so no
-    // mesh and no colour projection are involved at all.
+    if (event.data.action === 'views-draft') {
+      self.postMessage({
+        reconstruction: reconstructMultiView(
+          event.data.views || [],
+          options.resolution,
+          name,
+        ),
+      });
+      return;
+    }
+    // Pack the exact volume already inspected in the three-view preview.
     if (event.data.action === 'views') {
       self.postMessage({
-        model: carveMultiView(event.data.views || [], options.resolution, name),
+        model: event.data.volume
+          ? multiViewToModel(event.data.volume, name)
+          : carveMultiView(event.data.views || [], options.resolution, name),
       });
       return;
     }

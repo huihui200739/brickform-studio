@@ -4076,3 +4076,25 @@ h1 {
 .placement-lock input {
   accent-color: #19684d;
 }
+
+.view-projection-field {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+  color: #33403a;
+  font-size: 13px;
+}
+.view-projection-field select {
+  max-width: 100%;
+  border: 1px solid #cfd8cf;
+  background: #fff;
+  padding: 9px 12px;
+  border-radius: 8px;
+}
+.view-draft-result {
+  margin: 20px 0;
+  padding-top: 16px;
+  border-top: 1px solid #e1e7df;
+}

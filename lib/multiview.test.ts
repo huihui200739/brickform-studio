@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { carveMultiView, outline, type MultiView } from './multiview.ts';
+import {
+  carveMultiView,
+  outline,
+  reconstructMultiView,
+  multiViewToModel,
+  type MultiView,
+} from './multiview.ts';
 import { validateModel, PALETTE, type Raster } from './brick-engine.ts';
 
 type Colour = [number, number, number];
@@ -102,7 +108,9 @@ void test('colours are read from the view that faces each side', () => {
   const painted = new Set(model.bricks.map((b) => b.color)),
     names = [...painted].map((i) => PALETTE[i].name);
   assert.ok(names.includes('沙色'), 'the shared sand material is used');
-  const sides = model.bricks.filter((b) => b.x <= 1 || b.x + b.w >= model.width - 1);
+  const sides = model.bricks.filter(
+    (b) => b.x <= 1 || b.x + b.w >= model.width - 1,
+  );
   assert.ok(sides.length > 0, 'the model has side faces');
   assert.equal(validateModel(model).connected, true);
 });
@@ -199,10 +207,7 @@ void test('an anti-aliased edge does not colour the outer bricks', () => {
     return [215, 186, 140];
   });
   const model = carveMultiView(
-    inputs(
-      { axis: 'front', image: framed },
-      { axis: 'side', image: framed },
-    ),
+    inputs({ axis: 'front', image: framed }, { axis: 'side', image: framed }),
     20,
     '描边',
   );
@@ -251,4 +256,94 @@ void test('outline reports the drawn rectangle bounds', () => {
     { left: s.left, right: s.right, top: s.top, bottom: s.bottom },
     { left: 6, right: 25, top: 8, bottom: 19 },
   );
+});
+
+void test('three-view draft keeps physical dimensions, exposes only boundary faces, and packs the inspected volume', () => {
+  const views: MultiView[] = [
+    { axis: 'front', image: front() },
+    { axis: 'side', image: side() },
+    { axis: 'top', image: plan() },
+  ];
+  const { mesh, volume } = reconstructMultiView(views, 20, 'draft');
+  const { width: w, height: h, depth: d } = volume;
+  const triangleCount = mesh.positions.length / 9;
+  assert.equal(
+    triangleCount,
+    4 * (w * h + w * d + h * d),
+    'no internal voxel faces',
+  );
+  assert.equal(mesh.colors.length, triangleCount * 3);
+  for (const [axis, expected] of [
+    [0, w],
+    [1, h * 0.4],
+    [2, d],
+  ]) {
+    const coords = Array.from(mesh.positions).filter(
+      (_, index) => index % 3 === axis,
+    );
+    assert.equal(Math.min(...coords), 0);
+    assert.ok(Math.abs(Math.max(...coords) - expected) < 1e-5);
+  }
+  const model = multiViewToModel(structuredClone(volume), 'draft');
+  assert.deepEqual(model.bricks, carveMultiView(views, 20, 'draft').bricks);
+  assert.equal(
+    model.viewsDesign!.cells,
+    volume.solid.reduce((sum, cell) => sum + cell, 0),
+  );
+  assert.equal(validateModel(model).unsupported, 0);
+});
+
+void test('right-side front-left and plan front-bottom put asymmetric steps at +Z', () => {
+  // A full-width low platform with a taller block at the front. The side view
+  // has the tall block on the left. Front and top still see full rectangles.
+  const sideSteps = picture(40, 40, (x, y) => {
+    if (x < 4 || x >= 36 || y < 4 || y >= 36) return null;
+    return y >= 20 || x < 20 ? [215, 186, 140] : null;
+  });
+  const square = block(40, 40, [4, 4, 32, 32]);
+  const { volume } = reconstructMultiView(
+    [
+      { axis: 'front', image: square },
+      { axis: 'side', image: sideSteps },
+      { axis: 'top', image: square },
+    ],
+    20,
+  );
+  const at = (x: number, y: number, z: number) =>
+    (y * volume.depth + z) * volume.width + x;
+  const x = Math.floor(volume.width / 2),
+    y = volume.height - 1;
+  assert.equal(volume.solid[at(x, y, volume.depth - 1)], 1, 'front is high');
+  assert.equal(volume.solid[at(x, y, 0)], 0, 'back is low');
+  const reversed = reconstructMultiView(
+    [
+      { axis: 'front', image: square },
+      { axis: 'side', image: sideSteps, mirrored: true },
+      { axis: 'top', image: square },
+    ],
+    20,
+  ).volume;
+  assert.equal(
+    reversed.solid[at(x, y, 0)],
+    1,
+    'side horizontal flip reverses depth',
+  );
+});
+
+void test('top silhouette orientation and vertical flip agree with front at +Z', () => {
+  const square = block(40, 40, [4, 4, 32, 32]);
+  const notchedPlan = block(40, 40, [4, 4, 32, 32], [16, 24, 8, 12]);
+  const views: MultiView[] = [
+    { axis: 'front', image: square },
+    { axis: 'side', image: square },
+    { axis: 'top', image: notchedPlan },
+  ];
+  const v = reconstructMultiView(views, 20).volume;
+  const at = (z: number) => z * v.width + Math.floor(v.width / 2);
+  assert.equal(v.solid[at(v.depth - 1)], 0, 'bottom of plan is front');
+  assert.equal(v.solid[at(0)], 1, 'back retained');
+  views[2].flippedVertical = true;
+  const flipped = reconstructMultiView(views, 20).volume;
+  assert.equal(flipped.solid[at(0)], 0);
+  assert.equal(flipped.solid[at(v.depth - 1)], 1);
 });

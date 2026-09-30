@@ -161,6 +161,44 @@ for (const filename of fs.readdirSync(chunkDir)) {
     assert.equal(result.applied, 0);
     assert.ok(!result.model.semanticDesign);
     cube.dispose();
+    // Exercise the packaged three-view preview and conversion, including the
+    // structured-cloned occupied volume returned to the browser between steps.
+    const viewData = new Uint8ClampedArray(16 * 16 * 4);
+    for (let y = 2; y < 14; y++)
+      for (let x = 2; x < 14; x++)
+        viewData.set([215, 186, 140, 255], (y * 16 + x) * 4);
+    await self.onmessage({
+      data: {
+        action: 'views-draft',
+        views: ['front', 'side', 'top'].map((axis) => ({
+          axis,
+          image: { width: 16, height: 16, data: viewData },
+        })),
+        options: { resolution: 20 },
+        name: 'Three-view worker check',
+      },
+    });
+    assert.ok(result.reconstruction?.mesh.positions.length > 0, result.error);
+    assert.equal(
+      result.reconstruction.mesh.positions.length / 3,
+      result.reconstruction.mesh.colors.length,
+    );
+    const volume = structuredClone(result.reconstruction.volume);
+    await self.onmessage({
+      data: {
+        action: 'views',
+        volume,
+        options: { resolution: 20 },
+        name: 'Three-view worker check',
+      },
+    });
+    assert.equal(
+      result.model?.viewsDesign.method,
+      'silhouette-carving',
+      result.error,
+    );
+    assert.ok(result.model.bricks.length > 0);
+    assert.ok(result.model.assembly.steps.length > 0);
     checked++;
   }
 }

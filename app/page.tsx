@@ -863,6 +863,7 @@ export default function Home() {
               image={source?.imageData}
               name={source?.name || '我的三维积木'}
               resolution={resolution}
+              onInputsChange={() => setDirty(true)}
               onModel={(next) => {
                 applyModel(next);
                 setSurface('bricks');
