@@ -11,8 +11,32 @@ import {
   topDiagram,
   installationText,
   cleanStageName,
+  connectedBelow,
+  connectionInstruction,
 } from './build-instructions.ts';
 import { manualHTML } from './manual.ts';
+import { positionedComponent } from './semantic-components.ts';
+import type { Model } from './brick-engine.ts';
+
+void test('flame instructions identify the earlier hollow stud by its bar connection', () => {
+  const bricks = positionedComponent('brazier', [0, 0, 0], 0, { width: 12, depth: 12 })
+    .map((b, step) => ({ ...b, id: step + 1, step, section: 'component-flame' }));
+  const m: Model = { name: 'flame-guide', source: 'image', shape: 'sculpture', resolution: 20,
+    width: 12, depth: 12, height: 16, bricks, supportCount: 0,
+    levels: bricks.map(b => b.step), assembly: { sections: [],
+      parameters: { bodyLength: 0, headWidth: 0, bodyColor: 7, beakColor: 2 },
+      reference: '', steps: bricks.map(b => ({ name: b.part, description: '', section: b.section })),
+    },
+  };
+  const flame = bricks.at(-1)!, holder = bricks.at(-2)!;
+  assert.deepEqual(connectedBelow(m, flame).map(b => b.id), [holder.id]);
+  assert.match(connectionInstruction(m, flame), new RegExp(`#${holder.id}`));
+  assert.equal((detailDiagram(m, flame.step, 0).match(/data-connection-ring=/g) || []).length, 1);
+  const html = manualHTML(m, { start: flame.step, end: flame.step + 1 });
+  assert.match(html, /class="local-position"/);
+  assert.match(html, /安装底面高度/);
+  assert.ok(html.includes(connectionInstruction(m, flame)));
+});
 
 void test('one-piece instructions never reveal future placements, including same-group dependencies', () => {
   const m = roundedDuck();

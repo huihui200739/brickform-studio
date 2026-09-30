@@ -25,4 +25,7 @@ export type AnchorResult = {
   normalizedAnchor?: V3;
   /** Candidate kind used by debug output and placement policy. */
   surfaceKind?: 'ground' | 'wall' | 'platform' | 'unknown';
+  /** Image-supported recess, in brick-grid coordinates. Support may not fill it. */
+  clearanceVolume?: { min: V3; max: V3 };
+  clearanceAxis?: 0 | 2;
 };

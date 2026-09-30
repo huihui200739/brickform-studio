@@ -14,6 +14,7 @@ import {
   isSideMounted,
   isSpecialPart,
   gridAddress,
+  connectionInstruction,
 } from '@/lib/build-instructions';
 
 export default function BuildGuide({
@@ -206,6 +207,7 @@ export default function BuildGuide({
             <p className="guide-action-text">
               {installationText(guide, active)}
             </p>
+            <p className="guide-action-text">{connectionInstruction(guide, active)}</p>
             <div className="guide-address">
               {isSpecialPart(active)
                 ? '按左侧文字连接'
@@ -252,7 +254,7 @@ export default function BuildGuide({
                 {(view === 'detail' || view === 'placed') && (
                   <h4>
                     {isSpecialPart(active)
-                      ? '彩色为当前零件：对照连接后的方向'
+                      ? '橙色圆圈是连接点，彩色为当前零件'
                       : view === 'placed'
                         ? '装好后，应当是这样'
                         : isSideMounted(active)

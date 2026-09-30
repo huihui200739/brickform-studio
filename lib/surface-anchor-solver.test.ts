@@ -153,6 +153,13 @@ for (const resolution of [36, 48]) test(`fixture-temple ${resolution} seats fron
   const braziers = result.applied.filter((region) => region.kind === 'brazier');
   assert.ok(statue, 'the primary statue is retained as a component');
   assert.equal(statue.rotation, 2);
+  const opening = statue.anchorResult?.clearanceVolume;
+  assert.ok(opening, 'the detected niche must reserve its opening');
+  assert.ok(result.model.bricks.every(b => b.section?.startsWith('component-') ||
+    ![0, 1, 2].every(axis =>
+      [b.x, b.y, b.z][axis] < opening.max[axis] &&
+      [b.x + b.w, b.y + b.h, b.z + b.d][axis] > opening.min[axis],
+    )), 'no pillar, source remnant or automatic support may fill the opening');
   assert.ok((statue?.representationResult?.brickCount || 0) > 0);
   assert.equal(statue?.representationResult?.visibleFromReference, true);
   assert.equal(braziers.length, 2);

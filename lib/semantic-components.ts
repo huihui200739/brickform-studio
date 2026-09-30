@@ -132,7 +132,7 @@ export function regionPlacement(region: ComponentRegion, grid: V3) {
 }
 export function insideRegion(
   point: V3,
-  region: ReturnType<typeof regionPlacement>,
+  region: Pick<ReturnType<typeof regionPlacement>, 'min' | 'max'>,
 ) {
   return point.every((v, i) => v >= region.min[i] && v < region.max[i]);
 }

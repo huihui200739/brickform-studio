@@ -1092,7 +1092,7 @@ export default function Home() {
                   value={tab}
                   onValueChange={(v) => {
                     setTab(String(v));
-                    setPreviewMode('complete');
+                    setPreviewMode(v === 'steps' ? 'steps' : 'complete');
                     if (v === 'steps') {
                       setGuideFocus(null);
                       setLayer(1);

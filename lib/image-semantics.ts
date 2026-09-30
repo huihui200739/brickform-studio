@@ -7,6 +7,7 @@ export type ImageSemanticDetection = {
   bbox: { x: number; y: number; width: number; height: number };
   mask?: Uint8Array;
   maskSize?: [number, number];
+  nicheBox?: { x: number; y: number; width: number; height: number };
   anchorUV: [number, number];
   confidence: number;
   evidence: string[];
@@ -301,6 +302,13 @@ function detectEnclosedSubject(image: Raster): ImageSemanticDetection | undefine
         bbox: { x: minX / (w - 1), y: minY / (h - 1), width: (maxX - minX) / (w - 1), height: (maxY - minY) / (h - 1) },
         mask,
         maskSize: [width, height],
+        nicheBox: {
+          x: Math.min(...[...rows.values()].map(row => row[0])) / (w - 1),
+          y: Math.min(...rows.keys()) / (h - 1),
+          width: (Math.max(...[...rows.values()].map(row => row[1])) -
+            Math.min(...[...rows.values()].map(row => row[0]))) / (w - 1),
+          height: (Math.max(...rows.keys()) - Math.min(...rows.keys())) / (h - 1),
+        },
         anchorUV: [(minX + maxX) / 2 / (w - 1), maxY / (h - 1)],
         confidence: 0.86,
         anchorConfidence: 0.82,

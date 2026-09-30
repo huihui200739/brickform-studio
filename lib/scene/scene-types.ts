@@ -47,6 +47,8 @@ export type SceneElementInstance = {
   category: ElementCategory;
   confidence: number;
   imageBox?: ImageBox;
+  /** Image evidence for the recess enclosing this object. */
+  nicheBox?: ImageBox;
   imageMask?: Uint8Array;
   imageMaskSize?: [number, number];
   anchorUV?: [number, number];

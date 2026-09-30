@@ -116,18 +116,23 @@ export function placementContext(
   return { batch, active, visible };
 }
 export function connectedBelow(model: Model, b: Brick) {
-  const sockets = connectors(b).sockets;
+  const ports = connectors(b);
+  const matches = (a: typeof ports.studs[number], c: typeof ports.studs[number]) =>
+    (a.type || 'stud') === (c.type || 'stud') &&
+    a.point.every((v, i) => Math.abs(v - c.point[i]) < 0.001) &&
+    a.normal.every((v, i) => Math.abs(v - c.normal[i]) < 0.001);
   return model.bricks.filter(
     (p) =>
-      p.id < b.id &&
-      connectors(p).studs.some((c) =>
-        sockets.some(
-          (s) =>
-            s.point.every((v, i) => Math.abs(v - c.point[i]) < 0.001) &&
-            s.normal.every((v, i) => Math.abs(v - c.normal[i]) < 0.001),
-        ),
-      ),
+      ((p.step ?? 0) < (b.step ?? 0) || ((p.step ?? 0) === (b.step ?? 0) && p.id < b.id)) &&
+      (connectors(p).studs.some(c => ports.sockets.some(s => matches(s, c))) ||
+       connectors(p).sockets.some(s => ports.studs.some(c => matches(s, c)))),
   );
+}
+export function connectionInstruction(model: Model, b: Brick) {
+  const parents = connectedBelow(model, b);
+  if (b.y === 0) return '在平面上按定位图摆放，随后用上层薄板连接。';
+  if (!parents.length) return '未找到此前步骤中的连接零件，需要复核安装顺序。';
+  return `连接到已安装的 ${parents.map(p => `#${p.id}（${PARTS[p.part]}）`).join('、')}。`;
 }
 const num = (v: number) => v.toFixed(1);
 function hull(points: number[][]) {
@@ -252,15 +257,17 @@ function sceneSVG(
   const previousStuds = bricks
     .filter((b) => b.id !== activeId)
     .flatMap((b) => connectors(b).studs);
+  const previousSockets = bricks.filter(b => b.id !== activeId).flatMap(b => connectors(b).sockets);
+  const portMatches = (a: typeof previousStuds[number], b: typeof previousStuds[number]) =>
+    (a.type || 'stud') === (b.type || 'stud') &&
+    a.point.every((v, i) => Math.abs(v - b.point[i]) < 0.001) &&
+    a.normal.every((v, i) => Math.abs(v - b.normal[i]) < 0.001);
   const mounts =
-    active && lift
-      ? connectors(active).sockets.filter((s) =>
-          previousStuds.some(
-            (c) =>
-              c.point.every((v, i) => Math.abs(v - s.point[i]) < 0.001) &&
-              c.normal.every((v, i) => Math.abs(v - s.normal[i]) < 0.001),
-          ),
-        )
+    active && (lift || isSpecialPart(active))
+      ? [
+          ...connectors(active).sockets.filter(s => previousStuds.some(c => portMatches(s, c))),
+          ...connectors(active).studs.filter(c => previousSockets.some(s => portMatches(s, c))),
+        ]
       : [];
   const rings = mounts
     .map((s) => {
@@ -327,7 +334,7 @@ export function detailDiagram(
   ];
   const normal = transform(active.pose!.matrix, [0, -1, 0]);
   const context = isSpecialPart(active)
-    ? visible.filter((b) => b.section === active.section)
+    ? visible.filter((b) => b.section === active.section || supports.has(b.id))
     : near;
   return sceneSVG(context, active.id, {
     side: normal[0] < 0 ? -1 : 1,

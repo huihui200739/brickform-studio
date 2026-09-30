@@ -38,6 +38,7 @@ import { applyRepresentationTransaction } from './composition/transaction.ts';
 import { removeSemanticCutRemnants } from './semantic-cut-cleanup.ts';
 import { connectedBelow } from './build-instructions.ts';
 import { connectors } from './assembly-validation.ts';
+import { installCavityLintel } from './cavity-lintel.ts';
 import { enforceGroupConsistency } from './element-grouping.ts';
 import { routeStructureRepresentation } from './representation/representation-router.ts';
 import { applyAnchorResult, solveSurfaceAnchor } from './surface-anchor-solver.ts';
@@ -590,13 +591,15 @@ function assembleVolume(
     cells = new Map(volume.cells);
   validateRegions(regions, [w, h, d]);
   const placements = regions.map((r) => regionPlacement(r, [w, h, d]));
+  const openings = regions.flatMap(r => r.anchorResult?.clearanceVolume ? [r.anchorResult.clearanceVolume] : []);
+  const cuts = [...placements, ...openings];
   const sources = regions.map((r) => regionPlacement({
     ...r, anchor: r.sourceAnchor || r.referenceAnchor || r.anchor,
   }, [w, h, d]));
   let removedCells = 0;
   for (const key of cells.keys()) {
     const p = key.split(',').map(Number) as [number, number, number];
-    if (placements.some((r) => insideRegion(p, r))) {
+    if (cuts.some((r) => insideRegion(p, r))) {
       cells.delete(key);
       removedCells++;
     } else if (regions.some((r, i) => {
@@ -639,7 +642,7 @@ function assembleVolume(
         ]) {
           const next = `${x + dx},${y + dy},${z + dz}`;
           if (cells.has(next) && !seen.has(next)) queue.push(next);
-          if (placements.some((r) => insideRegion([x + dx, y + dy, z + dz], r)))
+          if (cuts.some((r) => insideRegion([x + dx, y + dy, z + dz], r)))
             touchesCut = true;
         }
       }
@@ -667,7 +670,8 @@ function assembleVolume(
   // If both jambs are present, bridge the opening with full 2 x 8 plates at
   // its upper boundary. Plates retain their catalog dimensions and are counted.
   const bridges: Model['bricks'] = [];
-  for (const r of placements) {
+  for (const [i, r] of placements.entries()) {
+    if (regions[i].anchorResult?.clearanceVolume) continue;
     const x = r.min[0] - 1,
       y = r.max[1];
     if (r.max[0] - r.min[0] !== 6 || x < 0 || x + 8 > w + 2 || y >= h + 2)
@@ -697,6 +701,10 @@ function assembleVolume(
       });
     }
   }
+  for (const region of regions) {
+    const box = region.anchorResult?.clearanceVolume;
+    if (box) bridges.push(...installCavityLintel(cells, volume.cells, box, region.anchorResult!.clearanceAxis ?? 2, dominant));
+  }
   const raw = finishModel(
     cells,
     w + 2,
@@ -709,7 +717,7 @@ function assembleVolume(
     protectedCells.size || placements.length
       ? (x, y, z) =>
           protectedCells.has(`${x},${y},${z}`) ||
-          placements.some((r) => insideRegion([x, y, z], r))
+          cuts.some((r) => insideRegion([x, y, z], r))
       : undefined,
     [...bridges, ...(() => {
       const structure = classifyStructure(mesh);
@@ -812,6 +820,7 @@ function assembleVolume(
     throw Error('此尺寸超过 14000 块零件，请降低积木尺寸后再转换。');
   const packing = optimizeAestheticPacking(raw, 192);
   const model = groupImageAssembly(raw);
+  model.clearanceVolumes = openings;
   model.meshDesign = {
     method: 'mesh-volume',
     smoothTiles,
@@ -846,6 +855,12 @@ function assembleVolume(
       '所选区域上方仍有结构需要支撑，请缩小清除范围，避开墙体或屋顶。',
     );
   addComponents(model, regions, [w, h, d], removedCells);
+  if (model.bricks.some(b => !b.section?.startsWith('component-') && openings.some(box =>
+    [0, 1, 2].every(axis =>
+      [b.x, b.y, b.z][axis] < box.max[axis] &&
+      [b.x + b.w, b.y + b.h, b.z + b.d][axis] > box.min[axis],
+    ),
+  ))) throw Error('入口空腔被支撑或主体积木占用，无法提交此安装方案。');
   const check = validateModel(model);
 
   if (

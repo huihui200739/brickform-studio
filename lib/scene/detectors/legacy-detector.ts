@@ -31,6 +31,7 @@ export class LegacySceneDetector implements SceneDetector {
       category: detection.kind,
       confidence: detection.confidence,
       imageBox: detection.bbox,
+      nicheBox: detection.nicheBox,
       imageMask: detection.mask,
       imageMaskSize: detection.maskSize,
       anchorUV: detection.anchorUV,

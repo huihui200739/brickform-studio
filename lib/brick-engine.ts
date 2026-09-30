@@ -43,6 +43,7 @@ export type Model = {
   representationResults?: import('./scene/scene-types.ts').RepresentationResult[];
   semanticReservedCells?: string[];
   reservedVolumes?: import('./scene/scene-types.ts').BBox3d[];
+  clearanceVolumes?: import('./scene/scene-types.ts').BBox3d[];
   repeatedGroups?: import('./scene-elements.ts').RepeatedElementGroup[];
   structureCategory?: import('./structure-classifier.ts').StructureCategory;
   structureConfidence?: number;
