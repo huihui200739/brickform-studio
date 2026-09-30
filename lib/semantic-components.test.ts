@@ -16,7 +16,17 @@ import { meshToDesign, meshToDesignAuto } from './mesh-design.ts';
 import { inventory, toLDraw, type Model } from './brick-engine.ts';
 import { installationText, detailDiagram } from './build-instructions.ts';
 import { brickFaces } from './assembly-diagram.ts';
+import { componentTemplate } from './component-library.ts';
 const kinds: ComponentKind[] = ['tree', 'brazier', 'statue'];
+test('statue clearance uses the rounded real catalog height, including its accessories', () => {
+  for (const rotation of [0, 1, 2, 3]) {
+    const bricks = positionedComponent('statue', [0, 0, 0], rotation, { width: 20, depth: 20 }, 'statue-standing');
+    const top = Math.max(...bricks.map(b => b.y + b.h));
+    assert.equal(COMPONENT_SIZES.statue.height, Math.ceil(top));
+    assert.equal(componentTemplate('statue-standing')!.bboxStuds.height, Math.ceil(top));
+    assert.ok(bricks.some(b => b.part === '4497'), 'the spear belongs to the measured envelope');
+  }
+});
 test('catalog statue presents its shield toward each reference-camera direction', () => {
   for (const yaw of [0, 90, 180, 270, -90, 15]) {
     const parts = positionedComponent('statue', [0, 0, 0], referenceFacingRotation(yaw), { width: 20, depth: 20 });

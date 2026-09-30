@@ -66,7 +66,7 @@ export const COMPONENT_LIBRARY: LegoComponentTemplate[] = [
     name: '持盾人物',
     category: 'statue',
     tags: ['figure'],
-    bboxStuds: { width: 6, depth: 5, height: 23 },
+    bboxStuds: { width: 6, depth: 5, height: 20 },
     anchor: { kind: 'ground', localPoint: [0, 0, 0] },
     colors: [11],
     representation: 'component',

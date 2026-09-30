@@ -658,13 +658,19 @@ function assembleVolume(
   // Seat each component on a connected four-stud mounting surface. Fill only
   // below the selected base, never refill the removed object above that base.
   const mountingCells = new Set<string>();
-  for (const r of placements)
+  for (const [i, r] of placements.entries())
     for (let x = r.x - 1; x < r.x + 1; x++)
       for (let z = r.z - 1; z < r.z + 1; z++) {
         for (let y = r.y - 1; y >= 2; y--) {
           const key = `${x},${y},${z}`;
           mountingCells.add(key);
-          if (cells.has(key)) break;
+          // At coarse resolutions a single seated top plate can hide a gap
+          // underneath. Keep two full brick courses below every flame seat,
+          // including existing cells, protected from later hollowing.
+          if (cells.has(key)) {
+            if (y <= r.y - (regions[i].kind === 'brazier' ? 6 : 1)) break;
+            continue;
+          }
           cells.set(key, { color: dominant, support: true });
         }
       }

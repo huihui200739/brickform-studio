@@ -131,7 +131,7 @@ test('anchor calibration updates the placement anchor without using imageBox dir
   assert.equal(calibrated.anchorResult?.attached, true);
 });
 
-for (const resolution of [36, 48]) test(`fixture-temple ${resolution} seats front-facing components and replaces projected flames`, async () => {
+for (const resolution of [28, 36, 48]) test(`fixture-temple ${resolution} seats front-facing components and replaces projected flames`, async () => {
   // Exercise the real browser pipeline: projection changes the packed source
   // colours and previously left a second flame painted on the rear masonry.
   const colored = colorFromReference(mesh, image);
@@ -162,6 +162,11 @@ for (const resolution of [36, 48]) test(`fixture-temple ${resolution} seats fron
     )), 'no pillar, source remnant or automatic support may fill the opening');
   assert.ok((statue?.representationResult?.brickCount || 0) > 0);
   assert.equal(statue?.representationResult?.visibleFromReference, true);
+  assert.equal(statue.templateId, 'statue-standing', 'all detail levels retain the catalog figure');
+  assert.equal(statue.representationResult?.brickCount, 13);
+  assert.equal(statue.representationResult?.fallbackLevel, 0);
+  assert.ok(statue.representationResult!.bbox3d!.max[1] <= opening.max[1],
+    'the complete figure must fit below the lintel');
   assert.equal(braziers.length, 2);
   assert.equal(result.model.clearanceVolumes?.length, 3, 'the entry and both foreground flame spaces are reserved');
   assert.ok(result.model.bricks.every(b => b.section?.startsWith('component-') ||

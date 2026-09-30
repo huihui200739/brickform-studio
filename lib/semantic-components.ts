@@ -82,7 +82,9 @@ export const COMPONENT_LABELS = {
 export const COMPONENT_SIZES = {
   tree: { width: 8, depth: 8, height: 16 },
   brazier: { width: 4, depth: 4, height: 18 },
-  statue: { width: 6, depth: 5, height: 23 },
+  // The catalog figure (including spear and plume) is 19.364 plate units
+  // tall. Round up its body envelope; 23 cut through low-resolution lintels.
+  statue: { width: 6, depth: 5, height: 20 },
 };
 // LDraw figures face local -Z. Quantize the reference camera to a legal
 // quarter turn so an automatic figure presents its face to the reference.
