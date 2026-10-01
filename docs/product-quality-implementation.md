@@ -349,6 +349,32 @@ node --experimental-strip-types scripts/benchmark-slopes.ts outputs/camera-calib
 
 证据：`reference-camera-2026-10-01.json`、`reference-camera-order-2026-10-01.json`、`reference-camera-material-2026-10-01.json`、`reference-camera-slopes-2026-10-01.json`、`image-reference-camera-2026-10-01.json`、`geometry-reference-camera-2026-10-01.json`。生产指纹为 `8f7639903d1f4170c6d6d1a716a3da493f0bb68143311a19e05208ceb567596e`，实际目录渲染在 `outputs/camera-calibration/<case>-after.png` 和 `temple-after.png`。没有浏览器验收、独立真实照片重建或实物试拼。
 
+### 第十一批：逐面遮挡与可见区域取色（2026-10-01）
+
+- 旧取色把三角面中心与邻近的 192×192 深度像素比较，允许模型尺寸 1.2% 的深度差；薄墙背面、局部被挡住的面会误标为观察。另有透视下直接线性插值世界深度的错误。
+- 新 `reference-visibility.ts` 对像素逐面深度测试，使用透视校正插值。没有占据采样像素的小三角面在自身采样位置查询全部可能遮挡面；只容许尺寸 1e-7 的浮点误差，不再放宽模型级距离。
+- 已观察面的颜色来自其实际拥有的可见像素，多数票决定该面的颜色；中心被挡住的大面仍可从可见部分取色。没有可见采样像素的微小面只在精确遮挡检查通过后读取自身像素。取消无安装面约束的 3×3 邻域跨面取色，保留阴影推断开关、来源记录及未观察面材质推断。
+- 两个新反例在修改前失败、修改后通过：相距 0.01 的前后薄板，后板不应观测到前板的叶片颜色；大三角面中心被红色组件挡住时，其露出的蓝色部分仍应成为有效观测。另有独立解析三维射线证明透视插值，以及没有占据任何栅格像素的小三角面前后遮挡反例。
+- **206 项测试、类型检查、构建及图片 worker 验证通过**。12 次目录模型/最终扣接顺序/清单/语义/墙面/平台回放通过，两份神庙在 28/36/48 档均保留雕像与两只已连接火盆。普通网格零件最终接近检查 **52,094 次，其中 4,456 次向上扣接**；51 件最终斜坡姿态、连接和基础验证通过。以上仍只覆盖最终一层接近空间，不代表完整插入路径、操作空间或承重验证。
+- 新材质审计固定 `ddf9d98` 为旧规则，两个版本使用同一相机。所有观察/取色票和推断来源重放一致，原始顶点及颜色哈希未变。每份原生输入分别抽查 32 个可见像素、32 个可见微小面中心、32 个被遮挡面中心：共 **8 份输入、768 条独立 NumPy 三维射线**，通过直接射线/源三角面相交验证，未使用生产代码的屏幕深度插值。最大深度误差小于尺寸 4.5e-15。抽查不是完整射线证明，也不是相机或材质真值。
+- 8 份输入合计撤销旧规则的 **23,652 个观察标记**，补回 **12,865 个观察标记**；颜色及叶片标记变化分别记录。旧实现的观察颜色可能就来自被挡面或跨面邻域，所以这次不再以“观察颜色必须和旧实现完全一致”为通过条件，而以源表面可见性、采样取色票和推断来源校验为条件。
+- 实际目录渲染复核六类和新神庙 48 档正面。神庙入口后墙连续，雕像、两只火盆保留；外围柱/阶梯仍有深色补丁。房屋仍把部分墙面错配蓝色，机车仍有红/棕/浅色补丁，马存在过重支撑与红色主体，头像/帽子/人物曲面阶梯和碎色仍在。**整模外观仍全部不通过套装级验收。** 修正遮挡计算不等于修正真实材质、相机内部对应、源网格猜测、完整曲面/区域零件构造。
+- 马、头像、人物及原神庙的部分零件和支撑数量上升；本批不能宣称统一减少零件或改善全部模型美观。仍没有独立真实照片测试和实物试拼。
+
+复现（相同本地源网格和检测缓存）：
+
+```sh
+BRICKFORM_BENCH_PYTHON=work/semantic-engine/.venv/bin/python npm run benchmark:images -- --scene-dir=outputs/identity-calibration
+node --experimental-strip-types scripts/benchmark-geometry.ts outputs/visibility-calibration
+node --experimental-strip-types scripts/benchmark-supports.ts outputs/visibility-calibration
+BRICKFORM_BENCH_PYTHON=work/semantic-engine/.venv/bin/python node --experimental-strip-types scripts/benchmark-surface-materials.ts outputs/visibility-calibration
+node --experimental-strip-types scripts/benchmark-slopes.ts outputs/visibility-calibration
+```
+
+生产指纹：`52e5649328320e61fbff9caa5983c971726b2dd4d4340b888085709d75a061a3`。证据：`reference-visibility-2026-10-01.json`、`reference-visibility-order-2026-10-01.json`、`reference-visibility-slopes-2026-10-01.json`、`image-reference-visibility-2026-10-01.json`、`geometry-reference-visibility-2026-10-01.json`。实际目录渲染：`outputs/visibility-calibration/<case>-after.png`、`temple-after.png`。
+
+下一项应处理有源图证据的区域材质与几何边界、表面光照/真实涂色歧义，再完善区域零件构造；不能通过加大容差、统一刷色或测试条数掩盖成品问题。整体目标保持进行中。
+
 ### 当前限制
 
 已解决已有基准中的错误组件替换，整理两份神庙入口后墙及有面积证据的平台，实装完整支撑图、普通砖最终扣接顺序、局部光照推断和通用近似平面整理；已接入有源表面证据的四种局部斜坡件、连续局部排布与带来源记录的表面材质推断；**完整区域构造、曲面、地面铺面与材质、背面布局、内部支撑构造、承重和完整装配规划仍未完成**。基准仍是六张干净样例图，不是独立真实照片集。本机检测模型仍有错标签；当前查询类别和身份支持规则不是通用零件编号识别器。阶段 2 必须继续扩展到完整平面/曲面/开口和材质设计，不能把这些通过记录包装成官方套装级质量。

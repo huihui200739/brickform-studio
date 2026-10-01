@@ -3,6 +3,7 @@ import { MESH_FEATURE, type TriangleMesh } from './mesh-types.ts';
 import { rgb } from './material-color-space.ts';
 import { referenceMaterials } from './reference-materials.ts';
 import { surfaceMaterials } from './surface-materials.ts';
+import { referenceVisibility } from './reference-visibility.ts';
 
 const SIZE = 96;
 // Olive foliage is warm and desaturated: its green channel barely beats red but
@@ -336,122 +337,86 @@ export function colorFromReference(
   const materials = referenceMaterials(image, mask, softenShadows);
   const p = mesh.positions;
   const N = 192,
-    depth = new Float32Array(N * N).fill(-Infinity),
-    pixelFace = new Int32Array(N * N).fill(-1),
-    coords = new Float32Array(p.length);
+    coords = new Float64Array(p.length);
   for (let i = 0; i < p.length; i += 3) {
     const v = view.point(p[i], p[i + 1], p[i + 2]);
     coords[i] = ((v[0] - view.minX) / (view.maxX - view.minX)) * (N - 1);
     coords[i + 1] = ((view.maxY - v[1]) / (view.maxY - view.minY)) * (N - 1);
     coords[i + 2] = v[2];
   }
-  for (let i = 0; i < coords.length; i += 9) {
-    const ax = coords[i],
-      ay = coords[i + 1],
-      bx = coords[i + 3],
-      by = coords[i + 4],
-      cx = coords[i + 6],
-      cy = coords[i + 7],
-      den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
-    if (Math.abs(den) < 1e-8) continue;
-    const x0 = Math.max(0, Math.floor(Math.min(ax, bx, cx))),
-      x1 = Math.min(N - 1, Math.ceil(Math.max(ax, bx, cx))),
-      y0 = Math.max(0, Math.floor(Math.min(ay, by, cy))),
-      y1 = Math.min(N - 1, Math.ceil(Math.max(ay, by, cy)));
-    for (let y = y0; y <= y1; y++)
-      for (let x = x0; x <= x1; x++) {
-        const a =
-            ((by - cy) * (x + 0.5 - cx) + (cx - bx) * (y + 0.5 - cy)) / den,
-          b = ((cy - ay) * (x + 0.5 - cx) + (ax - cx) * (y + 0.5 - cy)) / den;
-        if (a < 0 || b < 0 || a + b > 1) continue;
-        const z =
-          a * coords[i + 2] + b * coords[i + 5] + (1 - a - b) * coords[i + 8];
-        if (z > depth[y * N + x]) {
-          depth[y * N + x] = z;
-          pixelFace[y * N + x] = i / 9;
-        }
-      }
-  }
-  const faceColors = new Int16Array(p.length / 9).fill(-1),
-    features = new Uint8Array(p.length / 9),
-    counts = new Float64Array(PALETTE.length);
-  let observed = 0;
-  for (let i = 0; i < p.length; i += 9) {
-    const x = (coords[i] + coords[i + 3] + coords[i + 6]) / 3,
-      y = (coords[i + 1] + coords[i + 4] + coords[i + 7]) / 3,
-      z = (coords[i + 2] + coords[i + 5] + coords[i + 8]) / 3;
-    const ix = Math.min(N - 1, Math.max(0, Math.floor(x))),
-      iy = Math.min(N - 1, Math.max(0, Math.floor(y)));
+  const visibility = referenceVisibility(coords, extent, camera.perspective, N);
+  const faces = p.length / 9;
+  const faceColors = new Int16Array(faces).fill(-1),
+    features = new Uint8Array(faces),
+    counts = new Float64Array(PALETTE.length),
+    votes = new Uint32Array(faces * PALETTE.length),
+    samples = new Uint32Array(faces),
+    foliage = new Uint32Array(faces);
+  const imagePixel = (x: number, y: number) => {
+    const px = Math.round(left + (x / (N - 1)) * (right - left));
+    const py = Math.round(top + (y / (N - 1)) * (bottom - top));
+    if (px < 0 || px >= image.width || py < 0 || py >= image.height) return -1;
+    const k = py * image.width + px;
+    return mask[k] ? k : -1;
+  };
+  const sample = (face: number, k: number) => {
+    votes[face * PALETTE.length + materials.palette[k]]++;
+    samples[face]++;
     if (
-      !Number.isFinite(depth[iy * N + ix]) ||
-      z < depth[iy * N + ix] - extent * 0.012
+      isFoliage(image.data[k * 4], image.data[k * 4 + 1], image.data[k * 4 + 2])
     )
-      continue;
-    const px = Math.round(left + (x / (N - 1)) * (right - left)),
-      py = Math.round(top + (y / (N - 1)) * (bottom - top));
-    if (
-      px < 0 ||
-      px >= image.width ||
-      py < 0 ||
-      py >= image.height ||
-      !mask[py * image.width + px]
-    )
-      continue;
-    const colorVotes = new Uint8Array(PALETTE.length);
-    let sampled = 0,
-      foliage = 0;
-    for (let dy = -1; dy <= 1; dy++)
-      for (let dx = -1; dx <= 1; dx++) {
-        const xx = px + dx,
-          yy = py + dy;
-        if (xx < 0 || xx >= image.width || yy < 0 || yy >= image.height)
-          continue;
-        const k = yy * image.width + xx;
-        if (mask[k]) {
-          const r = image.data[k * 4],
-            g = image.data[k * 4 + 1],
-            b = image.data[k * 4 + 2];
-          colorVotes[materials.palette[k]]++;
-          sampled++;
-          if (isFoliage(r, g, b)) foliage++;
-        }
-      }
-    let c = 0;
-    for (let j = 1; j < colorVotes.length; j++)
-      if (colorVotes[j] > colorVotes[c]) c = j;
-    faceColors[i / 9] = c;
-    // A leaf's own brick colour is a detour: only the picture can say whether
-    // this face is canopy. Half of a small window is enough, so a leaf piece
-    // the size of a couple of pixels still counts.
-    if (foliage >= 2 && foliage * 2 >= sampled)
-      features[i / 9] |= MESH_FEATURE.foliage;
-    observed++;
-  }
-  if (observed < Math.min(10, Math.max(1, faceColors.length * 0.1)))
-    throw Error('参考图与网格未能对齐，请调整配色视角或更换图片。');
-  // Vote once per visible projected pixel. Dense tessellation and tiny relief
-  // triangles must not dominate the inferred material of unseen surfaces.
+      foliage[face]++;
+  };
+  // Every pixel belongs only to its nearest source surface. A partly occluded
+  // face can still provide paint from its visible portion, away from its center.
   const visiblePixels: { face: number; color: number }[] = [];
   let projectedPixels = 0;
   for (let y = 0; y < N; y++)
     for (let x = 0; x < N; x++) {
-      const k = y * N + x;
-      if (!Number.isFinite(depth[k])) continue;
-      const px = Math.round(left + ((x + 0.5) / (N - 1)) * (right - left));
-      const py = Math.round(top + ((y + 0.5) / (N - 1)) * (bottom - top));
-      if (
-        px < 0 ||
-        px >= image.width ||
-        py < 0 ||
-        py >= image.height ||
-        !mask[py * image.width + px]
-      )
-        continue;
-      const color = materials.palette[py * image.width + px];
+      const face = visibility.pixelFace[y * N + x];
+      if (face < 0) continue;
+      const k = imagePixel(x + 0.5, y + 0.5);
+      if (k < 0) continue;
+      const color = materials.palette[k];
+      sample(face, k);
       counts[color]++;
-      visiblePixels.push({ face: pixelFace[k], color });
+      visiblePixels.push({ face, color });
       projectedPixels++;
     }
+  let observed = 0,
+    pixelObservedFaces = 0,
+    centroidObservedFaces = 0,
+    occludedCentroids = 0;
+  for (let t = 0; t < faces; t++) {
+    if (samples[t]) pixelObservedFaces++;
+    else {
+      // Microtriangles need an exact query at their own sample position, not
+      // the depth at a neighboring raster pixel plus a broad distance allowance.
+      const i = t * 9;
+      const x = (coords[i] + coords[i + 3] + coords[i + 6]) / 3;
+      const y = (coords[i + 1] + coords[i + 4] + coords[i + 7]) / 3;
+      const z = visibility.depthAt(t, x, y);
+      if (!Number.isFinite(z)) continue;
+      const nearest = visibility.frontAt(x, y);
+      if (z < nearest.depth - visibility.tolerance) {
+        occludedCentroids++;
+        continue;
+      }
+      const k = imagePixel(x, y);
+      if (k < 0) continue;
+      sample(t, k);
+      centroidObservedFaces++;
+    }
+    let color = 0;
+    for (let c = 1; c < PALETTE.length; c++)
+      if (votes[t * PALETTE.length + c] > votes[t * PALETTE.length + color])
+        color = c;
+    faceColors[t] = color;
+    if (foliage[t] * 2 >= samples[t]) features[t] |= MESH_FEATURE.foliage;
+    observed++;
+  }
+  if (observed < Math.min(10, Math.max(1, faces * 0.1)))
+    throw Error('参考图与网格未能对齐，请调整配色视角或更换图片。');
   const dominant = counts.indexOf(Math.max(...counts));
   const surfaces = surfaceMaterials(p, faceColors, visiblePixels, dominant);
   const out = new Uint8Array(mesh.colors.length);
@@ -477,6 +442,11 @@ export function colorFromReference(
       ],
       projection: {
         voteUnit: 'visible-reference-pixel',
+        visibilityMethod: 'perspective-depth-tested-surfaces',
+        pixelObservedFaces,
+        centroidObservedFaces,
+        occludedCentroids,
+        depthTolerance: visibility.tolerance,
         projectedPixels,
         observedFaces: observed,
         inferredFaces: faceColors.length - observed,

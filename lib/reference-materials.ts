@@ -21,6 +21,11 @@ export type ReferenceMaterialDesign = {
   surfaces?: import('./surface-materials.ts').SurfaceMaterialDesign;
   projection?: {
     voteUnit: 'visible-reference-pixel';
+    visibilityMethod?: 'perspective-depth-tested-surfaces';
+    pixelObservedFaces?: number;
+    centroidObservedFaces?: number;
+    occludedCentroids?: number;
+    depthTolerance?: number;
     projectedPixels: number;
     observedFaces: number;
     inferredFaces: number;

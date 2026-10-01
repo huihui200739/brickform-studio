@@ -332,3 +332,53 @@ void test('unseen same-height walls inherit wall material rather than a larger s
     'roof observations are not wall donors',
   );
 });
+
+void test('a fully occluded thin rear panel is inferred, never observed as front foliage', () => {
+  const points: number[] = [];
+  const panel = (z: number) =>
+    points.push(-1, -1, z, 1, -1, z, 1, 1, z, -1, -1, z, 1, 1, z, -1, 1, z);
+  panel(0.01);
+  panel(0);
+  const positions = Float32Array.from(points);
+  const data = new Uint8Array(40 * 40 * 4);
+  for (let y = 2; y < 38; y++)
+    for (let x = 2; x < 38; x++)
+      data.set([110, 116, 78, 255], (y * 40 + x) * 4);
+  const result = colorFromReference(
+    { name: 'thin panels', positions, colors: new Uint8Array(12) },
+    { width: 40, height: 40, data },
+    { yaw: 0, pitch: 0, perspective: 0 },
+    false,
+  );
+  assert.deepEqual(Array.from(result.materialEvidence!.observed), [1, 1, 0, 0]);
+  assert.deepEqual(Array.from(result.features!.slice(2)), [0, 0]);
+  assert.equal(result.positions, positions);
+});
+
+void test('a large face samples its visible portion even when its centroid is hidden', () => {
+  const positions = Float32Array.from([
+    -1, -1, 0, 1, -1, 0, 0, 1, 0, -0.4, -0.5, 0.2, 0.4, -0.5, 0.2, 0.4, 0, 0.2,
+    -0.4, -0.5, 0.2, 0.4, 0, 0.2, -0.4, 0, 0.2,
+  ]);
+  const data = new Uint8Array(100 * 100 * 4);
+  for (let y = 4; y < 96; y++)
+    for (let x = 4; x < 96; x++) {
+      const u = ((x - 4) / 91) * 2 - 1,
+        v = 1 - ((y - 4) / 91) * 2;
+      if (v >= -1 && v <= 1 && Math.abs(u) <= (1 - v) / 2)
+        data.set(
+          u >= -0.4 && u <= 0.4 && v >= -0.5 && v <= 0
+            ? [201, 26, 9, 255]
+            : [0, 85, 191, 255],
+          (y * 100 + x) * 4,
+        );
+    }
+  const result = colorFromReference(
+    { name: 'partly hidden paint', positions, colors: new Uint8Array(9) },
+    { width: 100, height: 100, data },
+    { yaw: 0, pitch: 0, perspective: 0 },
+    false,
+  );
+  assert.equal(result.materialEvidence!.observed[0], 1);
+  assert.deepEqual(Array.from(result.colors.slice(0, 3)), [0, 85, 191]);
+});
