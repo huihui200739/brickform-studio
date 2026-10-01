@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { brickFaces } from './assembly-diagram.ts';
 import { manualHTML } from './manual.ts';
-import { IDENTITY } from './assembly-catalog.ts';
+import { IDENTITY, ASSEMBLY_PARTS } from './assembly-catalog.ts';
 import { gridConnections } from './grid-connections.ts';
 import { connectors, validateAssembly } from './assembly-validation.ts';
 import { instructionModel, installationText } from './build-instructions.ts';
@@ -34,16 +34,17 @@ function model(bricks: Brick[]): Model {
   };
 }
 void test('four slope orientations expose only the real high-row studs and agree with catalog poses', () => {
-  for (const partWidth of [1, 2])
+  for (const part of ['3039', '3040b', '3298', '4286'])
     for (let q = 0; q < 4; q++) {
+      const { w: partWidth, d: partDepth } = ASSEMBLY_PARTS[part];
       const slope: Brick = {
         id: 1,
-        part: partWidth === 2 ? '3039' : '3040b',
+        part,
         x: 2,
         y: 0,
         z: 2,
-        w: q % 2 ? 2 : partWidth,
-        d: q % 2 ? partWidth : 2,
+        w: q % 2 ? partDepth : partWidth,
+        d: q % 2 ? partWidth : partDepth,
         h: 3,
         color: 7,
         rotation: q,
@@ -84,33 +85,38 @@ void test('four slope orientations expose only the real high-row studs and agree
       );
       assert.equal(
         validateAssembly({ ...posed, bricks: low }).unsupported,
-        partWidth,
+        partWidth * (partDepth - 1),
       );
     }
 });
 
-function roof(stairs = false): TriangleMesh {
+function roof(stairs = false, grade = 0.5): TriangleMesh {
   const positions: number[] = [];
   const quad = (a: number[], b: number[], c: number[], d: number[]) =>
     positions.push(...a, ...b, ...c, ...a, ...c, ...d);
   // Twenty-stud source surface; real horizontal stair treads must not qualify.
   for (let z = 0; z < 20; z++) {
-    const y = 4 + z * 0.5,
-      high = stairs ? y : y + 0.5;
+    const y = 4 + z * grade,
+      high = stairs ? y : y + grade;
     quad([0, y, z], [0, high, z + 1], [20, high, z + 1], [20, y, z]);
     if (stairs)
       quad(
         [0, y, z + 1],
-        [0, y + 0.5, z + 1],
-        [20, y + 0.5, z + 1],
+        [0, y + grade, z + 1],
+        [20, y + grade, z + 1],
         [20, y, z + 1],
       );
   }
   quad([0, 0, 0], [20, 0, 0], [20, 0, 20], [0, 0, 20]);
   quad([0, 0, 0], [0, 4, 0], [20, 4, 0], [20, 0, 0]);
-  quad([0, 0, 20], [20, 0, 20], [20, 14, 20], [0, 14, 20]);
-  quad([0, 0, 0], [0, 0, 20], [0, 14, 20], [0, 4, 0]);
-  quad([20, 0, 0], [20, 4, 0], [20, 14, 20], [20, 0, 20]);
+  quad(
+    [0, 0, 20],
+    [20, 0, 20],
+    [20, 4 + 20 * grade, 20],
+    [0, 4 + 20 * grade, 20],
+  );
+  quad([0, 0, 0], [0, 0, 20], [0, 4 + 20 * grade, 20], [0, 4, 0]);
+  quad([20, 0, 0], [20, 4, 0], [20, 4 + 20 * grade, 20], [20, 0, 20]);
   return {
     name: 'oblique source',
     positions: Float32Array.from(positions),
@@ -133,6 +139,34 @@ void test('source roof replaces voxel terraces with catalog slopes and preserves
     () => false,
   );
   assert.ok(result.bricks.length > 20);
+  const slopes = result.bricks.map((b, i) => ({ ...b, id: i + 1 }));
+  const graph = gridConnections(slopes);
+  assert.ok(
+    [...graph.values()].some((links) => links.size > 0),
+    'a continuous roof must use the high-row studs to join successive slopes',
+  );
+  // Check actual transformed catalog sockets and studs, independently of the
+  // source fitting and region grouping, including the three-stud shallow parts.
+  const posedSlopes = instructionModel(model(slopes)).bricks;
+  for (const a of posedSlopes)
+    for (const id of graph.get(a.id)!) {
+      const b = posedSlopes.find((b) => b.id === id)!;
+      const portsA = connectors(a),
+        portsB = connectors(b);
+      const mates = (
+        studs: typeof portsA.studs,
+        sockets: typeof portsA.sockets,
+      ) =>
+        studs.some((s) =>
+          sockets.some((p) =>
+            s.point.every((n, k) => Math.abs(n - p.point[k]) < 1e-5),
+          ),
+        );
+      assert.ok(
+        mates(portsA.studs, portsB.sockets) ||
+          mates(portsB.studs, portsA.sockets),
+      );
+    }
   assert.ok(
     result.design.replacements.every(
       (r) => r.rmsStuds + 0.04 < r.voxelRmsStuds && r.maxErrorStuds <= 0.5,
@@ -159,9 +193,12 @@ void test('source roof replaces voxel terraces with catalog slopes and preserves
     inventory(m.bricks).reduce((n, p) => n + p.quantity, 0),
     m.bricks.length,
   );
-  assert.match(toLDraw(m), /3039.dat/);
+  assert.ok(
+    /3298\.dat/.test(toLDraw(m)),
+    'shallow roof exports real 33-degree slopes',
+  );
   assert.doesNotMatch(manualHTML(m), /undefined/);
-  const s = m.bricks.find((b) => b.part === '3039')!;
+  const s = m.bricks.find((b) => b.part === '3298')!;
   assert.match(installationText(m, s), /按紧/);
   const full = meshToDesign(mesh, 20);
   assert.equal(full.slopeDesign!.replacements.length, result.bricks.length);
@@ -224,15 +261,16 @@ void test('the replacement profile matches vendored catalog triangles, including
       'utf8',
     ),
   );
-  for (const id of ['3039', '3040b']) {
+  for (const id of ['3039', '3040b', '3298', '4286']) {
+    const catalog = ASSEMBLY_PARTS[id];
     const shape = brickFaces({
       id: 1,
       part: id,
       x: 0,
       y: 0,
       z: 0,
-      w: id === '3039' ? 2 : 1,
-      d: 2,
+      w: catalog.w,
+      d: catalog.d,
       h: 3,
       color: 7,
       pose: { position: [0, 0, 0], matrix: IDENTITY },
@@ -247,11 +285,11 @@ void test('the replacement profile matches vendored catalog triangles, including
       ),
     );
     const p: number[] = geometry[id].positions,
-      w = id === '3039' ? 2 : 1;
+      w = catalog.w;
     for (let x = 0.25; x < w; x += 0.5)
-      for (let z = 0.25; z < 2; z += 0.5) {
+      for (let z = 0.25; z < catalog.d; z += 0.5) {
         const xx = (x - w / 2) * 20,
-          zz = -30 + z * 20;
+          zz = catalog.centerZ! - catalog.d * 10 + z * 20;
         let top = Infinity;
         for (let i = 0; i < p.length; i += 9) {
           const a = p.slice(i, i + 3),
@@ -268,7 +306,7 @@ void test('the replacement profile matches vendored catalog triangles, including
             top = Math.min(top, u * a[1] + v * b[1] + (1 - u - v) * c[1]);
         }
         assert.ok(
-          Math.abs((24 - top) / 20 - slopeTop(z)) < 1e-5,
+          Math.abs((24 - top) / 20 - slopeTop(z, catalog.d - 1)) < 1e-5,
           `${id} at ${x},${z}`,
         );
       }

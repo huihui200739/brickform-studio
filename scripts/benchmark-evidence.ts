@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 
-/** Bind replay evidence to all production libraries and locked JS dependencies.
+/** Bind replay evidence to production libraries, catalog geometry and locked JS dependencies.
  * Test-only changes do not invalidate a conversion record. */
 export function conversionFingerprint() {
   const root = new URL('../lib/', import.meta.url);
@@ -9,13 +9,18 @@ export function conversionFingerprint() {
     .map((name) => name.toString())
     .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))
     .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  const hash = createHash('sha256').update('brickform-conversion-v2\0');
+  const hash = createHash('sha256').update('brickform-conversion-v3\0');
   for (const file of files)
     hash
       .update(file)
       .update('\0')
       .update(readFileSync(new URL(file, root)))
       .update('\0');
-  hash.update(readFileSync(new URL('../package-lock.json', import.meta.url)));
+  for (const file of ['package-lock.json', 'public/parts/geometry.json'])
+    hash
+      .update(file)
+      .update('\0')
+      .update(readFileSync(new URL(`../${file}`, import.meta.url)))
+      .update('\0');
   return hash.digest('hex');
 }

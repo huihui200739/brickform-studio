@@ -81,6 +81,8 @@ const cases = audit.cases.map(
         !!part &&
         r.rmsStuds + 0.04 < r.voxelRmsStuds &&
         r.maxErrorStuds <= 0.5 &&
+        r.planeResidualStuds <= 0.15 &&
+        r.normalSupport >= 0.85 &&
         r.coveredSamples === covered &&
         part.pose!.matrix.every((v, k) => v === rotate(r.rotation)[k]) &&
         ports.studs.length === ASSEMBLY_PARTS[r.part].w &&
@@ -101,9 +103,40 @@ const cases = audit.cases.map(
       model.bricks.filter(
         (b) =>
           !b.section?.startsWith('component-') &&
-          ['3039', '3040b'].includes(b.part),
+          ASSEMBLY_PARTS[b.part]?.kind === 'slope',
       ).length !== replacements.length
     )
+      failures++;
+    const regions = (model.slopeDesign?.regions || []).map((region) => {
+      const members = replacements.filter((r) => r.regionId === region.id);
+      const ids = new Set(members.map((r) => r.emittedId));
+      const joints =
+        members.reduce(
+          (n, r) =>
+            n +
+            [...(graph.get(r.emittedId!) || [])].filter((id) => ids.has(id))
+              .length,
+          0,
+        ) / 2;
+      const samples = members.reduce((n, r) => n + r.evaluatedSamples, 0);
+      const weighted = (field: 'rmsStuds' | 'voxelRmsStuds') =>
+        Math.sqrt(
+          members.reduce((n, r) => n + r[field] ** 2 * r.evaluatedSamples, 0) /
+            samples,
+        );
+      const passed =
+        members.length === region.pieces &&
+        members.every(
+          (r) => r.rotation === region.rotation && r.color === region.color,
+        ) &&
+        joints === region.chainedJoints &&
+        samples === region.evaluatedSamples &&
+        Math.abs(weighted('rmsStuds') - region.rmsStuds) < 1e-8 &&
+        Math.abs(weighted('voxelRmsStuds') - region.voxelRmsStuds) < 1e-8;
+      if (!passed) failures++;
+      return { ...region, jointsInFinalModel: joints, passed };
+    });
+    if (regions.reduce((n, r) => n + r.pieces, 0) !== replacements.length)
       failures++;
     if (failures) failed = true;
     const old = baseline.cases.find(
@@ -115,6 +148,7 @@ const cases = audit.cases.map(
       passed: failures === 0,
       failures,
       replacements,
+      regions,
       baseline: old
         ? { bricks: old.bricks, supports: old.supports }
         : undefined,

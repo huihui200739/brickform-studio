@@ -117,7 +117,7 @@ export function brickFaces(b: Brick): Face[] {
     const z0 = cz - z,
       z1 = cz + z;
     const y0 = p.kind === 'slope' ? 20 : top;
-    const ridge = p.kind === 'slope' ? cz : z1;
+    const ridge = p.kind === 'slope' ? z1 - 20 : z1;
     face(
       [
         [-x, y0, z0],
