@@ -68,6 +68,7 @@ import {
 } from './representation/visibility-validation.ts';
 import type { ReferenceCamera } from './reference-colors.ts';
 import type { SceneElementInstance } from './scene/scene-types.ts';
+import { designMeshSurfaces, type SurfaceDesign } from './surface-design.ts';
 
 // Conversion is split in two stages: the triangle volume is cast once, and each
 // component-placement attempt re-reads that volume. Autoplacement can therefore
@@ -83,6 +84,7 @@ export type MeshVolume = {
   intersected: number;
   protectedCells: Set<string>;
   platform?: PlatformDesign;
+  surfaceDesign?: SurfaceDesign;
 };
 export type PreservedRegion = {
   kind: 'statue';
@@ -496,8 +498,8 @@ export function buildMeshVolume(
   mesh: TriangleMesh,
   resolution = 28,
 ): MeshVolume {
-  const p = mesh.positions,
-    n = p.length / 9;
+  let p = mesh.positions;
+  const n = p.length / 9;
   if (
     !Number.isInteger(n) ||
     n < 1 ||
@@ -518,6 +520,8 @@ export function buildMeshVolume(
     scale = resolution / Math.max(...span);
   if (!Number.isFinite(scale) || span.some((v) => v <= 0))
     throw Error('这个文件没有可转换的三维体积。');
+  const surfaces = designMeshSurfaces(mesh, resolution);
+  p = surfaces.mesh.positions;
   const w = Math.max(1, Math.ceil(span[0] * scale)),
     h = Math.max(1, Math.ceil((span[1] * scale) / 0.4)),
     d = Math.max(1, Math.ceil(span[2] * scale));
@@ -669,7 +673,8 @@ export function buildMeshVolume(
     openRows,
     intersected,
     protectedCells,
-    platform: fitPlatform(mesh, resolution, cells, w, h, d),
+    platform: fitPlatform(surfaces.mesh, resolution, cells, w, h, d),
+    surfaceDesign: surfaces.design,
   };
 }
 // Assemble the brick model from a cast volume and the requested component
@@ -1103,6 +1108,7 @@ function assembleVolume(
     ...openings,
   ]);
   const model = groupImageAssembly(prepared);
+  if (volume.surfaceDesign) model.surfaceDesign = volume.surfaceDesign;
   if (mesh.materialDesign) model.materialDesign = mesh.materialDesign;
   model.clearanceVolumes = openings;
   if (platform) model.platformDesign = platform;
@@ -1117,6 +1123,8 @@ function assembleVolume(
     openRowFraction: openRows / Math.max(1, intersected),
   };
   model.assembly!.reference = `按三维网格体积生成；保留网格中的前后布局和孔洞。新增辅助支撑 ${model.supportCount} 块，已计入清单。网格可能含 AI 推测，连接检查不代表外观还原或实物稳定性已验证。`;
+  if (volume.surfaceDesign?.patches.length)
+    model.assembly!.reference += ' 连续近似平面在排砖前整理；孔洞、折角和外轮廓边界保留，隐藏形状与材质仍需复核。';
 
   if (model.designGeometry)
     model.assembly!.reference +=
