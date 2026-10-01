@@ -1,0 +1,899 @@
+{
+  "scope": "Public engine example renders; these are not photographs, original LEGO sets, or held-out model-training data. Inputs and native outputs are cached locally, not redistributed here.",
+  "resolution": 28,
+  "cases": [
+    {
+      "id": "house",
+      "image": "052.png",
+      "category": "building",
+      "forbiddenComponentKinds": [
+        "brazier"
+      ],
+      "sha256": "63dfa62dc5a19a1a3bd2df1d1589644f98dea501a4b31cb02a71679d0c74a0e7",
+      "resolution": 28,
+      "inputSha256": "63dfa62dc5a19a1a3bd2df1d1589644f98dea501a4b31cb02a71679d0c74a0e7",
+      "seed": 1675601453,
+      "inferenceCached": true,
+      "meshSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+      "camera": {
+        "method": "reference-projection",
+        "alignment": {
+          "method": "filled-triangle-silhouette",
+          "camera": {
+            "yaw": 35,
+            "pitch": 10,
+            "perspective": 0
+          },
+          "source": "estimated-camera",
+          "silhouetteIoU": 0.9171082513247539,
+          "aspectPenalty": 0.001626644180253235,
+          "alternative": {
+            "camera": {
+              "yaw": 135,
+              "pitch": 10,
+              "perspective": 0
+            },
+            "score": 0.8044221568151698,
+            "scoreGap": 0.11105945032933084
+          },
+          "ambiguous": false,
+          "limitations": "Silhouette fit does not verify interior pixel correspondence, material identity or hidden geometry. Competing poses can share the same outline."
+        },
+        "yaw": 35,
+        "pitch": 10,
+        "perspective": 0,
+        "observedFraction": 0.3031993278179938,
+        "softenShadows": true
+      },
+      "triangles": 154720,
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "conversionFingerprint": "8f7639903d1f4170c6d6d1a716a3da493f0bb68143311a19e05208ceb567596e",
+      "observedObjects": [
+        {
+          "category": "tree",
+          "label": "tree",
+          "identityScore": 0.6177938580513,
+          "identitySupported": true
+        },
+        {
+          "category": "tree",
+          "label": "tree",
+          "identityScore": 0.5296146273612976,
+          "identitySupported": true
+        },
+        {
+          "category": "building",
+          "label": "building",
+          "identityScore": 0.44659969210624695,
+          "identitySupported": true
+        },
+        {
+          "category": "building",
+          "label": "building",
+          "identityScore": 0.42272448539733887,
+          "identitySupported": true
+        },
+        {
+          "category": "lamp",
+          "label": "torch",
+          "identityScore": 0.4103813171386719,
+          "identitySupported": true
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.4096258282661438,
+          "identitySupported": false
+        },
+        {
+          "category": "building",
+          "label": "building",
+          "identityScore": 0.40700143575668335,
+          "identitySupported": true
+        },
+        {
+          "category": "building",
+          "label": "building",
+          "identityScore": 0.3989976644515991,
+          "identitySupported": true
+        }
+      ],
+      "detected": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "confidence": 0.6177938580513
+        },
+        {
+          "id": "image-tree-1",
+          "kind": "tree",
+          "confidence": 0.5296146273612976
+        }
+      ],
+      "status": "converted",
+      "bricks": 3220,
+      "steps": 611,
+      "supports": 238,
+      "partTypes": 20,
+      "partColorTypes": 131,
+      "structureCategory": "mass-building",
+      "structureConfidence": 0.5,
+      "platform": {
+        "source": "reconstructed-mesh",
+        "intent": "level-display-surface",
+        "topY": 5,
+        "columns": [
+          "1,12",
+          "1,13",
+          "1,14",
+          "2,9",
+          "2,12",
+          "2,13",
+          "2,14",
+          "2,15",
+          "2,16",
+          "3,7",
+          "3,8",
+          "3,9",
+          "3,12",
+          "3,13",
+          "3,15",
+          "3,16",
+          "3,14",
+          "4,6",
+          "4,7",
+          "4,8",
+          "4,12",
+          "4,13",
+          "4,16",
+          "4,17",
+          "4,18",
+          "4,19",
+          "4,20",
+          "4,21",
+          "4,22",
+          "4,14",
+          "4,15",
+          "7,3",
+          "8,3",
+          "9,2",
+          "9,3",
+          "10,2",
+          "10,3",
+          "11,2",
+          "11,23",
+          "11,24",
+          "12,1",
+          "12,23",
+          "12,24",
+          "12,25",
+          "13,22",
+          "13,23",
+          "13,24",
+          "13,25",
+          "13,26",
+          "14,26",
+          "14,24",
+          "14,25",
+          "15,1",
+          "15,26",
+          "15,24",
+          "15,25",
+          "16,1",
+          "16,2",
+          "16,3",
+          "16,26",
+          "16,24",
+          "16,25",
+          "17,2",
+          "17,3",
+          "17,26",
+          "17,24",
+          "17,25",
+          "18,2",
+          "18,3",
+          "18,22",
+          "18,23",
+          "18,24",
+          "18,25",
+          "18,26",
+          "19,2",
+          "19,3",
+          "19,22",
+          "19,23",
+          "19,24",
+          "19,25",
+          "19,26",
+          "20,2",
+          "20,3",
+          "20,23",
+          "20,24",
+          "21,3",
+          "21,23",
+          "21,24",
+          "21,25",
+          "22,3",
+          "22,23",
+          "22,24",
+          "23,22",
+          "23,23",
+          "23,24",
+          "24,22",
+          "24,23",
+          "25,10",
+          "25,11",
+          "25,12",
+          "25,13",
+          "25,14",
+          "25,15",
+          "25,16",
+          "25,17",
+          "25,18",
+          "25,19",
+          "25,20",
+          "25,21",
+          "26,12",
+          "26,13",
+          "26,16",
+          "26,17",
+          "26,18",
+          "26,19",
+          "26,20",
+          "27,12",
+          "27,13",
+          "27,16",
+          "27,17",
+          "27,18"
+        ],
+        "adjustedColumns": 23,
+        "evidence": {
+          "samples": 9879,
+          "areaStudsSquared": 233.1833446774658,
+          "lowSurfaceConsensus": 0.8441159305476871,
+          "rmsePlates": 0.15961733804240372
+        },
+        "validation": {
+          "passed": true,
+          "checkedColumns": 117,
+          "excludedColumns": 4,
+          "missing": 0,
+          "uneven": 0,
+          "exposedStuds": 0
+        }
+      },
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-1",
+          "kind": "tree"
+        }
+      ],
+      "dropped": [],
+      "semanticFalsePositives": [],
+      "semanticGatePassed": true,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3220
+      },
+      "inventoryTotal": 3220,
+      "colors": {
+        "0": 124,
+        "1": 183,
+        "2": 65,
+        "3": 125,
+        "4": 1722,
+        "5": 315,
+        "6": 55,
+        "7": 27,
+        "8": 229,
+        "9": 97,
+        "10": 12,
+        "11": 207,
+        "12": 59
+      },
+      "elapsedSeconds": 38.3
+    },
+    {
+      "id": "locomotive",
+      "image": "1022.png",
+      "category": "vehicle",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "df4284dabd513c4826d1cda8ad2dc6687ee4c30229d41c3d631749329175c90c",
+      "resolution": 28,
+      "inputSha256": "df4284dabd513c4826d1cda8ad2dc6687ee4c30229d41c3d631749329175c90c",
+      "seed": 3745678554,
+      "inferenceCached": true,
+      "meshSha256": "5b8be986de0fe82f66561518736b09237145beabe2891705710314ca88a9703a",
+      "camera": {
+        "method": "reference-projection",
+        "alignment": {
+          "method": "filled-triangle-silhouette",
+          "camera": {
+            "yaw": 45,
+            "pitch": 0,
+            "perspective": 0.25
+          },
+          "source": "estimated-camera",
+          "silhouetteIoU": 0.8460258780036969,
+          "aspectPenalty": 0.015619900118717011,
+          "alternative": {
+            "camera": {
+              "yaw": 135,
+              "pitch": 5,
+              "perspective": 0
+            },
+            "score": 0.7864882054744164,
+            "scoreGap": 0.04391777241056338
+          },
+          "ambiguous": false,
+          "limitations": "Silhouette fit does not verify interior pixel correspondence, material identity or hidden geometry. Competing poses can share the same outline."
+        },
+        "yaw": 45,
+        "pitch": 0,
+        "perspective": 0.25,
+        "observedFraction": 0.26597833351899297,
+        "softenShadows": true
+      },
+      "triangles": 143632,
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "conversionFingerprint": "8f7639903d1f4170c6d6d1a716a3da493f0bb68143311a19e05208ceb567596e",
+      "observedObjects": [
+        {
+          "category": "vehicle",
+          "label": "train",
+          "identityScore": 0.6132896542549133,
+          "identitySupported": true
+        },
+        {
+          "category": "vehicle",
+          "label": "train",
+          "identityScore": 0.5892465710639954,
+          "identitySupported": true
+        },
+        {
+          "category": "vehicle",
+          "label": "train",
+          "identityScore": 0.5338549017906189,
+          "identitySupported": true
+        },
+        {
+          "category": "lamp",
+          "label": "torch",
+          "identityScore": 0.5326309204101562,
+          "identitySupported": true
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.434997022151947,
+          "identitySupported": false
+        },
+        {
+          "category": "lamp",
+          "label": "torch",
+          "identityScore": 0.39759594202041626,
+          "identitySupported": true
+        },
+        {
+          "category": "vehicle",
+          "label": "train",
+          "identityScore": 0.3433223068714142,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.33012399077415466,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "wizard hat",
+          "identityScore": 0.3107086420059204,
+          "identitySupported": true
+        }
+      ],
+      "detected": [],
+      "status": "converted",
+      "bricks": 3133,
+      "steps": 668,
+      "supports": 195,
+      "partTypes": 13,
+      "partColorTypes": 68,
+      "structureCategory": "stepped-monument",
+      "structureConfidence": 0.55,
+      "applied": [],
+      "dropped": [],
+      "semanticFalsePositives": [],
+      "semanticGatePassed": true,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3133
+      },
+      "inventoryTotal": 3133,
+      "colors": {
+        "1": 85,
+        "2": 179,
+        "6": 273,
+        "7": 309,
+        "8": 4,
+        "9": 2205,
+        "10": 78
+      },
+      "elapsedSeconds": 10.2
+    },
+    {
+      "id": "horse",
+      "image": "1029.png",
+      "category": "animal",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "66305f50ddd7d90e521d718952c702b9fb71c30efe6970d39d918f6dbf5b6ec3",
+      "resolution": 28,
+      "inputSha256": "66305f50ddd7d90e521d718952c702b9fb71c30efe6970d39d918f6dbf5b6ec3",
+      "seed": 1714446160,
+      "inferenceCached": true,
+      "meshSha256": "718a8090e059a2aba32700f69a6b41f3771ed94df031b8b22bbcb7abe43adedb",
+      "camera": {
+        "method": "reference-projection",
+        "alignment": {
+          "method": "filled-triangle-silhouette",
+          "camera": {
+            "yaw": -35,
+            "pitch": 5,
+            "perspective": 0
+          },
+          "source": "estimated-camera",
+          "silhouetteIoU": 0.8707920792079208,
+          "aspectPenalty": 0.0008608463239961194,
+          "alternative": {
+            "camera": {
+              "yaw": 30,
+              "pitch": 0,
+              "perspective": 0.25
+            },
+            "score": 0.7311320802108876,
+            "scoreGap": 0.1387991526730371
+          },
+          "ambiguous": false,
+          "limitations": "Silhouette fit does not verify interior pixel correspondence, material identity or hidden geometry. Competing poses can share the same outline."
+        },
+        "yaw": -35,
+        "pitch": 5,
+        "perspective": 0,
+        "observedFraction": 0.4012228784182822,
+        "softenShadows": true
+      },
+      "triangles": 62312,
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "conversionFingerprint": "8f7639903d1f4170c6d6d1a716a3da493f0bb68143311a19e05208ceb567596e",
+      "observedObjects": [
+        {
+          "category": "animal",
+          "label": "horse",
+          "identityScore": 0.7069995403289795,
+          "identitySupported": true
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.5789812207221985,
+          "identitySupported": false
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.4835703372955322,
+          "identitySupported": false
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.4802486002445221,
+          "identitySupported": false
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.44752755761146545,
+          "identitySupported": false
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.41102463006973267,
+          "identitySupported": true
+        },
+        {
+          "category": "lamp",
+          "label": "torch",
+          "identityScore": 0.3046872615814209,
+          "identitySupported": true
+        }
+      ],
+      "detected": [],
+      "status": "converted",
+      "bricks": 1705,
+      "steps": 439,
+      "supports": 226,
+      "partTypes": 13,
+      "partColorTypes": 45,
+      "structureCategory": "stepped-monument",
+      "structureConfidence": 0.55,
+      "applied": [],
+      "dropped": [],
+      "semanticFalsePositives": [],
+      "semanticGatePassed": true,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 1705
+      },
+      "inventoryTotal": 1705,
+      "colors": {
+        "1": 3,
+        "2": 488,
+        "6": 24,
+        "7": 192,
+        "9": 977,
+        "10": 17,
+        "11": 2,
+        "12": 2
+      },
+      "elapsedSeconds": 4.1
+    },
+    {
+      "id": "sculpture-head",
+      "image": "075.png",
+      "category": "sculpture",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "58b926e26c0026df16378e214fb046e63dd0edceacb0f8db8005d9ed3f86949a",
+      "resolution": 28,
+      "inputSha256": "58b926e26c0026df16378e214fb046e63dd0edceacb0f8db8005d9ed3f86949a",
+      "seed": 1488529122,
+      "inferenceCached": true,
+      "meshSha256": "1e845d750e10e0ba03667991c962ed7db8dc93af2cb7b83dd4bcbf208c848be8",
+      "camera": {
+        "method": "reference-projection",
+        "alignment": {
+          "method": "filled-triangle-silhouette",
+          "camera": {
+            "yaw": 0,
+            "pitch": 0,
+            "perspective": 0.5
+          },
+          "source": "estimated-camera",
+          "silhouetteIoU": 0.9657654775235962,
+          "aspectPenalty": 0.006621396956120907,
+          "alternative": {
+            "camera": {
+              "yaw": -175,
+              "pitch": 0,
+              "perspective": 0
+            },
+            "score": 0.9278742250277205,
+            "scoreGap": 0.0312698555397547
+          },
+          "ambiguous": false,
+          "limitations": "Silhouette fit does not verify interior pixel correspondence, material identity or hidden geometry. Competing poses can share the same outline."
+        },
+        "yaw": 0,
+        "pitch": 0,
+        "perspective": 0.5,
+        "observedFraction": 0.31435977711397056,
+        "softenShadows": true
+      },
+      "triangles": 139264,
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "conversionFingerprint": "8f7639903d1f4170c6d6d1a716a3da493f0bb68143311a19e05208ceb567596e",
+      "observedObjects": [
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.48327720165252686,
+          "identitySupported": false
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.4302121102809906,
+          "identitySupported": true
+        }
+      ],
+      "detected": [],
+      "status": "converted",
+      "bricks": 4879,
+      "steps": 903,
+      "supports": 564,
+      "partTypes": 17,
+      "partColorTypes": 44,
+      "structureCategory": "mass-building",
+      "structureConfidence": 0.5,
+      "applied": [],
+      "dropped": [],
+      "semanticFalsePositives": [],
+      "semanticGatePassed": true,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 4879
+      },
+      "inventoryTotal": 4879,
+      "colors": {
+        "0": 4633,
+        "1": 18,
+        "8": 58,
+        "10": 74,
+        "11": 52,
+        "12": 44
+      },
+      "elapsedSeconds": 14.3
+    },
+    {
+      "id": "wizard-hat",
+      "image": "1111.png",
+      "category": "accessory",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "d9d43eae5cc61c872bc01d480de4e8954da352743d81f9329345d96e052ee2ac",
+      "resolution": 28,
+      "inputSha256": "d9d43eae5cc61c872bc01d480de4e8954da352743d81f9329345d96e052ee2ac",
+      "seed": 3654565550,
+      "inferenceCached": true,
+      "meshSha256": "cd27bce9bedb14a0096ab71e7514e9da3a1c35abb52ba805edb0778f00eb2885",
+      "camera": {
+        "method": "reference-projection",
+        "alignment": {
+          "method": "filled-triangle-silhouette",
+          "camera": {
+            "yaw": -5,
+            "pitch": 10,
+            "perspective": 0
+          },
+          "source": "estimated-camera",
+          "silhouetteIoU": 0.9072089624939114,
+          "aspectPenalty": 0.013447705112204097,
+          "alternative": {
+            "camera": {
+              "yaw": -50,
+              "pitch": 10,
+              "perspective": 0
+            },
+            "score": 0.78715480590338,
+            "scoreGap": 0.10660645147832726
+          },
+          "ambiguous": false,
+          "limitations": "Silhouette fit does not verify interior pixel correspondence, material identity or hidden geometry. Competing poses can share the same outline."
+        },
+        "yaw": -5,
+        "pitch": 10,
+        "perspective": 0,
+        "observedFraction": 0.28652227984758677,
+        "softenShadows": true
+      },
+      "triangles": 151168,
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "conversionFingerprint": "8f7639903d1f4170c6d6d1a716a3da493f0bb68143311a19e05208ceb567596e",
+      "observedObjects": [
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.516106128692627,
+          "identitySupported": false
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.4963582456111908,
+          "identitySupported": false
+        },
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.4839760661125183,
+          "identitySupported": false
+        },
+        {
+          "category": "decor",
+          "label": "wizard hat",
+          "identityScore": 0.4698655903339386,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.46094220876693726,
+          "identitySupported": true
+        },
+        {
+          "category": "lamp",
+          "label": "torch",
+          "identityScore": 0.4433497488498688,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "wizard hat",
+          "identityScore": 0.4099682569503784,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "wizard hat",
+          "identityScore": 0.40314146876335144,
+          "identitySupported": true
+        }
+      ],
+      "detected": [],
+      "status": "converted",
+      "bricks": 2789,
+      "steps": 861,
+      "supports": 498,
+      "partTypes": 12,
+      "partColorTypes": 61,
+      "structureCategory": "mass-building",
+      "structureConfidence": 0.5,
+      "applied": [],
+      "dropped": [],
+      "semanticFalsePositives": [],
+      "semanticGatePassed": true,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2789
+      },
+      "inventoryTotal": 2789,
+      "colors": {
+        "1": 165,
+        "3": 18,
+        "4": 456,
+        "5": 59,
+        "6": 13,
+        "7": 7,
+        "9": 28,
+        "10": 34,
+        "11": 24,
+        "12": 1977,
+        "13": 8
+      },
+      "elapsedSeconds": 8.3
+    },
+    {
+      "id": "costumed-figure",
+      "image": "004.png",
+      "category": "figure",
+      "forbiddenComponentKinds": [
+        "brazier",
+        "tree"
+      ],
+      "sha256": "6d08caba0671ffee9a683c5b3ca101b272cec71d3eb9e93b6e8d2b65ddd417fc",
+      "resolution": 28,
+      "inputSha256": "6d08caba0671ffee9a683c5b3ca101b272cec71d3eb9e93b6e8d2b65ddd417fc",
+      "seed": 1829292730,
+      "inferenceCached": true,
+      "meshSha256": "7e0c17d2e11bb21eb29a78b9c96324758e1b8c524d1855c160f5d7571d0f0de9",
+      "camera": {
+        "method": "reference-projection",
+        "alignment": {
+          "method": "filled-triangle-silhouette",
+          "camera": {
+            "yaw": 0,
+            "pitch": 10,
+            "perspective": 0.5
+          },
+          "source": "estimated-camera",
+          "silhouetteIoU": 0.9763501588422168,
+          "aspectPenalty": 0.0032083159827816345,
+          "alternative": {
+            "camera": {
+              "yaw": -185,
+              "pitch": 5,
+              "perspective": 0.5
+            },
+            "score": 0.9288903648366864,
+            "scoreGap": 0.04425147802274876
+          },
+          "ambiguous": false,
+          "limitations": "Silhouette fit does not verify interior pixel correspondence, material identity or hidden geometry. Competing poses can share the same outline."
+        },
+        "yaw": 0,
+        "pitch": 10,
+        "perspective": 0.5,
+        "observedFraction": 0.402066550621382,
+        "softenShadows": true
+      },
+      "triangles": 98812,
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "conversionFingerprint": "8f7639903d1f4170c6d6d1a716a3da493f0bb68143311a19e05208ceb567596e",
+      "observedObjects": [
+        {
+          "category": "statue",
+          "label": "human statue",
+          "identityScore": 0.6174764037132263,
+          "identitySupported": false
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.5496727228164673,
+          "identitySupported": true
+        },
+        {
+          "category": "lamp",
+          "label": "torch",
+          "identityScore": 0.5259319543838501,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.4738605320453644,
+          "identitySupported": true
+        },
+        {
+          "category": "decor",
+          "label": "sculpture head",
+          "identityScore": 0.30261266231536865,
+          "identitySupported": true
+        }
+      ],
+      "detected": [],
+      "status": "converted",
+      "bricks": 2985,
+      "steps": 558,
+      "supports": 240,
+      "partTypes": 16,
+      "partColorTypes": 58,
+      "structureCategory": "stepped-monument",
+      "structureConfidence": 0.55,
+      "applied": [],
+      "dropped": [],
+      "semanticFalsePositives": [],
+      "semanticGatePassed": true,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2985
+      },
+      "inventoryTotal": 2985,
+      "colors": {
+        "0": 332,
+        "1": 51,
+        "2": 52,
+        "3": 90,
+        "7": 2456,
+        "9": 3,
+        "12": 1
+      },
+      "elapsedSeconds": 6
+    }
+  ],
+  "limits": "Bilinear offline downsample approximates canvas; no browser UI, load stability, or physical build was tested. Connection checks are not visual quality scores."
+}

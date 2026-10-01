@@ -15,6 +15,9 @@ export type ReferenceMaterialDesign = {
   regions: ReferenceMaterialRegion[];
   normalizedPixels: number;
   warnings: string[];
+  alignment?: ReturnType<
+    typeof import('./reference-colors.ts').referenceAlignment
+  >['evidence'];
   surfaces?: import('./surface-materials.ts').SurfaceMaterialDesign;
   projection?: {
     voteUnit: 'visible-reference-pixel';

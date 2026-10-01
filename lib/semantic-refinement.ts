@@ -96,7 +96,7 @@ export async function detectRefinements(
   );
   const detections = analysis.elements;
   if (!detections.length) return [];
-  const alignment = referenceAlignment(mesh, image, camera),
+  const alignment = referenceAlignment(mesh, image, camera || mesh.coloring),
     frame = meshFrame(mesh, resolution);
   const regions: ComponentRegion[] = [];
   for (const [index, detection] of detections.entries()) {

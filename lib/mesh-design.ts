@@ -66,7 +66,10 @@ import {
   validateElementVisibility,
   type ReferenceView,
 } from './representation/visibility-validation.ts';
-import type { ReferenceCamera } from './reference-colors.ts';
+import {
+  colorFromReference,
+  type ReferenceCamera,
+} from './reference-colors.ts';
 import type { SceneElementInstance } from './scene/scene-types.ts';
 import { designMeshSurfaces, type SurfaceDesign } from './surface-design.ts';
 import { slopeSurface, designSlopes } from './slope-design.ts';
@@ -232,6 +235,30 @@ export type VisibilityContext = {
   image?: Raster;
   camera?: ReferenceCamera;
 };
+
+function matchingReferenceContext(
+  mesh: TriangleMesh,
+  visibility?: VisibilityContext,
+) {
+  if (!mesh.coloring || !visibility?.image) return { mesh, visibility };
+  const camera = visibility.camera || mesh.coloring;
+  const source = mesh.coloring;
+  // Color sampling, semantic rays and packing must refer to the same view.
+  // Explicit mounting-camera changes require reprojecting the reference paint,
+  // rather than carrying colors sampled from another camera into its volume.
+  if (
+    camera.yaw !== source.yaw ||
+    camera.pitch !== source.pitch ||
+    camera.perspective !== source.perspective
+  )
+    mesh = colorFromReference(
+      mesh,
+      visibility.image,
+      camera,
+      source.softenShadows ?? true,
+    );
+  return { mesh, visibility: { ...visibility, camera } };
+}
 
 function calibrateRegionAnchors(
   mesh: TriangleMesh,
@@ -1262,6 +1289,7 @@ export function meshToDesign(
   regions: ComponentRegion[] = [],
   visibility?: VisibilityContext,
 ): Model {
+  ({ mesh, visibility } = matchingReferenceContext(mesh, visibility));
   regions = regions.map(ensureSceneElement);
   if (regions.some((r) => r.autoRefinement))
     return meshToDesignAuto(mesh, resolution, regions, 48, visibility).model;
@@ -1343,6 +1371,7 @@ export function meshToDesignAuto(
   budget = 48,
   visibility?: VisibilityContext,
 ): AutoComponentResult {
+  ({ mesh, visibility } = matchingReferenceContext(mesh, visibility));
   if (regions.length > 64) throw Error('一次最多替换 64 个组件。');
   regions = regions.map(ensureSceneElement);
   const volume = buildMeshVolume(mesh, resolution);

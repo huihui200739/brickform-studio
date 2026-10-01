@@ -22,7 +22,9 @@ const current = conversionFingerprint();
 if (!audit.passed || audit.conversionFingerprint !== current)
   throw Error('Replay the current conversions and emitted order first.');
 // Keep the comparison implementation pinned to the last height-band version.
-// Its actual observed faces/foliage should not change when missing paint changes.
+// Compare paint at the SAME current alignment. Camera changes legitimately
+// move samples, so the baseline alignment is replaced explicitly, while its
+// original face colors, features and height-band inference are preserved.
 const baselineRevision = '12a4064';
 const baselineSource = execFileSync(
   'git',
@@ -33,11 +35,17 @@ const baselineFile = join(directory, '.baseline-reference-colors.ts');
 writeFileSync(
   baselineFile,
   '// @ts-nocheck\n' +
-    baselineSource.replace(
-      /from '(\.\/[^']+)'/g,
-      (_s, ref: string) =>
-        `from '${new URL(ref, new URL('../lib/reference-colors.ts', import.meta.url)).href}'`,
-    ),
+    `import { referenceAlignment } from '${new URL('../lib/reference-colors.ts', import.meta.url).href}';\n` +
+    baselineSource
+      .replace(
+        'export function referenceAlignment(',
+        'function legacyReferenceAlignment(',
+      )
+      .replace(
+        /from '(\.\/[^']+)'/g,
+        (_s, ref: string) =>
+          `from '${new URL(ref, new URL('../lib/reference-colors.ts', import.meta.url)).href}'`,
+      ),
 );
 const baseline = (await import(pathToFileURL(baselineFile).href)) as {
   colorFromReference: typeof colorFromReference;
@@ -102,8 +110,9 @@ for (const row of audit.cases as {
     }
     const positionsSha = sha(new Uint8Array(mesh.positions.buffer)),
       colorsSha = sha(mesh.colors);
-    const old = baseline.colorFromReference(mesh, image),
-      result = colorFromReference(mesh, image);
+    const camera = model.materialDesign?.alignment?.camera;
+    const old = baseline.colorFromReference(mesh, image, camera),
+      result = colorFromReference(mesh, image, camera);
     const regions = result.materialDesign!.surfaces!.regions,
       evidence = result.materialEvidence!;
     const inferredCounts = Array(regions.length).fill(0),
@@ -235,6 +244,8 @@ const result = {
   conversionFingerprint: current,
   baselineRevision,
   baselineSourceSha256: sha(baselineSource),
+  comparisonAlignment:
+    'Current alignment and final-model camera shared by both paint implementations; historical camera selection is not replayed.',
   scope: audit.scope,
   passed: !failed,
   cases,

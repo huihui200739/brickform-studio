@@ -127,10 +127,21 @@ export function referenceAlignment(
               Math.round(left + (x / (SIZE - 1)) * (right - left)),
             )
         ];
-  const samples: number[][] = [];
-  const stride = Math.max(3, Math.floor(p.length / 3 / 14000) * 3);
-  for (let i = 0; i < p.length; i += stride)
-    samples.push([p[i], p[i + 1], p[i + 2]]);
+  // Use all distinct source vertices for bounds. A sampling stride can skip
+  // small extrema and change the fitted camera when a surface is subdivided.
+  const samples: number[][] = [],
+    vertexIds = new Int32Array(p.length / 3);
+  const ids = new Map<string, number>();
+  for (let i = 0; i < p.length; i += 3) {
+    const key = `${p[i]},${p[i + 1]},${p[i + 2]}`;
+    let id = ids.get(key);
+    if (id === undefined) {
+      id = samples.length;
+      ids.set(key, id);
+      samples.push([p[i], p[i + 1], p[i + 2]]);
+    }
+    vertexIds[i / 3] = id;
+  }
   const project = (camera: Camera) => {
     const yaw = (camera.yaw * Math.PI) / 180,
       pitch = (camera.pitch * Math.PI) / 180;
@@ -163,20 +174,36 @@ export function referenceAlignment(
     });
     return { point, minX, maxX, minY, maxY, projected };
   };
-  const score = (camera: Camera) => {
+  const assess = (camera: Camera) => {
     const view = project(camera),
       m = new Uint8Array(SIZE * SIZE);
-    for (const v of view.projected) {
-      const x = Math.round(
-          ((v[0] - view.minX) / (view.maxX - view.minX)) * (SIZE - 1),
-        ),
-        y = Math.round(
-          ((view.maxY - v[1]) / (view.maxY - view.minY)) * (SIZE - 1),
-        );
-      for (let dy = -1; dy <= 1; dy++)
-        for (let dx = -1; dx <= 1; dx++)
-          if (x + dx >= 0 && x + dx < SIZE && y + dy >= 0 && y + dy < SIZE)
-            m[(y + dy) * SIZE + x + dx] = 1;
+    // Fill the actual projected triangles. Vertex splats measure tessellation
+    // density, leave sparse faces hollow and can choose a different pose for
+    // geometrically identical coarse and subdivided meshes.
+    const sx = (SIZE - 1) / (view.maxX - view.minX),
+      sy = (SIZE - 1) / (view.maxY - view.minY);
+    const xy = view.projected.map((v) => [
+      (v[0] - view.minX) * sx,
+      (view.maxY - v[1]) * sy,
+    ]);
+    for (let i = 0; i < vertexIds.length; i += 3) {
+      const [ax, ay] = xy[vertexIds[i]],
+        [bx, by] = xy[vertexIds[i + 1]],
+        [cx, cy] = xy[vertexIds[i + 2]];
+      const den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+      if (Math.abs(den) < 1e-8) continue;
+      const minX = Math.max(0, Math.ceil(Math.min(ax, bx, cx))),
+        maxX = Math.min(SIZE - 1, Math.floor(Math.max(ax, bx, cx))),
+        minY = Math.max(0, Math.ceil(Math.min(ay, by, cy))),
+        maxY = Math.min(SIZE - 1, Math.floor(Math.max(ay, by, cy)));
+      for (let y = minY; y <= maxY; y++)
+        for (let x = minX; x <= maxX; x++) {
+          if (m[y * SIZE + x]) continue;
+          const a = ((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / den,
+            b = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / den;
+          if (a >= -1e-5 && b >= -1e-5 && a + b <= 1 + 1e-5)
+            m[y * SIZE + x] = 1;
+        }
     }
     let intersection = 0,
       union = 0;
@@ -185,11 +212,26 @@ export function referenceAlignment(
       if (m[i] || target[i]) union++;
     }
     const aspect = (view.maxX - view.minX) / (view.maxY - view.minY),
-      targetAspect = (right - left) / (bottom - top);
-    return (
-      intersection / Math.max(1, union) -
-      0.25 * Math.abs(Math.log(aspect / targetAspect))
-    );
+      targetAspect = (right - left) / (bottom - top),
+      silhouetteIoU = intersection / Math.max(1, union),
+      aspectPenalty = 0.25 * Math.abs(Math.log(aspect / targetAspect));
+    return {
+      score: silhouetteIoU - aspectPenalty,
+      silhouetteIoU,
+      aspectPenalty,
+    };
+  };
+  const assessments = new Map<string, ReturnType<typeof assess>>();
+  const evaluated: { camera: Camera; score: number }[] = [];
+  const score = (camera: Camera) => {
+    const key = `${camera.yaw},${camera.pitch},${camera.perspective}`;
+    let result = assessments.get(key);
+    if (!result) {
+      result = assess(camera);
+      assessments.set(key, result);
+      evaluated.push({ camera: { ...camera }, score: result.score });
+    }
+    return result.score;
   };
   let camera: Camera = { yaw: 0, pitch: 20, perspective: 0.25 },
     best = -Infinity;
@@ -204,26 +246,67 @@ export function referenceAlignment(
           camera = c;
         }
       }
-    const coarse = { ...camera };
-    for (let yaw = coarse.yaw - 15; yaw <= coarse.yaw + 15; yaw += 5)
-      for (
-        let pitch = Math.max(0, coarse.pitch - 10);
-        pitch <= coarse.pitch + 10;
-        pitch += 5
+    // Refine distinct coarse poses, not only the first winner. Symmetric
+    // silhouettes can have equally plausible front/back or side cameras.
+    const seeds: Camera[] = [];
+    for (const candidate of [...evaluated].sort((a, b) => b.score - a.score)) {
+      if (candidate.score < best - 0.12) continue;
+      if (
+        seeds.every(
+          (c) =>
+            Math.abs(((c.yaw - candidate.camera.yaw + 540) % 360) - 180) >= 45,
+        )
       )
-        for (const perspective of [0, 0.25, 0.5]) {
-          const c = { yaw, pitch, perspective },
-            s = score(c);
-          if (s > best) {
-            best = s;
-            camera = c;
+        seeds.push(candidate.camera);
+      if (seeds.length === 4) break;
+    }
+    for (const coarse of seeds)
+      for (let yaw = coarse.yaw - 15; yaw <= coarse.yaw + 15; yaw += 5)
+        for (
+          let pitch = Math.max(0, coarse.pitch - 10);
+          pitch <= coarse.pitch + 10;
+          pitch += 5
+        )
+          for (const perspective of [0, 0.25, 0.5]) {
+            const c = { yaw, pitch, perspective },
+              s = score(c);
+            if (s > best) {
+              best = s;
+              camera = c;
+            }
           }
-        }
   }
-  const view = project(camera);
+  const view = project(camera),
+    fit = assess(camera);
+  const yawDistance = (a: number, b: number) =>
+    Math.abs(((a - b + 540) % 360) - 180);
+  const alternative = evaluated
+    .filter(
+      (c) =>
+        yawDistance(c.camera.yaw, camera.yaw) >= 45 ||
+        Math.abs(c.camera.pitch - camera.pitch) >= 30,
+    )
+    .sort((a, b) => b.score - a.score)[0];
+  const evidence = {
+    method: 'filled-triangle-silhouette' as const,
+    camera: { ...camera },
+    source: override
+      ? ('explicit-camera' as const)
+      : ('estimated-camera' as const),
+    silhouetteIoU: fit.silhouetteIoU,
+    aspectPenalty: fit.aspectPenalty,
+    alternative: alternative
+      ? { ...alternative, scoreGap: fit.score - alternative.score }
+      : undefined,
+    ambiguous:
+      !override && !!alternative && fit.score - alternative.score < 0.025,
+    limitations:
+      'Silhouette fit does not verify interior pixel correspondence, material identity or hidden geometry. Competing poses can share the same outline.',
+  };
   return {
     camera,
-    confidence: Math.max(0, Math.min(1, score(camera))),
+    confidence: Math.max(0, Math.min(1, fit.score)),
+    evidence,
     view,
     mask,
     left,
@@ -248,7 +331,7 @@ export function colorFromReference(
   override?: ReferenceCamera,
   softenShadows = true,
 ): TriangleMesh {
-  const { camera, view, mask, left, right, top, bottom, extent } =
+  const { camera, view, mask, left, right, top, bottom, extent, evidence } =
     referenceAlignment(mesh, image, override);
   const materials = referenceMaterials(image, mask, softenShadows);
   const p = mesh.positions;
@@ -386,6 +469,7 @@ export function colorFromReference(
     },
     materialDesign: {
       ...materials.design,
+      alignment: evidence,
       surfaces: surfaces.design,
       warnings: [
         ...materials.design.warnings,
@@ -401,8 +485,10 @@ export function colorFromReference(
     },
     coloring: {
       method: 'reference-projection',
+      alignment: evidence,
       ...camera,
       observedFraction: observed / faceColors.length,
+      softenShadows,
     },
   };
 }

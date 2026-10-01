@@ -1470,6 +1470,11 @@ export default function ReconstructionPanel({
                   : '可为无纹理模型恢复参考图配色'}
               </span>
             </div>
+            {draft.coloring?.alignment?.ambiguous && (
+              <p className="field-hint">
+                图片轮廓对应多个可能视角，部分表面可能取错颜色。请旋转检查草稿；补充同一模型的侧面或俯视图可减少不确定性。
+              </p>
+            )}
             <label className="reconstruction-color">
               <input
                 type="checkbox"

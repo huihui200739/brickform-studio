@@ -21,6 +21,10 @@ export type TriangleMesh = {
     pitch: number;
     perspective: number;
     observedFraction: number;
+    softenShadows?: boolean;
+    alignment?: ReturnType<
+      typeof import('./reference-colors.ts').referenceAlignment
+    >['evidence'];
   };
   statueFallback?: {
     cells: Array<[number, number, number]>;
