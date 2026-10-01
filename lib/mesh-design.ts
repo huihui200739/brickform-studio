@@ -69,6 +69,7 @@ import {
 import type { ReferenceCamera } from './reference-colors.ts';
 import type { SceneElementInstance } from './scene/scene-types.ts';
 import { designMeshSurfaces, type SurfaceDesign } from './surface-design.ts';
+import { slopeSurface, designSlopes } from './slope-design.ts';
 
 // Conversion is split in two stages: the triangle volume is cast once, and each
 // component-placement attempt re-reads that volume. Autoplacement can therefore
@@ -85,6 +86,7 @@ export type MeshVolume = {
   protectedCells: Set<string>;
   platform?: PlatformDesign;
   surfaceDesign?: SurfaceDesign;
+  slopeSamples: ReturnType<typeof slopeSurface>;
 };
 export type PreservedRegion = {
   kind: 'statue';
@@ -675,6 +677,7 @@ export function buildMeshVolume(
     protectedCells,
     platform: fitPlatform(surfaces.mesh, resolution, cells, w, h, d),
     surfaceDesign: surfaces.design,
+    slopeSamples: slopeSurface(surfaces.mesh, resolution),
   };
 }
 // Assemble the brick model from a cast volume and the requested component
@@ -881,6 +884,24 @@ function assembleVolume(
           if (floorColumns.has(column)) excludedFloorColumns.add(column);
         }
   }
+  const slopes = designSlopes(
+    volume.slopeSamples,
+    cells,
+    w + 2,
+    d + 2,
+    (x, y, z) =>
+      (!!platform && y <= platform.topY + 1) ||
+      cuts.some((r) => insideRegion([x, y, z], r)) ||
+      bridges.some(
+        (b) =>
+          x >= b.x &&
+          x < b.x + b.w &&
+          y >= b.y &&
+          y < b.y + b.h &&
+          z >= b.z &&
+          z < b.z + b.d,
+      ),
+  );
   const raw = finishModel(
     cells,
     w + 2,
@@ -897,6 +918,7 @@ function assembleVolume(
       : undefined,
     [
       ...bridges,
+      ...slopes.bricks,
       ...(() => {
         const structure = classifyStructure(mesh);
         if (
@@ -952,6 +974,14 @@ function assembleVolume(
         ),
       );
     const protectedTop =
+      slopes.bricks.some(
+        (s) =>
+          b.y + b.h === s.y &&
+          b.x < s.x + s.w &&
+          b.x + b.w > s.x &&
+          b.z < s.z + s.d &&
+          b.z + b.d > s.z,
+      ) ||
       (b.h === 1 && hangingParents.has(b.id)) ||
       (!!b.support && !supportOnFloor) ||
       b.y < 2 ||
@@ -1109,6 +1139,7 @@ function assembleVolume(
   ]);
   const model = groupImageAssembly(prepared);
   if (volume.surfaceDesign) model.surfaceDesign = volume.surfaceDesign;
+  model.slopeDesign = slopes.design;
   if (mesh.materialDesign) model.materialDesign = mesh.materialDesign;
   model.clearanceVolumes = openings;
   if (platform) model.platformDesign = platform;
@@ -1124,7 +1155,8 @@ function assembleVolume(
   };
   model.assembly!.reference = `按三维网格体积生成；保留网格中的前后布局和孔洞。新增辅助支撑 ${model.supportCount} 块，已计入清单。网格可能含 AI 推测，连接检查不代表外观还原或实物稳定性已验证。`;
   if (volume.surfaceDesign?.patches.length)
-    model.assembly!.reference += ' 连续近似平面在排砖前整理；孔洞、折角和外轮廓边界保留，隐藏形状与材质仍需复核。';
+    model.assembly!.reference +=
+      ' 连续近似平面在排砖前整理；孔洞、折角和外轮廓边界保留，隐藏形状与材质仍需复核。';
 
   if (model.designGeometry)
     model.assembly!.reference +=

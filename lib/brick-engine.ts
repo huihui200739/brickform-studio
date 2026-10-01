@@ -35,6 +35,8 @@ export type Brick = {
   d: number;
   h: number;
   color: number;
+  /** Upright quarter turns; needed for asymmetric slopes, even square parts. */
+  rotation?: number;
   support?: boolean;
   installation?: string;
   pose?: Pose;
@@ -61,6 +63,7 @@ export type Model = {
   platformDesign?: import('./platform-design.ts').PlatformDesign;
   materialDesign?: import('./reference-materials.ts').ReferenceMaterialDesign;
   surfaceDesign?: import('./surface-design.ts').SurfaceDesign;
+  slopeDesign?: import('./slope-design.ts').SlopeDesign;
   clearanceVolumes?: import('./scene/scene-types.ts').BBox3d[];
   repeatedGroups?: import('./scene-elements.ts').RepeatedElementGroup[];
   structureCategory?: import('./structure-classifier.ts').StructureCategory;
@@ -735,9 +738,17 @@ export function validateModel(model: Model) {
     unsupported = 0,
     invalidParts = 0;
   for (const b of model.bricks) {
-    const p = CATALOG.find((p) => p.id === b.part);
+    const p = ASSEMBLY_PARTS[b.part];
     if (
       !p ||
+      (b.rotation !== undefined &&
+        (!Number.isInteger(b.rotation) ||
+          b.rotation < 0 ||
+          b.rotation > 3 ||
+          (b.rotation % 2
+            ? p.d !== b.w || p.w !== b.d
+            : p.w !== b.w || p.d !== b.d))) ||
+      !['brick', 'plate', 'tile', 'slope'].includes(p.kind) ||
       p.h !== b.h ||
       !((p.w === b.w && p.d === b.d) || (p.w === b.d && p.d === b.w))
     )

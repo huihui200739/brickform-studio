@@ -117,15 +117,26 @@ export function brickFaces(b: Brick): Face[] {
     const z0 = cz - z,
       z1 = cz + z;
     const y0 = p.kind === 'slope' ? 20 : top;
+    const ridge = p.kind === 'slope' ? cz : z1;
     face(
       [
         [-x, y0, z0],
         [x, y0, z0],
-        [x, top, z1],
-        [-x, top, z1],
+        [x, top, ridge],
+        [-x, top, ridge],
       ],
       1,
     );
+    if (p.kind === 'slope')
+      face(
+        [
+          [-x, top, ridge],
+          [x, top, ridge],
+          [x, top, z1],
+          [-x, top, z1],
+        ],
+        1,
+      );
     face(
       [
         [-x, bottom, z0],
@@ -141,6 +152,7 @@ export function brickFaces(b: Brick): Face[] {
         [-x, bottom, z1],
         [-x, top, z1],
         [x, top, z1],
+        ...(p.kind === 'slope' ? [[x, top, ridge] as V3] : []),
       ],
       0.85,
     );
@@ -158,6 +170,7 @@ export function brickFaces(b: Brick): Face[] {
         [-x, bottom, z1],
         [-x, bottom, z0],
         [-x, y0, z0],
+        ...(p.kind === 'slope' ? [[-x, top, ridge] as V3] : []),
         [-x, top, z1],
       ],
       0.9,

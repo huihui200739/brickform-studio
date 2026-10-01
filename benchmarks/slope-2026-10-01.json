@@ -1,0 +1,1121 @@
+{
+  "date": "2026-10-01",
+  "conversionFingerprint": "c7675b0804b001c53657b3fbe611ec4175bb151401f15da0287d6c4d17ec137f",
+  "passed": true,
+  "scope": "Six public engine sample renders and two user Temple fixtures at three sizes. Replayed cached native meshes and actual learned observations; no new native inference or physical build.",
+  "cases": [
+    {
+      "id": "house",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "63dfa62dc5a19a1a3bd2df1d1589644f98dea501a4b31cb02a71679d0c74a0e7",
+      "meshSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "674559d3c39f00799cbd2b92a08fc7f5b6b8d8589c1731db8a6014a6dc498997",
+      "baseline": {
+        "bricks": 2955,
+        "supports": 191
+      },
+      "bricks": 3027,
+      "supports": 192,
+      "steps": 535,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 58,
+        "addedColumns": 65,
+        "addedCells": 678
+      },
+      "emittedApproaches": {
+        "tested": 3023,
+        "upward": 182,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 3027,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3027
+      },
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree"
+        }
+      ],
+      "platformPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [
+        {
+          "part": "3039",
+          "x": 8,
+          "y": 26,
+          "z": 5,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.12961110507528306,
+          "voxelRmsStuds": 0.4304299793675608,
+          "maxErrorStuds": 0.18463998558035577,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 1858,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1856,
+            1857
+          ],
+          "passed": true
+        },
+        {
+          "part": "3039",
+          "x": 7,
+          "y": 24,
+          "z": 7,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.23484295962223217,
+          "voxelRmsStuds": 0.7003045864417634,
+          "maxErrorStuds": 0.31378569312129834,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 1632,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1633,
+            1631
+          ],
+          "passed": true
+        },
+        {
+          "part": "3039",
+          "x": 9,
+          "y": 28,
+          "z": 7,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.19123086988661636,
+          "voxelRmsStuds": 0.7447641870634685,
+          "maxErrorStuds": 0.2448218865621481,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 2036,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            2000
+          ],
+          "passed": true
+        },
+        {
+          "part": "3039",
+          "x": 7,
+          "y": 24,
+          "z": 9,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.275505696295011,
+          "voxelRmsStuds": 0.6588021351573831,
+          "maxErrorStuds": 0.35285307679904143,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 1878,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1633,
+            1631,
+            1793
+          ],
+          "passed": true
+        },
+        {
+          "part": "3039",
+          "x": 7,
+          "y": 25,
+          "z": 13,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.09588352696529609,
+          "voxelRmsStuds": 0.5709259425621549,
+          "maxErrorStuds": 0.14147869340451535,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 1927,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1657,
+            1763,
+            1764
+          ],
+          "passed": true
+        },
+        {
+          "part": "3039",
+          "x": 7,
+          "y": 25,
+          "z": 15,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.09009491390682312,
+          "voxelRmsStuds": 0.5519333757034546,
+          "maxErrorStuds": 0.11594779725104765,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 1928,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1657,
+            1884,
+            1602
+          ],
+          "passed": true
+        },
+        {
+          "part": "3039",
+          "x": 20,
+          "y": 26,
+          "z": 16,
+          "rotation": 3,
+          "color": 4,
+          "rmsStuds": 0.15787813459513758,
+          "voxelRmsStuds": 0.7789202617705064,
+          "maxErrorStuds": 0.21409463721178135,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 1980,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1815,
+            1255
+          ],
+          "passed": true
+        },
+        {
+          "part": "3039",
+          "x": 7,
+          "y": 25,
+          "z": 17,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.09460909883156869,
+          "voxelRmsStuds": 0.5330983711720535,
+          "maxErrorStuds": 0.1048999110596931,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 1605,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1655,
+            1606,
+            1602,
+            1604
+          ],
+          "passed": true
+        },
+        {
+          "part": "3039",
+          "x": 9,
+          "y": 29,
+          "z": 17,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.028862073154076785,
+          "voxelRmsStuds": 0.5528238468549092,
+          "maxErrorStuds": 0.04779110566318323,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 2101,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1979,
+            2045,
+            1972,
+            2046
+          ],
+          "passed": true
+        },
+        {
+          "part": "3039",
+          "x": 21,
+          "y": 24,
+          "z": 18,
+          "rotation": 3,
+          "color": 4,
+          "rmsStuds": 0.2635060949294386,
+          "voxelRmsStuds": 0.6712143575250178,
+          "maxErrorStuds": 0.34571609223112176,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 1836,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1253,
+            1727,
+            1733
+          ],
+          "passed": true
+        },
+        {
+          "part": "3040b",
+          "x": 19,
+          "y": 28,
+          "z": 5,
+          "rotation": 3,
+          "color": 4,
+          "rmsStuds": 0.02891820078009229,
+          "voxelRmsStuds": 0.5353450948023633,
+          "maxErrorStuds": 0.04051688980158552,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "emittedId": 1918,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            1998,
+            1919
+          ],
+          "passed": true
+        },
+        {
+          "part": "3040b",
+          "x": 8,
+          "y": 26,
+          "z": 11,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.23612353285940776,
+          "voxelRmsStuds": 0.6984823991858744,
+          "maxErrorStuds": 0.2876698895504681,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "emittedId": 1964,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            1925,
+            1798
+          ],
+          "passed": true
+        },
+        {
+          "part": "3040b",
+          "x": 8,
+          "y": 27,
+          "z": 19,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.052014229032106805,
+          "voxelRmsStuds": 0.573977631455191,
+          "maxErrorStuds": 0.0735925031538045,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "emittedId": 1824,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            1825,
+            1823
+          ],
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "locomotive",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "df4284dabd513c4826d1cda8ad2dc6687ee4c30229d41c3d631749329175c90c",
+      "meshSha256": "5b8be986de0fe82f66561518736b09237145beabe2891705710314ca88a9703a",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "7e267986d7d68f012e6ceb589830e0dbd3f35a64e22c3c156616c7bc4706abb9",
+      "baseline": {
+        "bricks": 2624,
+        "supports": 232
+      },
+      "bricks": 2624,
+      "supports": 232,
+      "steps": 576,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 124,
+        "addedColumns": 133,
+        "addedCells": 636
+      },
+      "emittedApproaches": {
+        "tested": 2624,
+        "upward": 412,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 2624,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2624
+      },
+      "applied": [],
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": []
+    },
+    {
+      "id": "horse",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "66305f50ddd7d90e521d718952c702b9fb71c30efe6970d39d918f6dbf5b6ec3",
+      "meshSha256": "718a8090e059a2aba32700f69a6b41f3771ed94df031b8b22bbcb7abe43adedb",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "dd2e59b34f85c9349409271963379728665f3d4f066c236bee92539185316d47",
+      "baseline": {
+        "bricks": 1630,
+        "supports": 240
+      },
+      "bricks": 1630,
+      "supports": 240,
+      "steps": 458,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 55,
+        "addedColumns": 56,
+        "addedCells": 729
+      },
+      "emittedApproaches": {
+        "tested": 1630,
+        "upward": 299,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 1630,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 1630
+      },
+      "applied": [],
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": []
+    },
+    {
+      "id": "sculpture-head",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "58b926e26c0026df16378e214fb046e63dd0edceacb0f8db8005d9ed3f86949a",
+      "meshSha256": "1e845d750e10e0ba03667991c962ed7db8dc93af2cb7b83dd4bcbf208c848be8",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "383d9758e6a5af512dbc6522831535746a3e44cc1d12210a1e9363d861f556c1",
+      "baseline": {
+        "bricks": 4932,
+        "supports": 694
+      },
+      "bricks": 4932,
+      "supports": 694,
+      "steps": 980,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 126,
+        "addedColumns": 136,
+        "addedCells": 2648
+      },
+      "emittedApproaches": {
+        "tested": 4932,
+        "upward": 1663,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 4932,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 4932
+      },
+      "applied": [],
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": []
+    },
+    {
+      "id": "wizard-hat",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "d9d43eae5cc61c872bc01d480de4e8954da352743d81f9329345d96e052ee2ac",
+      "meshSha256": "cd27bce9bedb14a0096ab71e7514e9da3a1c35abb52ba805edb0778f00eb2885",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "3571d9737c96ff9c5d2a082e516469c4a19f803898b3d259fb13d02063a454b3",
+      "baseline": {
+        "bricks": 2755,
+        "supports": 569
+      },
+      "bricks": 2755,
+      "supports": 569,
+      "steps": 838,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 180,
+        "addedColumns": 187,
+        "addedCells": 1747
+      },
+      "emittedApproaches": {
+        "tested": 2755,
+        "upward": 400,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 2755,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2755
+      },
+      "applied": [],
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": []
+    },
+    {
+      "id": "costumed-figure",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "6d08caba0671ffee9a683c5b3ca101b272cec71d3eb9e93b6e8d2b65ddd417fc",
+      "meshSha256": "7e0c17d2e11bb21eb29a78b9c96324758e1b8c524d1855c160f5d7571d0f0de9",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "88921b07f37ad23ed6b0bac92e414bd94a276ce0c803054f968d63a9e5b34b5b",
+      "baseline": {
+        "bricks": 2862,
+        "supports": 212
+      },
+      "bricks": 2862,
+      "supports": 212,
+      "steps": 510,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 49,
+        "addedColumns": 53,
+        "addedCells": 833
+      },
+      "emittedApproaches": {
+        "tested": 2862,
+        "upward": 643,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 2862,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2862
+      },
+      "applied": [],
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": []
+    },
+    {
+      "id": "temple-original",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+      "meshSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "972518afa7255bb1358b6eae9feff709fe487eed0927554fa9c70dc156dd7db8",
+      "bricks": 2600,
+      "supports": 45,
+      "steps": 316,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 13,
+        "addedColumns": 9,
+        "addedCells": 88
+      },
+      "emittedApproaches": {
+        "tested": 2568,
+        "upward": 22,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 2600,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2600
+      },
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-statue-3",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [],
+      "baseline": {
+        "bricks": 2600,
+        "supports": 45
+      }
+    },
+    {
+      "id": "temple-original",
+      "resolution": 36,
+      "passed": true,
+      "inputSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+      "meshSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "9b1f9c2385910dbf423de9ab95d4c2d63a10a98072340d31cc33d9f2a2c0ba1a",
+      "bricks": 4606,
+      "supports": 117,
+      "steps": 560,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 15,
+        "addedColumns": 15,
+        "addedCells": 437
+      },
+      "emittedApproaches": {
+        "tested": 4574,
+        "upward": 23,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 4606,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 4606
+      },
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-statue-3",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [],
+      "baseline": {
+        "bricks": 4606,
+        "supports": 117
+      }
+    },
+    {
+      "id": "temple-original",
+      "resolution": 48,
+      "passed": true,
+      "inputSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+      "meshSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "85e937f8f23aeb5dddc2c020aa0acead0de1052fe8e381664395998bdccb43f4",
+      "bricks": 9120,
+      "supports": 227,
+      "steps": 1112,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 25,
+        "addedColumns": 26,
+        "addedCells": 576
+      },
+      "emittedApproaches": {
+        "tested": 9088,
+        "upward": 56,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 9120,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 9120
+      },
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-statue-3",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [],
+      "baseline": {
+        "bricks": 9120,
+        "supports": 227
+      }
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "meshSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "6e4285bfa601316b751456a3d381612ae409b6033a24762a395aacdc94345a2d",
+      "bricks": 2340,
+      "supports": 15,
+      "steps": 258,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 6,
+        "addedColumns": 6,
+        "addedCells": 84
+      },
+      "emittedApproaches": {
+        "tested": 2308,
+        "upward": 16,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 2340,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2340
+      },
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [
+        {
+          "part": "3040b",
+          "x": 16,
+          "y": 12,
+          "z": 19,
+          "rotation": 2,
+          "color": 7,
+          "rmsStuds": 0.0964389084076254,
+          "voxelRmsStuds": 0.5935895516431308,
+          "maxErrorStuds": 0.13688719408431282,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "emittedId": 1083,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            1026
+          ],
+          "passed": true
+        }
+      ],
+      "baseline": {
+        "bricks": 2339,
+        "supports": 15
+      }
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 36,
+      "passed": true,
+      "inputSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "meshSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "2b23ce6e2d942076acd382b069cc43fc0465a5b181025b6bb761e4622a3e88b4",
+      "bricks": 4086,
+      "supports": 57,
+      "steps": 447,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 9,
+        "addedColumns": 9,
+        "addedCells": 124
+      },
+      "emittedApproaches": {
+        "tested": 4054,
+        "upward": 27,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 4086,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 4086
+      },
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [
+        {
+          "part": "3039",
+          "x": 18,
+          "y": 18,
+          "z": 6,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.09865929393374999,
+          "voxelRmsStuds": 0.47237589292313187,
+          "maxErrorStuds": 0.10179332554984821,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 2074,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1915
+          ],
+          "passed": true
+        },
+        {
+          "part": "3039",
+          "x": 20,
+          "y": 18,
+          "z": 6,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.1024769739911028,
+          "voxelRmsStuds": 0.4686742455601638,
+          "maxErrorStuds": 0.10709689698134195,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 2075,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1918
+          ],
+          "passed": true
+        },
+        {
+          "part": "3040b",
+          "x": 22,
+          "y": 18,
+          "z": 6,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.10181582781692508,
+          "voxelRmsStuds": 0.4690214781974692,
+          "maxErrorStuds": 0.10589225845331995,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "emittedId": 2076,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            1919
+          ],
+          "passed": true
+        }
+      ],
+      "baseline": {
+        "bricks": 4019,
+        "supports": 57
+      }
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 48,
+      "passed": true,
+      "inputSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "meshSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "2d72e228b7f4a684ed366354a2fbe1f37ed2452bb76bd20e0057ee18f4a52c1b",
+      "bricks": 7896,
+      "supports": 85,
+      "steps": 837,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 25,
+        "addedColumns": 24,
+        "addedCells": 201
+      },
+      "emittedApproaches": {
+        "tested": 7864,
+        "upward": 53,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 7896,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 7896
+      },
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [
+        {
+          "part": "3039",
+          "x": 21,
+          "y": 31,
+          "z": 10,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.07806326572928851,
+          "voxelRmsStuds": 0.5387185856876622,
+          "maxErrorStuds": 0.09595827824261427,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 4738,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            4662
+          ],
+          "passed": true
+        },
+        {
+          "part": "3039",
+          "x": 26,
+          "y": 31,
+          "z": 10,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.07074727962611982,
+          "voxelRmsStuds": 0.534873948412618,
+          "maxErrorStuds": 0.07538901660208985,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 4739,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            4663
+          ],
+          "passed": true
+        },
+        {
+          "part": "3039",
+          "x": 23,
+          "y": 32,
+          "z": 11,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.19445123367694062,
+          "voxelRmsStuds": 0.36468600638001986,
+          "maxErrorStuds": 0.26261742896778273,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "emittedId": 4769,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            4492
+          ],
+          "passed": true
+        },
+        {
+          "part": "3040b",
+          "x": 28,
+          "y": 31,
+          "z": 10,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.07127208096512806,
+          "voxelRmsStuds": 0.5345419907022748,
+          "maxErrorStuds": 0.07597043824743288,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "emittedId": 4740,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            4663
+          ],
+          "passed": true
+        },
+        {
+          "part": "3040b",
+          "x": 25,
+          "y": 32,
+          "z": 11,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.1939458410191045,
+          "voxelRmsStuds": 0.3651665365135286,
+          "maxErrorStuds": 0.25883929082263357,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "emittedId": 4770,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            4493
+          ],
+          "passed": true
+        }
+      ],
+      "baseline": {
+        "bricks": 7831,
+        "supports": 85
+      }
+    }
+  ],
+  "limits": "Source-evidenced upright slopes only. Unobserved backs, curved surface design, material inference, kit appearance, procurement, full insertion paths, joint force and human step trials remain incomplete."
+}

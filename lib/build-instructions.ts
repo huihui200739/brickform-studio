@@ -24,7 +24,7 @@ export function instructionModel(model: Model): Model {
     ...model,
     bricks: model.bricks.map((b) => {
       const p = ASSEMBLY_PARTS[b.part],
-        q = p.w === b.w ? 0 : 1,
+        q = b.rotation ?? (p.w === b.w ? 0 : 1),
         matrix = rotate(q);
       const center = transform(matrix, [0, p.bottom - p.h * 4, p.centerZ || 0]);
       const pose: Pose = {
