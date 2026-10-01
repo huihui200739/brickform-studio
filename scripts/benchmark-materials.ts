@@ -62,6 +62,9 @@ const cases = verified.cases.map(
         ).length,
         normalizedPixels: design.normalizedPixels,
         projection,
+        surfaceRegionCount: design.surfaces?.regions.length,
+        surfaceInferenceMethod: design.surfaces?.method,
+        defaultFaces: design.surfaces?.defaultFaces,
         warnings: design.warnings,
       },
       structuralAuditPassed: true,
@@ -75,7 +78,7 @@ const output = {
   conversionFingerprint: current,
   scope: verified.scope,
   method:
-    'Continuous local chromaticity/lightness regions; visible projected pixels vote once, independent of triangle count. Abrupt colour boundaries are kept. Unknown surfaces still use inferred height bands.',
+    'Continuous local chromaticity/lightness regions; visible projected pixels vote once, independent of triangle count. Abrupt colour boundaries are kept. Unknown surfaces use recorded connected-region and compatible-inclination material hypotheses, with a reference default when evidence is missing.',
   cases,
   limits:
     'Region coherence is an illumination hypothesis, not intrinsic material recognition. Hard shadows, soft painted gradients and reflections remain ambiguous. Palette/part counts and structural gates do not establish appearance, purchasability, strength or physical buildability. Cached public engine examples are not independent real photographs.',

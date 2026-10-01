@@ -1,0 +1,621 @@
+{
+  "date": "2026-10-01",
+  "conversionFingerprint": "8bd88ba1f5ac7bec596978d27e525afd7fe826c8cef5f50e96aa4dbe12fae279",
+  "scope": "Six public engine sample renders and two user Temple fixtures at three sizes. Replayed cached native meshes and actual learned observations; no new native inference or physical build.",
+  "cases": [
+    {
+      "id": "house",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "63dfa62dc5a19a1a3bd2df1d1589644f98dea501a4b31cb02a71679d0c74a0e7",
+      "meshSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "e3a38487bf60869e6d84cc94cea5d161909738f9ffd2ec6b69facd0d803bddab",
+      "baseline": {
+        "bricks": 3222,
+        "supports": 416,
+        "steps": 306,
+        "conversionFingerprint": "5700521bf0af79240eaff27dcf82ab319f51ba2527988c24fcb22aadb4669a0e"
+      },
+      "bricks": 3153,
+      "supports": 144,
+      "steps": 530,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 53,
+        "addedColumns": 57,
+        "addedCells": 478
+      },
+      "emittedApproaches": {
+        "tested": 3149,
+        "upward": 209,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 3153,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3153
+      },
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree"
+        }
+      ],
+      "platformPassed": true,
+      "appearance": "Draft; catalog rendering reviewed separately, not an official-kit quality pass."
+    },
+    {
+      "id": "locomotive",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "df4284dabd513c4826d1cda8ad2dc6687ee4c30229d41c3d631749329175c90c",
+      "meshSha256": "5b8be986de0fe82f66561518736b09237145beabe2891705710314ca88a9703a",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "67b676681fb9eab321ee14d8acda1fe724a1aa39d1feac1cc1f01af1026de118",
+      "baseline": {
+        "bricks": 2819,
+        "supports": 464,
+        "steps": 266,
+        "conversionFingerprint": "5700521bf0af79240eaff27dcf82ab319f51ba2527988c24fcb22aadb4669a0e"
+      },
+      "bricks": 3057,
+      "supports": 186,
+      "steps": 647,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 88,
+        "addedColumns": 94,
+        "addedCells": 477
+      },
+      "emittedApproaches": {
+        "tested": 3057,
+        "upward": 516,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 3057,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3057
+      },
+      "applied": [],
+      "appearance": "Draft; catalog rendering reviewed separately, not an official-kit quality pass."
+    },
+    {
+      "id": "horse",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "66305f50ddd7d90e521d718952c702b9fb71c30efe6970d39d918f6dbf5b6ec3",
+      "meshSha256": "718a8090e059a2aba32700f69a6b41f3771ed94df031b8b22bbcb7abe43adedb",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "a2e6097352831f3b17bd6c36ec6a2573201551c3932a437656eba909d12b0e1d",
+      "baseline": {
+        "bricks": 1927,
+        "supports": 561,
+        "steps": 190,
+        "conversionFingerprint": "5700521bf0af79240eaff27dcf82ab319f51ba2527988c24fcb22aadb4669a0e"
+      },
+      "bricks": 1754,
+      "supports": 222,
+      "steps": 461,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 50,
+        "addedColumns": 54,
+        "addedCells": 638
+      },
+      "emittedApproaches": {
+        "tested": 1754,
+        "upward": 370,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 1754,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 1754
+      },
+      "applied": [],
+      "appearance": "Draft; catalog rendering reviewed separately, not an official-kit quality pass."
+    },
+    {
+      "id": "sculpture-head",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "58b926e26c0026df16378e214fb046e63dd0edceacb0f8db8005d9ed3f86949a",
+      "meshSha256": "1e845d750e10e0ba03667991c962ed7db8dc93af2cb7b83dd4bcbf208c848be8",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "1b7d2f0ea7cd745851a3218d577513443d364c455855341a01757f6604047f59",
+      "baseline": {
+        "bricks": 5758,
+        "supports": 1542,
+        "steps": 513,
+        "conversionFingerprint": "5700521bf0af79240eaff27dcf82ab319f51ba2527988c24fcb22aadb4669a0e"
+      },
+      "bricks": 4818,
+      "supports": 596,
+      "steps": 929,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 106,
+        "addedColumns": 114,
+        "addedCells": 2211
+      },
+      "emittedApproaches": {
+        "tested": 4818,
+        "upward": 2040,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 4818,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 4818
+      },
+      "applied": [],
+      "appearance": "Draft; catalog rendering reviewed separately, not an official-kit quality pass."
+    },
+    {
+      "id": "wizard-hat",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "d9d43eae5cc61c872bc01d480de4e8954da352743d81f9329345d96e052ee2ac",
+      "meshSha256": "cd27bce9bedb14a0096ab71e7514e9da3a1c35abb52ba805edb0778f00eb2885",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "09cf07f266cef96912fb70c985439f2cfe8f9b2f47f90ddb01386ef694947590",
+      "baseline": {
+        "bricks": 3256,
+        "supports": 974,
+        "steps": 303,
+        "conversionFingerprint": "5700521bf0af79240eaff27dcf82ab319f51ba2527988c24fcb22aadb4669a0e"
+      },
+      "bricks": 2831,
+      "supports": 529,
+      "steps": 862,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 176,
+        "addedColumns": 188,
+        "addedCells": 1547
+      },
+      "emittedApproaches": {
+        "tested": 2831,
+        "upward": 421,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 2831,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2831
+      },
+      "applied": [],
+      "appearance": "Draft; catalog rendering reviewed separately, not an official-kit quality pass."
+    },
+    {
+      "id": "costumed-figure",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "6d08caba0671ffee9a683c5b3ca101b272cec71d3eb9e93b6e8d2b65ddd417fc",
+      "meshSha256": "7e0c17d2e11bb21eb29a78b9c96324758e1b8c524d1855c160f5d7571d0f0de9",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "edb15e248a59c8beaaade8ad57719585ebd866000dc5d96022337be9903e888c",
+      "baseline": {
+        "bricks": 3235,
+        "supports": 556,
+        "steps": 301,
+        "conversionFingerprint": "5700521bf0af79240eaff27dcf82ab319f51ba2527988c24fcb22aadb4669a0e"
+      },
+      "bricks": 2962,
+      "supports": 223,
+      "steps": 546,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 46,
+        "addedColumns": 50,
+        "addedCells": 791
+      },
+      "emittedApproaches": {
+        "tested": 2962,
+        "upward": 660,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 2962,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2962
+      },
+      "applied": [],
+      "appearance": "Draft; catalog rendering reviewed separately, not an official-kit quality pass."
+    },
+    {
+      "id": "temple-original",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+      "meshSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "db58939f0b13dd887bc67f6f199f73103f225adfaaca87302961df92e57174c9",
+      "bricks": 2790,
+      "supports": 38,
+      "steps": 339,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 8,
+        "addedColumns": 8,
+        "addedCells": 92
+      },
+      "emittedApproaches": {
+        "tested": 2758,
+        "upward": 48,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 2790,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2790
+      },
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-statue-3",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; catalog rendering reviewed separately, not an official-kit quality pass."
+    },
+    {
+      "id": "temple-original",
+      "resolution": 36,
+      "passed": true,
+      "inputSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+      "meshSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "4a96cf68a2efeb5eb9b7d78c84c3d538eaf6083070656295362fdbc00c8c44f5",
+      "bricks": 4966,
+      "supports": 113,
+      "steps": 587,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 18,
+        "addedColumns": 18,
+        "addedCells": 436
+      },
+      "emittedApproaches": {
+        "tested": 4934,
+        "upward": 24,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 4966,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 4966
+      },
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-statue-3",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; catalog rendering reviewed separately, not an official-kit quality pass."
+    },
+    {
+      "id": "temple-original",
+      "resolution": 48,
+      "passed": true,
+      "inputSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+      "meshSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "d818b08b81bd6e1bcf0faf286749b93c79668d9e14930c2a865b19b5ceef2225",
+      "bricks": 9269,
+      "supports": 204,
+      "steps": 1043,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 23,
+        "addedColumns": 26,
+        "addedCells": 630
+      },
+      "emittedApproaches": {
+        "tested": 9237,
+        "upward": 79,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 9269,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 9269
+      },
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-statue-3",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; catalog rendering reviewed separately, not an official-kit quality pass."
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "meshSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "d76086d57d9dbf18cf4301c1860fb1184f0c57512df6e34e98f28deb193d4017",
+      "bricks": 2577,
+      "supports": 13,
+      "steps": 284,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 4,
+        "addedColumns": 4,
+        "addedCells": 58
+      },
+      "emittedApproaches": {
+        "tested": 2545,
+        "upward": 21,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 2577,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2577
+      },
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; catalog rendering reviewed separately, not an official-kit quality pass."
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 36,
+      "passed": true,
+      "inputSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "meshSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "fe9e0a8c93b802e5c40d8bb93aa911bb92583a645e3d09422f5217f0e1c61b28",
+      "bricks": 4565,
+      "supports": 34,
+      "steps": 471,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 6,
+        "addedColumns": 6,
+        "addedCells": 63
+      },
+      "emittedApproaches": {
+        "tested": 4533,
+        "upward": 40,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 4565,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 4565
+      },
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; catalog rendering reviewed separately, not an official-kit quality pass."
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 48,
+      "passed": true,
+      "inputSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "meshSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "ccbee2f84228e72b91db81e300107f2662ade85f2d38b93c4cb8f951119bf433",
+      "bricks": 8701,
+      "supports": 100,
+      "steps": 898,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 27,
+        "addedColumns": 28,
+        "addedCells": 347
+      },
+      "emittedApproaches": {
+        "tested": 8669,
+        "upward": 46,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 8701,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 8701
+      },
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; catalog rendering reviewed separately, not an official-kit quality pass."
+    }
+  ],
+  "passed": true,
+  "limits": "Fewer support parts is not a strength result. Negative spaces, material regions, curve design, procurement, full paths, force/stability and human instructions trials remain incomplete. Public engine examples are not independent held-out photographs."
+}

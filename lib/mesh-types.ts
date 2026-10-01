@@ -12,6 +12,9 @@ export type TriangleMesh = {
   // One flags byte per triangle; unobserved triangles carry no flags.
   features?: Uint8Array;
   materialDesign?: import('./reference-materials.ts').ReferenceMaterialDesign;
+  // Source-face correspondence; inferred paint is not an observation. Face
+  // indices survive the geometry design stage, which does not retessellate.
+  materialEvidence?: { regionIds: Int32Array; observed: Uint8Array };
   coloring?: {
     method: 'reference-projection';
     yaw: number;

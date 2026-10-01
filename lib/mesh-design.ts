@@ -982,7 +982,26 @@ function assembleVolume(
           b.z < s.z + s.d &&
           b.z + b.d > s.z,
       ) ||
-      (b.h === 1 && hangingParents.has(b.id)) ||
+      // Split an underside attachment plate only on the calibrated floor and
+      // with full lower support. Upper bridges keep their continuous sockets.
+      (b.h === 1 &&
+        hangingParents.has(b.id) &&
+        !(
+          platform &&
+          b.y + b.h === platform.topY + 1 &&
+          Array.from({ length: b.w }, (_, dx) => dx).some((dx) =>
+            Array.from({ length: b.d }, (_, dz) => dz).some(
+              (dz) =>
+                floorColumns.has(`${b.x + dx},${b.z + dz}`) &&
+                !excludedFloorColumns.has(`${b.x + dx},${b.z + dz}`),
+            ),
+          ) &&
+          Array.from({ length: b.w }, (_, dx) => dx).every((dx) =>
+            Array.from({ length: b.d }, (_, dz) => dz).every((dz) =>
+              cells.has(`${b.x + dx},${b.y - 1},${b.z + dz}`),
+            ),
+          )
+        )) ||
       (!!b.support && !supportOnFloor) ||
       b.y < 2 ||
       placements.some(

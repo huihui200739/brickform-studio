@@ -281,3 +281,54 @@ void test('unseen material votes are invariant to dense tessellation of a smalle
   );
   assert.ok(dense.materialDesign!.projection!.inferredFaces > 0);
 });
+
+void test('unseen same-height walls inherit wall material rather than a larger sloping canopy', () => {
+  const points: number[] = [];
+  const quad = (a: number[], b: number[], c: number[], d: number[]) =>
+    points.push(...a, ...b, ...c, ...a, ...c, ...d);
+  // The canopy takes 75% of the reference, but both surfaces span the same Y.
+  // A global height vote would paint the right wall blue at every height.
+  quad([-2, -1, 1], [1, -1, 1], [1, 1, -1], [-2, 1, -1]);
+  quad([1, -1, 1], [2, -1, 1], [2, 1, 1], [1, 1, 1]);
+  quad([2, -1, 1], [2, -1, -1], [2, 1, -1], [2, 1, 1]);
+  const positions = Float32Array.from(points);
+  const data = new Uint8Array(80 * 40 * 4);
+  for (let y = 2; y < 38; y++)
+    for (let x = 4; x < 76; x++)
+      data.set(
+        (x < 58 ? [0, 85, 191] : [215, 186, 140]).concat(255),
+        (y * 80 + x) * 4,
+      );
+  const result = colorFromReference(
+    {
+      name: 'canopy and wall',
+      positions,
+      colors: new Uint8Array(positions.length / 3),
+    },
+    { width: 80, height: 40, data },
+    { yaw: 0, pitch: 0, perspective: 0 },
+    false,
+  );
+  assert.equal(result.positions, positions);
+  assert.deepEqual(
+    Array.from(result.colors.slice(0, 6)),
+    [0, 85, 191, 0, 85, 191],
+    'observed blue canopy is preserved',
+  );
+  assert.deepEqual(
+    Array.from(result.colors.slice(6)),
+    Array(4).fill([215, 186, 140]).flat(),
+    'front and unseen side walls use observed sand wall material',
+  );
+  const surfaces = result.materialDesign!.surfaces!;
+  assert.equal(surfaces.inferredFaces, 2);
+  const wall = surfaces.regions.find((r) => r.normal[0] > 0.99)!;
+  assert.equal(wall.source, 'compatible-surface');
+  assert.ok(wall.donorRegionIds.length > 0);
+  assert.ok(
+    wall.donorRegionIds.every(
+      (id) => Math.abs(surfaces.regions[id].normal[1]) < 0.12,
+    ),
+    'roof observations are not wall donors',
+  );
+});

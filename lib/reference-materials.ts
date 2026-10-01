@@ -15,6 +15,7 @@ export type ReferenceMaterialDesign = {
   regions: ReferenceMaterialRegion[];
   normalizedPixels: number;
   warnings: string[];
+  surfaces?: import('./surface-materials.ts').SurfaceMaterialDesign;
   projection?: {
     voteUnit: 'visible-reference-pixel';
     projectedPixels: number;

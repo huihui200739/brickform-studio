@@ -2,6 +2,7 @@ import { PALETTE, type Raster } from './brick-engine.ts';
 import { MESH_FEATURE, type TriangleMesh } from './mesh-types.ts';
 import { rgb } from './material-color-space.ts';
 import { referenceMaterials } from './reference-materials.ts';
+import { surfaceMaterials } from './surface-materials.ts';
 
 const SIZE = 96;
 // Olive foliage is warm and desaturated: its green channel barely beats red but
@@ -247,13 +248,13 @@ export function colorFromReference(
   override?: ReferenceCamera,
   softenShadows = true,
 ): TriangleMesh {
-  const { camera, view, mask, left, right, top, bottom, lo, hi, extent } =
+  const { camera, view, mask, left, right, top, bottom, extent } =
     referenceAlignment(mesh, image, override);
   const materials = referenceMaterials(image, mask, softenShadows);
   const p = mesh.positions;
   const N = 192,
     depth = new Float32Array(N * N).fill(-Infinity),
-    surfaceHeight = new Float32Array(N * N),
+    pixelFace = new Int32Array(N * N).fill(-1),
     coords = new Float32Array(p.length);
   for (let i = 0; i < p.length; i += 3) {
     const v = view.point(p[i], p[i + 1], p[i + 2]);
@@ -284,8 +285,7 @@ export function colorFromReference(
           a * coords[i + 2] + b * coords[i + 5] + (1 - a - b) * coords[i + 8];
         if (z > depth[y * N + x]) {
           depth[y * N + x] = z;
-          surfaceHeight[y * N + x] =
-            a * p[i + 1] + b * p[i + 4] + (1 - a - b) * p[i + 7];
+          pixelFace[y * N + x] = i / 9;
         }
       }
   }
@@ -299,7 +299,11 @@ export function colorFromReference(
       z = (coords[i + 2] + coords[i + 5] + coords[i + 8]) / 3;
     const ix = Math.min(N - 1, Math.max(0, Math.floor(x))),
       iy = Math.min(N - 1, Math.max(0, Math.floor(y)));
-    if (z < depth[iy * N + ix] - extent * 0.012) continue;
+    if (
+      !Number.isFinite(depth[iy * N + ix]) ||
+      z < depth[iy * N + ix] - extent * 0.012
+    )
+      continue;
     const px = Math.round(left + (x / (N - 1)) * (right - left)),
       py = Math.round(top + (y / (N - 1)) * (bottom - top));
     if (
@@ -344,10 +348,7 @@ export function colorFromReference(
     throw Error('参考图与网格未能对齐，请调整配色视角或更换图片。');
   // Vote once per visible projected pixel. Dense tessellation and tiny relief
   // triangles must not dominate the inferred material of unseen surfaces.
-  const bands = Array.from(
-    { length: 16 },
-    () => new Float64Array(PALETTE.length),
-  );
+  const visiblePixels: { face: number; color: number }[] = [];
   let projectedPixels = 0;
   for (let y = 0; y < N; y++)
     for (let x = 0; x < N; x++) {
@@ -365,61 +366,31 @@ export function colorFromReference(
         continue;
       const color = materials.palette[py * image.width + px];
       counts[color]++;
-      const band = Math.min(
-        15,
-        Math.max(
-          0,
-          Math.floor(((surfaceHeight[k] - lo[1]) / (hi[1] - lo[1])) * 16),
-        ),
-      );
-      bands[band][color]++;
+      visiblePixels.push({ face: pixelFace[k], color });
       projectedPixels++;
     }
   const dominant = counts.indexOf(Math.max(...counts));
-  // Regional illumination inference has already been applied above. A global
-  // palette remap would erase separate dark paint/metal regions.
-  // Unseen surfaces have no trustworthy texture. Use broad material bands
-  // rather than copying a nearby dark doorway through to the back wall. Dark
-  // neutrals remain on observed faces, but are excluded from unseen bands when
-  // the dominant material is light. This is a conservative back-colour guess,
-  // not evidence that every dark region is a doorway or shadow.
-  const bandAt = (i: number) =>
-    Math.min(
-      15,
-      Math.max(
-        0,
-        Math.floor(
-          (((p[i + 1] + p[i + 4] + p[i + 7]) / 3 - lo[1]) / (hi[1] - lo[1])) *
-            16,
-        ),
-      ),
-    );
-  const opening = (index: number) => {
-    const c = rgb[index],
-      max = Math.max(...c),
-      min = Math.min(...c);
-    return max < 120 && (max === 0 || (max - min) / max < 0.15);
-  };
-  const keepOpenings = opening(dominant);
-  if (!keepOpenings)
-    for (const band of bands)
-      for (let color = 0; color < band.length; color++)
-        if (opening(color)) band[color] = 0;
-  const bandColors = bands.map((v) =>
-    v.some(Boolean) ? v.indexOf(Math.max(...v)) : dominant,
-  );
+  const surfaces = surfaceMaterials(p, faceColors, visiblePixels, dominant);
   const out = new Uint8Array(mesh.colors.length);
   for (let t = 0; t < faceColors.length; t++) {
-    const i = t * 9,
-      c = faceColors[t] >= 0 ? faceColors[t] : bandColors[bandAt(i)];
+    const c = surfaces.colors[t];
     out.set(rgb[Math.max(0, c)], t * 3);
   }
   return {
     ...mesh,
     colors: out,
     features,
+    materialEvidence: {
+      regionIds: surfaces.regionIds,
+      observed: Uint8Array.from(faceColors, (color) => (color >= 0 ? 1 : 0)),
+    },
     materialDesign: {
       ...materials.design,
+      surfaces: surfaces.design,
+      warnings: [
+        ...materials.design.warnings,
+        'Unobserved faces use geometric surface material hypotheses. Compatible inclination and proximity do not prove unseen paint; regions without compatible observations use the reference default.',
+      ],
       projection: {
         voteUnit: 'visible-reference-pixel',
         projectedPixels,
