@@ -6,6 +6,7 @@ import {
   type Model,
 } from './brick-engine.ts';
 import { assemblyDiagram, orientationLabel } from './assembly-diagram.ts';
+import { procurementReport } from './purchase-inventory.ts';
 import {
   stageBricks,
   cleanStageName,
@@ -53,7 +54,7 @@ export function download(
 }
 export function csv(model: Model) {
   return (
-    '\uFEFF设计编号,零件名称,乐高颜色编号,颜色,数量\r\n' +
+    '\uFEFFLDraw编号,零件名称,乐高颜色编号,颜色,数量\r\n' +
     inventory(model.bricks)
       .map(
         (i) =>
@@ -61,6 +62,16 @@ export function csv(model: Model) {
       )
       .join('\r\n')
   );
+}
+
+function purchaseTable(model: Model) {
+  const report = procurementReport(model);
+  const status = {
+    'catalog-confirmed': '组合已收录',
+    unverified: '待核实',
+    'unsupported-color': '此颜色未收录',
+  };
+  return `<section class="page"><header>BRICKFORM / 采购核对</header><h2>采购清单</h2><p>三维模型 ${report.sourceBrickCount} 件子件，对应 ${report.purchaseQuantity} 件采购单位。目录已核实 ${report.catalogConfirmed} 项，未核实 ${report.unverified} 项，颜色待替换 ${report.unsupportedColors} 项。目录记录不代表实时库存。</p>${report.assemblyStepsRequireReview ? '<p class="note">人仔躯干和腿部按已装配总成采购。后续拼装图仍分列几何子件，需复核总成安装步骤及姿态，请勿按图拆卸人仔。</p>' : ''}<table><thead><tr><th>采购零件 / 来源 LDraw 编号</th><th>BrickLink 编号</th><th>颜色</th><th>数量</th><th>目录记录</th></tr></thead><tbody>${report.lines.map((line) => `<tr><td>${esc(line.name)}<small>${esc(line.ldrawParts.join(' / '))}</small></td><td>${line.catalogUrl ? `<a href="${esc(line.catalogUrl)}">${esc(line.bricklinkId!)}</a>` : '未核实'}</td><td>${esc(PALETTE[line.color].name)}</td><td>${line.quantity}</td><td>${status[line.status]}<small>${esc(line.reason)}</small></td></tr>`).join('')}</tbody></table><p>可下载采购 CSV 查看来源零件序号、证据链接及核对日期。未核实的编号或颜色组合需购买前确认。</p></section>`;
 }
 export type ManualRange = { start: number; end: number };
 export function manualHTML(model: Model, range?: ManualRange) {
@@ -86,7 +97,7 @@ export function manualHTML(model: Model, range?: ManualRange) {
       )}</div><table><thead><tr><th>序号</th><th>零件</th><th>颜色</th><th>左上角坐标</th><th>X × Z 凸点</th></tr></thead><tbody>${rows(batch)}</tbody></table><footer>本组安装基准高度 ${(y * 3.2).toFixed(1)} mm · 薄板高 3.2 mm / 砖块高 9.6 mm · 凸点间距 8 mm</footer></section>`;
     }
   }
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${esc(model.name)} · Brickform 拼装说明书</title><style>*{box-sizing:border-box}body{font:14px Arial,'PingFang SC',sans-serif;color:#24362b;background:#edf1eb;margin:0}.page{background:white;max-width:820px;margin:25px auto;padding:44px;break-after:page}header{font:11px monospace;letter-spacing:2px;border-bottom:1px solid #d6dfd6;padding-bottom:15px}header span{float:right;letter-spacing:0}h1{font-size:40px;margin:60px 0 22px}h2{font-size:26px}small{font-size:13px;font-weight:400;margin-left:15px;color:#69776b}p{line-height:1.8;color:#647266}.diagram{max-width:650px;margin:20px auto}.diagram svg{width:100%;max-height:280px}table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;padding:7px;border-bottom:1px solid #e1e7e0}footer{margin-top:25px;font-size:11px;color:#69776b}.notice{padding:20px;background:#f3f6ef;margin:25px 0;line-height:1.8}button{display:block;margin:20px auto;padding:12px 24px;background:#2b674f;color:white;border:0;border-radius:6px;cursor:pointer}@page{size:A4;margin:12mm}@media print{body{background:white}.page{margin:0;padding:12px;max-width:none}button{display:none}.diagram svg{max-height:230px}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr{break-inside:avoid}}</style></head><body><button onclick="window.print()">打印 / 另存为 PDF</button><section class="page"><header>BRICKFORM / BUILDING GUIDE</header><h1>${esc(model.name)}<br/>拼装说明书</h1><p>${model.bricks.length} 块积木 · ${model.levels.length} 组 · ${step} 个步骤<br/>含底座 ${model.width * 8} × ${model.depth * 8} × ${(model.height * 3.2).toFixed(1)} mm（不含凸点）</p><div class="notice">${model.source === 'image' ? '本模型由图片轮廓生成，厚度按所选模式估算；背面与体积未经三维扫描验证。' : '这是参数化小黄鸭示例模型。'}<br/>同色辅助支撑 ${model.supportCount} 块，已包含在清单内。已做网格重叠、下方连接与整体连通检查，未做物理稳定性仿真或实物试拼。基础零件设计编号可核查，具体零件与颜色组合及在售情况请在购买前核对。<br/>请先摆好底座第一层，再用第二层连接。按图中凸点坐标向上拼搭。</div><h2>完整零件清单</h2><table><thead><tr><th>设计编号</th><th>名称</th><th>颜色 / LEGO 颜色编号</th><th>数量</th></tr></thead><tbody>${inventory(
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${esc(model.name)} · Brickform 拼装说明书</title><style>*{box-sizing:border-box}body{font:14px Arial,'PingFang SC',sans-serif;color:#24362b;background:#edf1eb;margin:0}.page{background:white;max-width:820px;margin:25px auto;padding:44px;break-after:page}header{font:11px monospace;letter-spacing:2px;border-bottom:1px solid #d6dfd6;padding-bottom:15px}header span{float:right;letter-spacing:0}h1{font-size:40px;margin:60px 0 22px}h2{font-size:26px}small{font-size:13px;font-weight:400;margin-left:15px;color:#69776b}p{line-height:1.8;color:#647266}.diagram{max-width:650px;margin:20px auto}.diagram svg{width:100%;max-height:280px}table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;padding:7px;border-bottom:1px solid #e1e7e0}footer{margin-top:25px;font-size:11px;color:#69776b}.notice{padding:20px;background:#f3f6ef;margin:25px 0;line-height:1.8}button{display:block;margin:20px auto;padding:12px 24px;background:#2b674f;color:white;border:0;border-radius:6px;cursor:pointer}@page{size:A4;margin:12mm}@media print{body{background:white}.page{margin:0;padding:12px;max-width:none}button{display:none}.diagram svg{max-height:230px}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr{break-inside:avoid}}</style></head><body><button onclick="window.print()">打印 / 另存为 PDF</button><section class="page"><header>BRICKFORM / BUILDING GUIDE</header><h1>${esc(model.name)}<br/>拼装说明书</h1><p>${model.bricks.length} 块积木 · ${model.levels.length} 组 · ${step} 个步骤<br/>含底座 ${model.width * 8} × ${model.depth * 8} × ${(model.height * 3.2).toFixed(1)} mm（不含凸点）</p><div class="notice">${model.source === 'image' ? '本模型由图片轮廓生成，厚度按所选模式估算；背面与体积未经三维扫描验证。' : '这是参数化小黄鸭示例模型。'}<br/>同色辅助支撑 ${model.supportCount} 块，已包含在清单内。已做网格重叠、下方连接与整体连通检查，未做物理稳定性仿真或实物试拼。基础零件LDraw 编号可核查，具体零件与颜色组合及在售情况请在购买前核对。<br/>请先摆好底座第一层，再用第二层连接。按图中凸点坐标向上拼搭。</div><h2>完整零件清单</h2><table><thead><tr><th>LDraw 编号</th><th>名称</th><th>颜色 / LEGO 颜色编号</th><th>数量</th></tr></thead><tbody>${inventory(
     model.bricks,
   )
     .map(
@@ -95,7 +106,7 @@ export function manualHTML(model: Model, range?: ManualRange) {
     )
     .join(
       '',
-    )}</tbody></table><footer>独立设计工具，与 LEGO Group 无关联或认证。<br/>零件核对：<a href="https://www.lego.com/en-us/pick-and-build/pick-a-brick">LEGO Pick a Brick</a></footer></section>${pages}</body></html>`;
+    )}</tbody></table><footer>独立设计工具，与 LEGO Group 无关联或认证。<br/>零件核对：<a href="https://www.lego.com/en-us/pick-and-build/pick-a-brick">LEGO Pick a Brick</a></footer></section>${purchaseTable(model)}${pages}</body></html>`;
 }
 
 function assemblyManual(model: Model, range?: ManualRange) {
@@ -130,7 +141,7 @@ function assemblyManual(model: Model, range?: ManualRange) {
     model,
     a.steps.length - 1,
     model.bricks.map((b) => b.id),
-  )}</div><div class="note">${esc(a.reference)}<br/>已检查零件外包框、凸点连接与步骤依赖。侧向零件按所列方向安装。未做受力仿真或实物试拼；零件与颜色组合、在售情况需购买前核对。</div><h2>先读这三个提示</h2><p>1. 每张小图只新增一块零件；其他彩色零件要等后面的图。<br/>2. 左侧零件小图用于找零件，安装姿态以局部放大图为准。<br/>3. ${model.imageDesign || model.meshDesign ? '凸点向上，对准下方连接点垂直按紧；第一层先在平面摆好。' : '顶装向下按，眼睛和翅膀等侧装件从侧面按入。'}完成一块后勾选“已装好”。</p><h2>搭建顺序</h2><p>${a.steps.map((s, i) => `${i + 1}. ${esc(s.name)}`).join(' → ')}</p></section><section class="page"><header>BRICKFORM / PARTS LIST</header><h2>完整零件清单</h2><table><thead><tr><th>设计编号</th><th>名称</th><th>颜色 / LEGO 色号</th><th>数量</th></tr></thead><tbody>${inventory(
+  )}</div><div class="note">${esc(a.reference)}<br/>已检查零件外包框、凸点连接与步骤依赖。侧向零件按所列方向安装。未做受力仿真或实物试拼；零件与颜色组合、在售情况需购买前核对。</div><h2>先读这三个提示</h2><p>1. 每张小图只新增一块零件；其他彩色零件要等后面的图。<br/>2. 左侧零件小图用于找零件，安装姿态以局部放大图为准。<br/>3. ${model.imageDesign || model.meshDesign ? '凸点向上，对准下方连接点垂直按紧；第一层先在平面摆好。' : '顶装向下按，眼睛和翅膀等侧装件从侧面按入。'}完成一块后勾选“已装好”。</p><h2>搭建顺序</h2><p>${a.steps.map((s, i) => `${i + 1}. ${esc(s.name)}`).join(' → ')}</p></section><section class="page"><header>BRICKFORM / PARTS LIST</header><h2>完整零件清单</h2><table><thead><tr><th>LDraw 编号</th><th>名称</th><th>颜色 / LEGO 色号</th><th>数量</th></tr></thead><tbody>${inventory(
     model.bricks,
   )
     .map(
@@ -139,5 +150,5 @@ function assemblyManual(model: Model, range?: ManualRange) {
     )
     .join(
       '',
-    )}</tbody></table><footer>几何来源：LDraw.org 官方零件库（社区维护），原作者与 CC BY 授权见平台零件来源说明。独立设计工具，与 LEGO Group 无关联或认证。</footer></section>${pages}</body></html>`;
+    )}</tbody></table><footer>几何来源：LDraw.org 官方零件库（社区维护），原作者与 CC BY 授权见平台零件来源说明。独立设计工具，与 LEGO Group 无关联或认证。</footer></section>${purchaseTable(model)}${pages}</body></html>`;
 }

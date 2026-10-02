@@ -50,10 +50,8 @@ import {
   TableHead,
 } from '@/components/ui/table';
 import {
-  inventory,
   validateModel,
   toLDraw,
-  PARTS,
   PALETTE,
   type Raster,
   type Options,
@@ -70,6 +68,10 @@ import type { ImageDesignOptions } from '@/lib/image-design';
 // oxlint-disable-next-line import/default -- Vite's worker URL query supplies this default export.
 import imageDesignWorkerUrl from '@/lib/image-design.worker.ts?worker&url';
 import { csv, download, manualHTML } from '@/lib/manual';
+import {
+  procurementReport,
+  purchaseInventoryCSV,
+} from '@/lib/purchase-inventory';
 const backgroundItems = [
   { value: 'auto', label: '自动去除背景' },
   { value: 'white', label: '去除白色背景' },
@@ -114,7 +116,8 @@ export default function Home() {
     uploadToken = useRef(0),
     sourceUrl = useRef('');
   const activeWorker = useRef<Worker | null>(null);
-  const parts = useMemo(() => inventory(model.bricks), [model]);
+  const procurement = useMemo(() => procurementReport(model), [model]);
+  const parts = procurement.lines;
   const validation = useMemo(() => validateModel(model), [model]);
   // A finished brick model can come from the single-image mesh path or from the
   // three-view silhouette carve, and both behave the same in the workbench.
@@ -124,7 +127,7 @@ export default function Home() {
     model.blueprintDesign
   );
   const shownParts = parts.filter((p) =>
-    `${p.part} ${PARTS[p.part]} ${PALETTE[p.color].name}`.includes(
+    `${p.part} ${p.bricklinkId ?? ''} ${p.ldrawParts.join(' ')} ${p.name} ${PALETTE[p.color].name}`.includes(
       search.trim(),
     ),
   );
@@ -358,9 +361,19 @@ export default function Home() {
           end: Math.min((chapter + 1) * 30, model.levels.length),
         }
       : undefined;
-  function save(kind: 'csv' | 'ldr' | 'html') {
+  function save(kind: 'csv' | 'geometry-csv' | 'ldr' | 'html') {
     if (kind === 'csv')
-      download(csv(model), 'brickform-parts.csv', 'text/csv;charset=utf-8');
+      download(
+        purchaseInventoryCSV(model.bricks),
+        'brickform-purchase.csv',
+        'text/csv;charset=utf-8',
+      );
+    if (kind === 'geometry-csv')
+      download(
+        csv(model),
+        'brickform-geometry-parts.csv',
+        'text/csv;charset=utf-8',
+      );
     if (kind === 'ldr') download(toLDraw(model), 'brickform-model.ldr');
     if (kind === 'html')
       download(
@@ -1106,7 +1119,7 @@ export default function Home() {
                     <TabsList variant="line">
                       <TabsTrigger value="parts">
                         <Blocks />
-                        零件清单<span>{parts.length}</span>
+                        采购清单<span>{parts.length}</span>
                       </TabsTrigger>
                       <TabsTrigger value="steps">
                         <FileText />
@@ -1121,11 +1134,9 @@ export default function Home() {
                   <TabsContent value="parts">
                     <div className="table-intro">
                       <span>
-                        {model.imageDesign
-                          ? `包含主体、底座和 ${model.supportCount} 块辅助支撑`
-                          : model.assembly
-                            ? '包含全部部件，侧装连接件已计入'
-                            : '包含主体、底座及辅助支撑'}
+                        目录已核实 {procurement.catalogConfirmed} 项 · 未核实{' '}
+                        {procurement.unverified} 项 · 颜色待替换{' '}
+                        {procurement.unsupportedColors} 项
                       </span>
                       <input
                         aria-label="搜索零件或颜色"
@@ -1139,9 +1150,10 @@ export default function Home() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>零件</TableHead>
-                            <TableHead>设计编号</TableHead>
+                            <TableHead>BrickLink 编号 / LDraw 来源</TableHead>
                             <TableHead>颜色</TableHead>
                             <TableHead className="quantity">数量</TableHead>
+                            <TableHead>目录记录</TableHead>
                             <TableHead />
                           </TableRow>
                         </TableHeader>
@@ -1154,11 +1166,12 @@ export default function Home() {
                                     size={20}
                                     style={{ color: PALETTE[p.color].hex }}
                                   />
-                                  {PARTS[p.part]}
+                                  {p.name}
                                 </span>
                               </TableCell>
                               <TableCell className="part-code">
-                                {p.part}
+                                {p.bricklinkId ?? '未核实'}
+                                <small> · {p.ldrawParts.join(' / ')}</small>
                               </TableCell>
                               <TableCell>
                                 <span className="color-cell">
@@ -1171,16 +1184,25 @@ export default function Home() {
                               <TableCell className="quantity">
                                 {p.quantity}
                               </TableCell>
+                              <TableCell title={p.reason}>
+                                {p.status === 'catalog-confirmed'
+                                  ? '组合已收录'
+                                  : p.status === 'unsupported-color'
+                                    ? '此颜色未收录'
+                                    : '待核实'}
+                              </TableCell>
                               <TableCell>
-                                <a
-                                  className="part-link"
-                                  href={`https://www.lego.com/en-us/pick-and-build/pick-a-brick?query=${p.part.replace(/b$/, '')}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  aria-label={`到乐高官网核对 ${p.part}`}
-                                >
-                                  <ArrowUpRight size={15} />
-                                </a>
+                                {p.catalogUrl && (
+                                  <a
+                                    className="part-link"
+                                    href={p.catalogUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    aria-label={`到 BrickLink 目录核对 ${p.bricklinkId}`}
+                                  >
+                                    <ArrowUpRight size={15} />
+                                  </a>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -1193,11 +1215,17 @@ export default function Home() {
                       )}
                     </div>
                     <div className="table-foot">
-                      零件与颜色组合、在售情况需购买前核对
+                      目录记录不代表实时库存；未核实项需购买前确认。
                       <span>
-                        总计 <b>{model.bricks.length}</b> 块
+                        采购 <b>{procurement.purchaseQuantity}</b> 件 · 三维子件{' '}
+                        {model.bricks.length} 件
                       </span>
                     </div>
+                    {procurement.assembledQuantity > 0 && (
+                      <p className="empty-search">
+                        人仔躯干和腿部按已装配总成采购。当前说明书仍分列几何子件，总成安装步骤需复核，请勿按图拆卸人仔。
+                      </p>
+                    )}
                   </TabsContent>
                   <TabsContent value="steps">
                     <BuildGuide
@@ -1353,8 +1381,18 @@ export default function Home() {
           <button className="export-option" onClick={() => save('csv')}>
             <Blocks />
             <span>
-              <b>下载零件清单</b>
-              <small>CSV 格式，可在 Excel 中查看</small>
+              <b>下载采购清单</b>
+              <small>包含目录编号、颜色核实状态和源零件对应</small>
+            </span>
+          </button>
+          <button
+            className="export-option"
+            onClick={() => save('geometry-csv')}
+          >
+            <Blocks />
+            <span>
+              <b>下载三维子件清单</b>
+              <small>LDraw 编号，与模型和当前拼装图逐件对应</small>
             </span>
           </button>
           <p className="export-disclaimer">

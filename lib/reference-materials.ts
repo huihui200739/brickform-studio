@@ -1,5 +1,5 @@
 import type { Raster } from './brick-engine.ts';
-import { lab, match } from './material-color-space.ts';
+import { colors, lab, match } from './material-color-space.ts';
 
 export type ReferenceMaterialRegion = {
   id: number;
@@ -8,6 +8,18 @@ export type ReferenceMaterialRegion = {
   lightnessRange: [number, number];
   chromaticityResidual: number;
   inferredIllumination: boolean;
+  quantization?: {
+    method: 'chromatic-near-tie-with-region-witness';
+    originalColor: number;
+    representative: [number, number, number];
+    originalDistance: number;
+    selectedDistance: number;
+    hueDifference: number;
+    witnessRegionIds: number[];
+    maximumWitnessDeltaE: 4;
+    minimumWitnessPixels: number;
+    inference: true;
+  };
   view?: 'front' | 'side' | 'top';
 };
 export type ReferenceMaterialDesign = {
@@ -61,6 +73,7 @@ export function referenceMaterials(
       chroma[i * 3 + a] = sum > 1e-5 ? linear[a] / sum : 1 / 3;
   }
   const regions: ReferenceMaterialRegion[] = [];
+  const representatives: [number, number, number][] = [];
   let normalizedPixels = 0;
   for (let seed = 0; seed < n; seed++) {
     if (!mask[seed] || labels[seed] >= 0) continue;
@@ -121,6 +134,7 @@ export function referenceMaterials(
       range[1] - range[0] >= 8 &&
       residual <= 0.1;
     const color = match(...representative);
+    representatives.push(representative);
     regions.push({
       id,
       pixels: queue.length,
@@ -129,11 +143,97 @@ export function referenceMaterials(
       chromaticityResidual: residual,
       inferredIllumination: inferred,
     });
-    if (inferred)
-      for (const i of queue) {
-        if (palette[i] !== color) normalizedPixels++;
-        palette[i] = color;
-      }
+  }
+  if (normalize) {
+    const prototypes = representatives.map((value, id) => ({
+      id,
+      representative: value,
+      lab: lab(...value),
+      color: regions[id].color,
+    }));
+    const chroma = (p: number[]) => Math.hypot(p[1], p[2]);
+    const hueDifference = (p: number[], c: number[]) =>
+      (Math.acos(
+        Math.max(
+          -1,
+          Math.min(
+            1,
+            Math.cos(Math.atan2(p[2], p[1]) - Math.atan2(c[2], c[1])),
+          ),
+        ),
+      ) *
+        180) /
+      Math.PI;
+    const minimumWitnessPixels = Math.max(
+      64,
+      mask.reduce((n, v) => n + Number(!!v), 0) * 0.01,
+    );
+    // Freeze witnesses before resolving near ties. Corrections never become
+    // donors, and similar RGB alone cannot establish an intrinsic material.
+    const witnesses = prototypes.filter(
+      (p) =>
+        regions[p.id].inferredIllumination &&
+        regions[p.id].pixels >= minimumWitnessPixels &&
+        chroma(p.lab) >= 25 &&
+        chroma(colors[p.color]) >= 20 &&
+        hueDifference(p.lab, colors[p.color]) <= 30,
+    );
+    for (const p of prototypes) {
+      if (
+        !regions[p.id].inferredIllumination ||
+        chroma(p.lab) < 25 ||
+        chroma(colors[p.color]) >= 5
+      )
+        continue;
+      const distance = (c: number[]) =>
+        Math.hypot(
+          Math.sqrt(0.5) * (p.lab[0] - c[0]),
+          p.lab[1] - c[1],
+          p.lab[2] - c[2],
+        );
+      const originalDistance = distance(colors[p.color]);
+      const candidates = colors
+        .map((c, color) => ({
+          color,
+          distance: distance(c),
+          hueDifference: hueDifference(p.lab, c),
+          witnesses: witnesses.filter(
+            (w) =>
+              w.color === color &&
+              Math.hypot(...p.lab.map((v, a) => v - w.lab[a])) <= 4,
+          ),
+        }))
+        .filter(
+          (c) =>
+            chroma(colors[c.color]) >= 20 &&
+            c.hueDifference <= 30 &&
+            c.distance <= originalDistance + 3 &&
+            c.witnesses.length > 0,
+        )
+        .sort((a, b) => a.distance - b.distance || a.color - b.color);
+      const selected = candidates[0];
+      if (!selected) continue;
+      regions[p.id].color = selected.color;
+      regions[p.id].quantization = {
+        method: 'chromatic-near-tie-with-region-witness',
+        originalColor: p.color,
+        representative: p.representative,
+        originalDistance,
+        selectedDistance: selected.distance,
+        hueDifference: selected.hueDifference,
+        witnessRegionIds: selected.witnesses.map((w) => w.id),
+        maximumWitnessDeltaE: 4,
+        minimumWitnessPixels,
+        inference: true,
+      };
+    }
+    for (let i = 0; i < n; i++) {
+      if (!mask[i]) continue;
+      const region = regions[labels[i]];
+      if (!region.inferredIllumination) continue;
+      if (palette[i] !== region.color) normalizedPixels++;
+      palette[i] = region.color;
+    }
   }
   return {
     palette,

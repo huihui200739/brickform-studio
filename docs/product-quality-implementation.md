@@ -417,6 +417,34 @@ node --experimental-strip-types scripts/benchmark-slopes.ts outputs/voxel-materi
 
 生产指纹：`0b94c66d5c00764722a95915079a2c1f933b2c257ffbd2a70d6e88f0576f2758`。证据：`voxel-material-area-2026-10-02.json`、`voxel-material-order-2026-10-02.json`、`voxel-material-slopes-2026-10-02.json`、`image-voxel-material-2026-10-02.json`、`geometry-voxel-material-2026-10-02.json`、`voxel-material-render-review-2026-10-02.json`。实际目录渲染：`outputs/voxel-material-calibration/<case>-after.png`、`temple-after.png`。整体目标继续进行中。
 
+### 第十三批：有见证的材质匹配与采购单位审计（2026-10-02）
+
+- 帽子的帽冠与帽檐代表色 Lab 距离仅 1.233，旧色板匹配仍把它们分别选成深灰和蓝色。直接排除中性色的原型会把房屋的冷光石墙误改成蓝色，已被对照否定。新规则只处理已接受光照推断的明显有色区域：色板距离接近时，必须有另一块足够大的原始可见区域支持同一候选色相；双方代表色距离不超过 4，候选色相差不超过 30°，额外色板距离不超过 3。见证冻结在修改前，修正区域不能继续成为见证。
+- `reference-materials.ts` 为修正记录原颜色、代表色、色板距离、见证区域及推断性质。源像素、区域边界和关闭阴影归一化的行为保持原样。`benchmark-region-consensus.ts` 固定 `d6844ec` 的材质算法、色彩空间、色板及前景遮罩；八份实际参考输入（六张样例渲染与两份神庙夹具）回放仅改变帽子 **10,810 个前景像素 / 3 个区域**，全部深灰→蓝色，其余七份配色完全一致。黑、绿、金色装饰未被统一刷色。这是有限色板中的一致性改进，不是紫色真实材质识别，也不是对其余配色正确性的认证。
+- 原采购界面把 LDraw 几何编号当作商品设计编号，并只删末尾 `b` 去官网搜索。新 `purchase-inventory.ts` 分别记录 LDraw 来源、BrickLink 编号/色号、日期及证据；未知映射和未经检查的零件颜色组合保留“未核实”。十种基础砖/板使用已核实的有限颜色记录，已知别名来自 vendored LDraw 头信息；没有把全零件目录默认为可采购。
+- 完整同色的人仔几何子件、来源 ID 唯一且属于同一组件时，采购表可合并为 [970c00 腿部总成](https://www.bricklink.com/v2/catalog/catalogitem.page?P=970c00) 和 [973c000 躯干总成](https://www.bricklink.com/v2/catalog/catalogitem.page?P=973c000&idColor=86)，仍保留每个源子件的对应关系。缺件、异色、重复或无组件归属时不合并。此合并只改变采购单位计数，不证明姿态或装配；`assemblyStepsRequireReview` 明确指出当前按子件分列的说明书尚需整合，不应照图拆卸已装配的人仔。
+- 火焰 `6126b` 的实心亮橙色与长矛 `4497` 的浅蓝灰色没有相应 Known Colors 记录，采购表标为需核实的颜色组合；不把卖家有批次等同于目录生产证据，也不宣称零件不存在或缺货。[火焰目录](https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b)、[长矛目录](https://www.bricklink.com/v2/catalog/catalogitem.page?P=4497)。本批没有替换这些模型颜色；后续需有来源的透明色/替代色约束及渲染处理。
+- 页面与离线 HTML 增加采购核对表；采购 CSV 包含目录状态、来源 ID、证据链接及日期，另保留按 LDraw 子件计数的三维清单。几何零件、安装坐标与原步骤未被采购合并改写。
+- **224 项测试、类型检查、构建/图片 worker 验证通过**。六类 28 档及两份神庙 28/36/48 档共 12 次转换通过，雕像和两只已连接火盆均保留。最终普通网格接近回放 **51,892 次，其中 4,328 次向上扣接**；51 件最终斜坡姿态及连接通过。仍只覆盖最终一层接近空间，不代表完整插入路径、操作空间、承重或实物搭建。
+- `benchmark-procurement.ts` 绑定这 12 份最终模型及文件 SHA，**52,097 个来源子件全部恰好追溯一次**，模型字节与内存数据未变；对应 52,061 件采购单位。合计 620 条颜色组合有目录记录、245 条未核实、12 条颜色问题（六份神庙各有两只火焰及一只长矛，共 18 件）。这些是跨尺寸回放的重复计数。所有输出仍为 `procurementReady: false`，库存、总成安装步骤、真实姿态与实物搭建未通过完整核验。
+- 帽子的新目录模型实际重新渲染，灰蓝分裂减少；其零件 **2710→2797**，辅助支撑 **470→578**，不能宣称零件减少或整体外观达标。其他 11 份最终模型 SHA 与上一批完全相同，复用的六份既有目录渲染也逐一核对 PNG SHA。帽子仍有阶梯曲面、杂色与过重支撑；神庙雕像后墙的残留配色/局部结构问题仍在。**整模外观继续不通过套装级验收。** 没有新增独立真实照片或实物试拼。
+- 本机 `npm run local` 服务已恢复，`http://localhost:3000/` 返回 HTTP 200。网页状态未作浏览器视觉验收；已有模型需重新生成才能使用新材质规则。
+
+复现（复用既有网格与匹配的检测缓存，不重新进行原生 AI 推理）：
+
+```sh
+BRICKFORM_BENCH_PYTHON=work/semantic-engine/.venv/bin/python npm run benchmark:images -- --scene-dir=outputs/identity-calibration
+node --experimental-strip-types scripts/benchmark-geometry.ts outputs/region-consensus-calibration
+node --experimental-strip-types scripts/benchmark-supports.ts outputs/region-consensus-calibration
+node --experimental-strip-types scripts/benchmark-region-consensus.ts outputs/region-consensus-calibration
+node --experimental-strip-types scripts/benchmark-procurement.ts outputs/region-consensus-calibration
+node --experimental-strip-types scripts/benchmark-slopes.ts outputs/region-consensus-calibration
+```
+
+生产指纹：`665ef2652c8c0501a4f906152d10316ac38a0071d3bf612ccb81182e71ffa36e`。证据为 `benchmarks/region-consensus-{material,order,slopes,procurement,image,geometry,render-review}-2026-10-02.json`。新渲染在 `outputs/region-consensus-calibration/wizard-hat-after.png`。
+
+下一步仍须把真实材质/局部几何设计与零件颜色来源约束接到生成阶段，并把人仔总成作为可操作步骤规划；仅增加警告或通过条数不能替代这些工作。整体目标继续进行中。
+
 ### 当前限制
 
 已解决已有基准中的错误组件替换，整理两份神庙入口后墙及有面积证据的平台，实装完整支撑图、普通砖最终扣接顺序、局部光照推断和通用近似平面整理；已接入有源表面证据的四种局部斜坡件、连续局部排布与带来源记录的表面材质推断；**完整区域构造、曲面、地面铺面与材质、背面布局、内部支撑构造、承重和完整装配规划仍未完成**。基准仍是六张干净样例图，不是独立真实照片集。本机检测模型仍有错标签；当前查询类别和身份支持规则不是通用零件编号识别器。阶段 2 必须继续扩展到完整平面/曲面/开口和材质设计，不能把这些通过记录包装成官方套装级质量。
