@@ -1,0 +1,452 @@
+{
+  "date": "2026-10-02",
+  "decision": "reject-scalar-shadow-hypothesis",
+  "productionCommit": "2652142c27ab42a1b2c8e2c698d9050a0833d0da",
+  "productionConversionFingerprint": "4776a5a3dda4ffcfd7da82e9e4935c37976bb58358a535b437d048bfb0693f3d",
+  "scope": "Two cached actual reference/native mesh cases, six diagnostic synthetic controls, and a fixed-CAD Temple recolor. No new native inference, production changes, broad photo benchmark or physical build.",
+  "artifacts": [
+    {
+      "path": "outputs/wall-material-hypothesis/audit.ts",
+      "sha256": "133850db79a1b613079fe1b97b99c15324874eaf6718abd375059f4b91ead185"
+    },
+    {
+      "path": "outputs/wall-material-hypothesis/hypothesis.ts",
+      "sha256": "5bd2ec24547da04d0a9e2e40460227017482c30123fe56d460d51aeb5fca1f39"
+    },
+    {
+      "path": "outputs/wall-material-hypothesis/prototype.ts",
+      "sha256": "0e80870e29ac987942321d8090398f3e3db85a4825f647fd17c06c9a1319db91"
+    },
+    {
+      "path": "outputs/wall-material-hypothesis/fixed-cad-preview.ts",
+      "sha256": "69c4eca94e63bc36849479fec585b46a98c1c7054509737443a9d8dca37918a7"
+    },
+    {
+      "path": "outputs/wall-material-hypothesis/results.json",
+      "sha256": "aaeab42ea6101334935ad59b46cbccb0346eaac64a9144924b720bb9c125c3c2"
+    },
+    {
+      "path": "outputs/wall-material-hypothesis/fixed-cad-preview.json",
+      "sha256": "3e7ac6951b27c705d80d9da003e947063f48a670d37f29e68ae656ffdea59bd6"
+    },
+    {
+      "path": "outputs/wall-material-hypothesis/temple-standard-48-cad-comparison.png",
+      "sha256": "658ea555f6360cdb0fe83ed781e936ccd1e454dd4fac0953cfff4ce40ef7272d"
+    },
+    {
+      "path": "lib/fixtures/temple-standard.glb.gz",
+      "sha256": "8cf7698188d859801cee12bb7295948ac0ec2047715a9e514a43e7c1e28deb04"
+    },
+    {
+      "path": "lib/fixtures/temple-standard.rgba.gz",
+      "sha256": "69089242d7273b758cc97ea53a2cf5ea36ea129a1ab742513649637fed9db173"
+    },
+    {
+      "path": "lib/fixtures/temple-standard.scene.json",
+      "sha256": "b693151ce3d12186370bf9e63a7c8544ade94d306d73defdf45b8663b3034550"
+    },
+    {
+      "path": "outputs/identity-calibration/house.rgba",
+      "sha256": "7db1435cb4531df28da3719eea61516c7149636014c64ea8ee4b2429ae106225"
+    },
+    {
+      "path": "outputs/identity-calibration/house.scene.json",
+      "sha256": "0f7df2a7c09b3077d8d5775d78c6bfe507a0dbdfb281007a760f5c07ec2cc165"
+    },
+    {
+      "path": "outputs/image-benchmark/house/model.glb",
+      "sha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171"
+    },
+    {
+      "path": "outputs/catalog-color-calibration/temple-standard-48.json",
+      "sha256": "a84c6ecb5976c5285d7d6c3fe38dcb74295e6689d39858506dbc2945888001fd"
+    }
+  ],
+  "thresholds": {
+    "minimumCandidatePixels": 64,
+    "minimumWitnessPixels": 64,
+    "minimumProjectedPixels": 8,
+    "minimumCompatibleSharedEdges": 8,
+    "minimumImageBoundary": 8,
+    "minimumWitnessLightness": 60,
+    "minimumLightnessGain": 15,
+    "maximumLinearChromaDistance": 0.035,
+    "maximumSemanticFraction": 0.05,
+    "maximumWitnessPaletteHueDifference": 30
+  },
+  "sourceCases": [
+    {
+      "id": "temple-standard",
+      "decisions": [
+        {
+          "region": 312,
+          "originalColor": 8,
+          "proposedColor": 7,
+          "pixels": 266,
+          "bounds": [
+            [
+              117,
+              57
+            ],
+            [
+              202,
+              60
+            ]
+          ],
+          "rawRGB": [
+            165.6375,
+            134.5125,
+            109.5125
+          ],
+          "rawChroma": [
+            0.49008360702070697,
+            0.3104409384334916,
+            0.1994754545458014
+          ],
+          "reason": "independent bright witness with compatible shared-edge geometry and scalar raw chromaticity",
+          "witnesses": [
+            {
+              "id": 312,
+              "color": 8,
+              "donor": 176,
+              "donorColor": 7,
+              "edgeCount": 78,
+              "pixels": 266,
+              "projected": 111,
+              "excludedFraction": 0,
+              "lightnessDelta": 24.4155364618549,
+              "chromaDistance": 0.02478585348492365,
+              "rawLab": [
+                58.3915636352925,
+                8.168925579953356,
+                17.930872243523098
+              ],
+              "donorLab": [
+                82.8071000971474,
+                6.537949234429297,
+                27.089089704487513
+              ],
+              "boundary": 89,
+              "witnessRGB": [
+                236.51716738197425,
+                200.38555078683834,
+                155.73676680972818
+              ],
+              "witnessPaletteHueDifference": 5.5936779362464755
+            }
+          ],
+          "inference": true
+        },
+        {
+          "region": 1090,
+          "originalColor": 8,
+          "proposedColor": 7,
+          "pixels": 112,
+          "bounds": [
+            [
+              132,
+              155
+            ],
+            [
+              187,
+              156
+            ]
+          ],
+          "rawRGB": [
+            160,
+            126.57575757575758,
+            99.39393939393939
+          ],
+          "rawChroma": [
+            0.5109096436974029,
+            0.30622916080364365,
+            0.18286119549895333
+          ],
+          "reason": "independent bright witness with compatible shared-edge geometry and scalar raw chromaticity",
+          "witnesses": [
+            {
+              "id": 1090,
+              "color": 8,
+              "donor": 1030,
+              "donorColor": 7,
+              "edgeCount": 37,
+              "pixels": 112,
+              "projected": 35,
+              "excludedFraction": 0,
+              "lightnessDelta": 18.756138248195597,
+              "chromaDistance": 0.019838106819608584,
+              "rawLab": [
+                55.534261236367584,
+                9.016183589024006,
+                19.700298613032952
+              ],
+              "donorLab": [
+                74.29039948456318,
+                8.174543574447357,
+                27.16405243768296
+              ],
+              "boundary": 56,
+              "witnessRGB": [
+                214.64705882352942,
+                176.02941176470588,
+                133.2941176470588
+              ],
+              "witnessPaletteHueDifference": 8.773078939159172
+            },
+            {
+              "id": 1090,
+              "color": 8,
+              "donor": 947,
+              "donorColor": 7,
+              "edgeCount": 30,
+              "pixels": 112,
+              "projected": 35,
+              "excludedFraction": 0,
+              "lightnessDelta": 26.124943340906867,
+              "chromaDistance": 0.030719609613763424,
+              "rawLab": [
+                55.534261236367584,
+                9.016183589024006,
+                19.700298613032952
+              ],
+              "donorLab": [
+                81.65920457727445,
+                7.083839860136997,
+                28.720934589686387
+              ],
+              "boundary": 52,
+              "witnessRGB": [
+                234.92592592592592,
+                196.77777777777777,
+                149.62962962962962
+              ],
+              "witnessPaletteHueDifference": 5.879950962299891
+            }
+          ],
+          "inference": true
+        },
+        {
+          "region": 2550,
+          "originalColor": 8,
+          "proposedColor": 7,
+          "pixels": 66,
+          "bounds": [
+            [
+              130,
+              219
+            ],
+            [
+              195,
+              219
+            ]
+          ],
+          "rawRGB": [
+            168.3,
+            137.35,
+            105.35
+          ],
+          "rawChroma": [
+            0.49956090643239204,
+            0.3196594047045591,
+            0.18077968886304882
+          ],
+          "reason": "independent bright witness with compatible shared-edge geometry and scalar raw chromaticity",
+          "witnesses": [
+            {
+              "id": 2550,
+              "color": 8,
+              "donor": 2581,
+              "donorColor": 7,
+              "edgeCount": 23,
+              "pixels": 66,
+              "projected": 41,
+              "excludedFraction": 0,
+              "lightnessDelta": 26.693804930901152,
+              "chromaDistance": 0.032897558138275065,
+              "rawLab": [
+                59.32068412693923,
+                7.143895375300302,
+                21.582398285593296
+              ],
+              "donorLab": [
+                86.01448905784038,
+                5.706260816260134,
+                27.27327971467728
+              ],
+              "boundary": 66,
+              "witnessRGB": [
+                244.55,
+                209.825,
+                163.925
+              ],
+              "witnessPaletteHueDifference": 3.842097223876961
+            }
+          ],
+          "inference": true
+        },
+        {
+          "region": 2680,
+          "originalColor": 8,
+          "proposedColor": 7,
+          "pixels": 77,
+          "bounds": [
+            [
+              123,
+              224
+            ],
+            [
+              195,
+              225
+            ]
+          ],
+          "rawRGB": [
+            134.8695652173913,
+            104.91304347826087,
+            81.34782608695652
+          ],
+          "rawChroma": [
+            0.5190527363251508,
+            0.30274163423082023,
+            0.178205629444029
+          ],
+          "reason": "independent bright witness with compatible shared-edge geometry and scalar raw chromaticity",
+          "witnesses": [
+            {
+              "id": 2680,
+              "color": 8,
+              "donor": 2705,
+              "donorColor": 7,
+              "edgeCount": 48,
+              "pixels": 77,
+              "projected": 47,
+              "excludedFraction": 0,
+              "lightnessDelta": 15.854671346562462,
+              "chromaDistance": 0.026380583089934705,
+              "rawLab": [
+                46.74384285291604,
+                8.54188326717642,
+                17.831404401547456
+              ],
+              "donorLab": [
+                62.5985141994785,
+                7.293718093140611,
+                22.795426672673848
+              ],
+              "boundary": 70,
+              "witnessRGB": [
+                178.14285714285714,
+                145.71428571428572,
+                111.38095238095238
+              ],
+              "witnessPaletteHueDifference": 9.767641143638858
+            }
+          ],
+          "inference": true
+        }
+      ],
+      "changedReferencePixels": 521,
+      "changedFaces": 395,
+      "semanticChanges": 0,
+      "blueChanges": 0,
+      "region413Proposal": null
+    },
+    {
+      "id": "house",
+      "decisions": [],
+      "changedReferencePixels": 0,
+      "changedFaces": 0,
+      "semanticChanges": 0,
+      "blueChanges": 0,
+      "region413Proposal": null
+    }
+  ],
+  "controls": [
+    {
+      "id": "uniform-dark-paint",
+      "expected": "preserve",
+      "actual": "preserve",
+      "passed": true,
+      "changedPixels": 0
+    },
+    {
+      "id": "textured-dark-wood",
+      "expected": "preserve",
+      "actual": "preserve",
+      "passed": true,
+      "changedPixels": 0
+    },
+    {
+      "id": "blue-painted-wall",
+      "expected": "preserve",
+      "actual": "preserve",
+      "passed": true,
+      "changedPixels": 0
+    },
+    {
+      "id": "neutral-dark-painted-wall",
+      "expected": "preserve",
+      "actual": "preserve",
+      "passed": true,
+      "changedPixels": 0
+    },
+    {
+      "id": "scalar-cast-shadow-on-sand",
+      "expected": "brighten",
+      "actual": "brighten",
+      "passed": true,
+      "changedPixels": 1600
+    },
+    {
+      "id": "dark-tan-paint-ambiguous-gradient",
+      "expected": "preserve",
+      "actual": "brighten",
+      "passed": false,
+      "changedPixels": 1600
+    }
+  ],
+  "ambiguityProof": {
+    "encoding": "8-byte uint32LE width/height header plus RGBA8",
+    "first": "outputs/wall-material-hypothesis/scalar-cast-shadow-on-sand.rgba",
+    "second": "outputs/wall-material-hypothesis/dark-tan-paint-ambiguous-gradient.rgba",
+    "bytesIdentical": true,
+    "sha256": "051bd8d26e5fb36928b99cd576212d192ae848e8f48201e66d72fa03faea625e",
+    "bothChangedPixels": 1600,
+    "inference": "Identical supplied pixels/coplanar geometry have different intrinsic material explanations. Deterministic inference cannot distinguish them solely from this supplied evidence."
+  },
+  "fixedCAD": {
+    "sourceModelPath": "outputs/catalog-color-calibration/temple-standard-48.json",
+    "sourceModelSha256": "a84c6ecb5976c5285d7d6c3fe38dcb74295e6689d39858506dbc2945888001fd",
+    "matchedChangedFaceModes": 395,
+    "rejectedFaceModes": 0,
+    "changedBrickIds": [
+      3473,
+      3475,
+      3476,
+      3482,
+      3483,
+      3484,
+      3485,
+      5351,
+      5353,
+      5354,
+      5356,
+      5408,
+      5409,
+      5410,
+      5646,
+      7498,
+      7508,
+      7625,
+      7626,
+      7701,
+      7702,
+      7703,
+      7704
+    ],
+    "scope": "Fixed catalog CAD recolor only. Source triangle-cell area voting; same parts, poses, instructions and installed components. Does not replay packing, unseen-face inference or procurement legality."
+  },
+  "promotable": false,
+  "reason": "Dark paint can have exactly the same radiance and geometry as a cast shadow. The explicit dark-tan-paint gradient counterexample is indistinguishable and is falsely brightened.",
+  "qualityAchieved": false,
+  "nextWorkPackage": "Immutable observations -> connected surface/material hypotheses -> same-camera candidate validation -> regional brick design. Typed interfaces alone are not completion."
+}
