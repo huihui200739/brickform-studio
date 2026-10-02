@@ -1,0 +1,480 @@
+{
+  "date": "2026-10-02",
+  "scope": "Source radiance audit of the Temple-standard48 jamb bordering the fitted niche. No production changes; source pixel correspondence and intrinsic material remain unverified.",
+  "baseline": {
+    "commit": "a5ec92c",
+    "modelPath": "outputs/region-consensus-calibration/temple-standard-48.json",
+    "modelSha256": "a3e9cb92e169c6929b636b69bcbf1c1b64172dc044940002ac985a85915208dd"
+  },
+  "inputs": [
+    {
+      "path": "lib/fixtures/temple-standard.glb.gz",
+      "sha256": "8cf7698188d859801cee12bb7295948ac0ec2047715a9e514a43e7c1e28deb04"
+    },
+    {
+      "path": "lib/fixtures/temple-standard.rgba.gz",
+      "sha256": "69089242d7273b758cc97ea53a2cf5ea36ea129a1ab742513649637fed9db173"
+    },
+    {
+      "path": "outputs/material-audit-2026-10-02/temple-niche-audit.ts",
+      "sha256": "d8020e3781cb50c09856dc762df17423868ead19de833b75a44c51dab978a117"
+    },
+    {
+      "path": "outputs/material-audit-2026-10-02/temple-niche-evidence.json",
+      "sha256": "a9d40a3c893dd0705a46dcf424df4170df5b05926411ce55e8ba282a7fae3361"
+    },
+    {
+      "path": "outputs/material-audit-2026-10-02/temple-observed-vote-candidate.json",
+      "sha256": "5eeb210b0fcd6c054cc75fa5aed7f910f563f435d9b7d354fb18f233c8ac411c"
+    }
+  ],
+  "camera": {
+    "yaw": 0,
+    "pitch": 20,
+    "perspective": 0.5
+  },
+  "fittedPlane": {
+    "id": "statue-4510-2401-798-1988-rear-wall",
+    "axis": 2,
+    "direction": 1,
+    "coordinate": 15,
+    "bounds": {
+      "min": [
+        17,
+        36,
+        13
+      ],
+      "max": [
+        33,
+        74,
+        15
+      ]
+    },
+    "material": {
+      "color": 7,
+      "source": "local-reference-region",
+      "supportFraction": 0.9719298245614035,
+      "inferredShadows": true
+    },
+    "evidence": {
+      "source": "mesh-and-reference",
+      "samples": 1381,
+      "inlierFraction": 0.6835746327976572,
+      "rmseStuds": 0.12012652834096568,
+      "imageCoverage": 0.5833333333333334,
+      "observedCrossRange": [
+        19.46272929819792,
+        30.589871601755352
+      ]
+    }
+  },
+  "jambROI": {
+    "min": [
+      17,
+      36,
+      24
+    ],
+    "max": [
+      33,
+      74,
+      27
+    ]
+  },
+  "jambParts": 94,
+  "jambColors": {
+    "7": 55,
+    "10": 25,
+    "9": 14
+  },
+  "darkArea": {
+    "sourceStudsSquared": 28.706436654302077,
+    "observedStudsSquared": 23.234856950326257,
+    "observedFraction": 0.8093953711543009
+  },
+  "majorSourceRegion": {
+    "id": 413,
+    "pixels": 3352,
+    "color": 10,
+    "lightnessRange": [
+      4.802860736846924,
+      26.998809814453125
+    ],
+    "chromaticityResidual": 0.06673992843673027,
+    "inferredIllumination": true
+  },
+  "inferredVoteOutweighsObservation": {
+    "id": 6094,
+    "part": "3024",
+    "color": 9,
+    "position": [
+      17,
+      42,
+      25
+    ],
+    "size": [
+      1,
+      1,
+      1
+    ],
+    "section": "subject",
+    "support": false,
+    "role": "outside-fitted-opening",
+    "sourceCells": 1,
+    "sourceAreaVotes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0.3591717732091011,
+      0.21430317067303975,
+      0,
+      0,
+      0
+    ],
+    "observedAreaVotes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0.21430317067303975,
+      0,
+      0,
+      0
+    ],
+    "surfaceRegions": [
+      [
+        489,
+        0.21430317067303975
+      ],
+      [
+        1558,
+        0.1878009770075488
+      ],
+      [
+        977,
+        0.14857395675030388
+      ],
+      [
+        6010,
+        0.022796839451248406
+      ]
+    ]
+  },
+  "unsafeObservationPriorityPrototype": {
+    "scope": "Hypothetical per-cell policy; no repacking or final-model mutation. Only matching original source-vote subject cells outside fitted plane.",
+    "thresholds": {
+      "minimumObservedAreaStudsSquared": 0.1,
+      "minimumObservedFraction": 0.25,
+      "minimumObservedMaterialFraction": 0.75
+    },
+    "changes": [
+      {
+        "cell": "17,42,25",
+        "brickId": 6094,
+        "part": "3024",
+        "oldColor": 9,
+        "candidateColor": 10,
+        "totalSourceArea": 0.5734749438821408,
+        "observedArea": 0.21430317067303975,
+        "observedFraction": 0.37369229982798136,
+        "observedMaterialFraction": 1.0,
+        "sourceRegions": [
+          [
+            977,
+            0.14857395675030388
+          ],
+          [
+            1558,
+            0.1878009770075488
+          ],
+          [
+            489,
+            0.21430317067303975
+          ],
+          [
+            6010,
+            0.022796839451248406
+          ]
+        ]
+      },
+      {
+        "cell": "19,49,25",
+        "brickId": 6377,
+        "part": "3023",
+        "oldColor": 7,
+        "candidateColor": 9,
+        "totalSourceArea": 0.2548857716775304,
+        "observedArea": 0.1076980520396264,
+        "observedFraction": 0.42253457825759283,
+        "observedMaterialFraction": 1.0,
+        "sourceRegions": [
+          [
+            1435,
+            0.147187719637904
+          ],
+          [
+            737,
+            0.1076980520396264
+          ]
+        ]
+      },
+      {
+        "cell": "30,45,26",
+        "brickId": 6244,
+        "part": "3070b",
+        "oldColor": 7,
+        "candidateColor": 10,
+        "totalSourceArea": 0.2992459340201825,
+        "observedArea": 0.14075886655593675,
+        "observedFraction": 0.47037854337711177,
+        "observedMaterialFraction": 0.882287219894447,
+        "sourceRegions": [
+          [
+            1082,
+            0.013569965911351536
+          ],
+          [
+            1050,
+            0.01386453141574014
+          ],
+          [
+            5205,
+            0.043544291009604386
+          ],
+          [
+            7014,
+            0.0017407379388613435
+          ],
+          [
+            813,
+            0.09119162778294415
+          ],
+          [
+            740,
+            0.051798797746025776
+          ],
+          [
+            6758,
+            0.01549664193527581
+          ],
+          [
+            5176,
+            0.05147022277357349
+          ],
+          [
+            970,
+            0.010062313755606218
+          ],
+          [
+            6995,
+            0.006506803751199645
+          ]
+        ]
+      },
+      {
+        "cell": "32,45,24",
+        "brickId": 6196,
+        "part": "3005",
+        "oldColor": 7,
+        "candidateColor": 6,
+        "totalSourceArea": 0.5592156241083428,
+        "observedArea": 0.2838362501048651,
+        "observedFraction": 0.5075613732313646,
+        "observedMaterialFraction": 0.776041511328491,
+        "sourceRegions": [
+          [
+            89,
+            0.17230774692265444
+          ],
+          [
+            1706,
+            0.13385323423902867
+          ],
+          [
+            2958,
+            0.007837300346198077
+          ],
+          [
+            5625,
+            0.04404351428647979
+          ],
+          [
+            1821,
+            0.008741376027930734
+          ],
+          [
+            2019,
+            0.029506490757315686
+          ],
+          [
+            662,
+            0.04267570351029517
+          ],
+          [
+            5434,
+            0.030594438353566927
+          ],
+          [
+            1974,
+            0.0022401016219096466
+          ],
+          [
+            1259,
+            0.05444261879285652
+          ],
+          [
+            1544,
+            0.032973099250107114
+          ]
+        ]
+      },
+      {
+        "cell": "32,44,25",
+        "brickId": 6199,
+        "part": "3069b",
+        "oldColor": 7,
+        "candidateColor": 6,
+        "totalSourceArea": 0.8165200773295731,
+        "observedArea": 0.2892538032649661,
+        "observedFraction": 0.3542519177372465,
+        "observedMaterialFraction": 0.9899846749853306,
+        "sourceRegions": [
+          [
+            297,
+            0.011431180961824994
+          ],
+          [
+            5994,
+            0.13906840488814548
+          ],
+          [
+            5288,
+            0.08707508411696599
+          ],
+          [
+            2958,
+            0.06708676239398749
+          ],
+          [
+            2262,
+            0.05879527632167736
+          ],
+          [
+            1765,
+            0.01961918413383484
+          ],
+          [
+            1226,
+            0.01390372091737943
+          ],
+          [
+            1974,
+            0.4166434927443297
+          ],
+          [
+            1600,
+            0.0005529840543368597
+          ],
+          [
+            1544,
+            0.0023439867970910027
+          ]
+        ]
+      },
+      {
+        "cell": "32,42,25",
+        "brickId": 6093,
+        "part": "3022",
+        "oldColor": 9,
+        "candidateColor": 10,
+        "totalSourceArea": 0.5878273123564007,
+        "observedArea": 0.1929810883915376,
+        "observedFraction": 0.3282955458771416,
+        "observedMaterialFraction": 1.0,
+        "sourceRegions": [
+          [
+            1541,
+            0.35349861896676504
+          ],
+          [
+            1457,
+            0.10428309583328144
+          ],
+          [
+            6373,
+            0.0011049907770388613
+          ],
+          [
+            1514,
+            0.1289406067793153
+          ]
+        ]
+      },
+      {
+        "cell": "33,39,25",
+        "brickId": 5944,
+        "part": "3023",
+        "oldColor": 7,
+        "candidateColor": 9,
+        "totalSourceArea": 0.43394530012888566,
+        "observedArea": 0.11630365705642867,
+        "observedFraction": 0.26801455626293325,
+        "observedMaterialFraction": 1.0,
+        "sourceRegions": [
+          [
+            2629,
+            0.10723350992220348
+          ],
+          [
+            2100,
+            0.21040813315025353
+          ],
+          [
+            5560,
+            0.11630365705642867
+          ]
+        ]
+      },
+      {
+        "cell": "33,44,24",
+        "brickId": 6197,
+        "part": "3070b",
+        "oldColor": 9,
+        "candidateColor": 7,
+        "totalSourceArea": 0.43291784517208554,
+        "observedArea": 0.14959239876149166,
+        "observedFraction": 0.34554454252637345,
+        "observedMaterialFraction": 0.8437870846793192,
+        "sourceRegions": [
+          [
+            1514,
+            0.19794130852198105
+          ],
+          [
+            1259,
+            0.10875240260895927
+          ],
+          [
+            1544,
+            0.12622413404114524
+          ]
+        ]
+      }
+    ]
+  },
+  "rejectedBecause": "Observed priority would assign flame-orange6 to masonry at [32,45,24] and [32,44,25]; current semantic replacement cleanup keeps these sand7. Observed projection is not proof of correct pixel correspondence.",
+  "nextRequired": "Calibrate internal image/surface correspondence and material membership across folds/illumination. Preserve semantic source exclusion and known decorative material boundaries. No blanket recolor.",
+  "replayedOn": "2026-10-02",
+  "sourceEvidenceSha256": "2bb8ab692a04023c4d0f8fa27c0ca0f7dab6a0c47347049279a2ca5bd46fa546"
+}

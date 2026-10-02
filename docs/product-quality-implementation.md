@@ -2,13 +2,13 @@
 
 目标保持为：单图或多图输入，得到外形忠实、真实零件组成、能实际拼搭、每步清楚的设计。不能用文件生成成功、结构连通或少数图片通过来代替最终验收。
 
-## 当前进度（2026-10-01）
+## 当前进度（2026-10-02）
 
 | 工作包 | 状态 | 证据 / 下一步 |
 | --- | --- | --- |
 | 1. 识别证据、实例轮廓、身份与安装分离 | 本机适配器已实装，当前正负例通过 | 六图误装火盆/树从 34 降到 0；两份神庙保留雕像及两只火盆；广泛识别质量仍需独立图片检验 |
 | 2. 结构化几何、开口与材质 | 壁龛、平台、局部光照、近似平面与表面材质来源已实装，整体仍在实施 | 缓存跨类别及两份神庙 × 三档通过；共享顶点平面整理保留孔洞/折角/外轮廓；真实轮廓对齐与统一视角已接入；内部像素/材质准确性、曲面及背面布局仍待实施 |
-| 3. 区域零件设计与采购约束 | 支撑连接切片已实装，整体仍在实施 | 按断开的零件组补连接；连续局部斜面排布及四种斜坡目录件已接入；真实零件–颜色组合、曲面与内部跨梁仍待实施 |
+| 3. 区域零件设计与采购约束 | 支撑连接切片已实装，整体仍在实施 | 按断开的零件组补连接；连续局部斜面排布及四种斜坡目录件已接入；已核验目录色接入火焰/长矛选择；其余采购组合、曲面与内部跨梁仍待实施 |
 | 4. 子装配、插入动作与说明书 | 普通网格零件的顺序和最终接近动作已实装，整体仍在实施 | 上下扣接顺序与箭头；完整路径、子装配、过程稳定性和人工图示试验待实施 |
 | 5. 独立图片与实物试拼 | 待实施 | 至少 30 张独立图片和 5 个跨类别完整试拼；需要记录真实失败与返工 |
 
@@ -444,6 +444,31 @@ node --experimental-strip-types scripts/benchmark-slopes.ts outputs/region-conse
 生产指纹：`665ef2652c8c0501a4f906152d10316ac38a0071d3bf612ccb81182e71ffa36e`。证据为 `benchmarks/region-consensus-{material,order,slopes,procurement,image,geometry,render-review}-2026-10-02.json`。新渲染在 `outputs/region-consensus-calibration/wizard-hat-after.png`。
 
 下一步仍须把真实材质/局部几何设计与零件颜色来源约束接到生成阶段，并把人仔总成作为可操作步骤规划；仅增加警告或通过条数不能替代这些工作。整体目标继续进行中。
+
+### 第十四批：有来源的目录颜色选择与透明火焰
+
+- `choosePartColor()` 在目录组件生成前读取采购模块的同一份核验记录。只替代经过明确审计的未收录颜色，并从已确认组合中选择最近色；未知编号/颜色组合保留原选择并待核实，不删除语义组件或擅自确认可采购。原实心橙色 `6126b` 改选透明橙色（LEGO 182 / LDraw 57 / BrickLink 98）；原浅灰 `4497` 长矛改选已确认黑色。目录不是实时库存，黑色长矛也不能被描述为忠实复刻照片中的石雕材质。[火焰目录](https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b)、[长矛目录](https://www.bricklink.com/v2/catalog/catalogitem.page?P=4497)。
+- 色板末尾追加透明橙色，保留所有旧索引。显示色值 `#F08F1C`、ALPHA 128 来自本次检查的 [官方 LDConfig](https://library.ldraw.org/library/official/LDConfig.ldr)；是显示近似，不是塑料光学测量。普通 RGB/Lab 匹配、区域见证候选以及主体/单色选择都排除此透明条目；新增采购颜色没有被默认授予全部基础砖或人仔总成。
+- 每件替代保留 `colorChoice` 的原索引、选定索引、理由、主来源和日期；经过安装与采购行聚合后仍保留源零件 ID。页面、HTML 采购表和 CSV 展示替代，LDraw 输出选定官方色号。读取旧设计进行采购核对时不自动改模型颜色，旧实心橙火焰/灰色长矛仍显示未收录组合。
+- 两个 Three 查看器对透明零件使用独立可排序 Mesh、alpha 与禁写深度；透明边缘同样不盖住实体背景，不制造实心火焰阴影。离线渲染混合真实 vendored 零件三角形的每像素深度片段。实际 `6126b` 能透出绿色墙面背景，移到实体墙后整张 PNG 与只有墙时完全一致；同一普通墙 PNG 与旧渲染逐字节相同。此处没有浏览器 GPU、折射或透光阴影的验收。
+- 对新神庙 48 档残留做源区域审计：已声明的壁龛后墙为沙色平面，剩余混色主要在平面之外的门框/边界。暗棕零件的大部分面积确实来自被投影观察的深阴影；这只证明源图辐射值，不证明真实材料。另发现推测色面积盖过观察色的个别单元。直接让所有观察优先的原型会把火焰橙色误投到两块沙色墙砖，被否定，没有进入生产。下一项必须校准内部像素对应、语义遮罩与区域材质，不能把“观测到”自动等同于“投影对应正确”。
+- 230 项测试、类型检查、构建/图片 worker 检查通过；另有 3 项实际透明渲染行为回归通过。六类样例与两份神庙三档共 12 次转换保留现有组件、连接/碰撞、平面、平台与清单门槛；51 件最终斜坡和 51,892 次最终接近回放通过，其中 4,328 次向上扣接。六份神庙逐件与 `a5ec92c` 比较，几何、姿态、步骤与其他颜色完全不变，仅两只火焰与一只长矛的颜色及替代记录改变。
+- 独立采购审计覆盖 52,097 个来源子件与 52,061 个采购单位，18 条生成替色完整记录全部保留；已确认 632 条、未核实 245 条、此前明确未收录的颜色组合降为 0 条。记录跨尺寸重复样例，并不等于 632 种互异商品或完整采购就绪。11 个旧色/未知组合控制通过，旧设计仍可指出原组合问题。所有模型 `procurementReady: false`，人仔总成步骤与实时库存仍需核对。
+- 当前实际神庙目录件重新离线渲染：透明火焰与黑色长矛已生效，**杂色门框、粗糙区域构造和整模外观仍未通过套装级验收**。这次没有新增独立真实照片或真人试拼，采购总成计数仍不等于合格子装配步骤。
+
+复现这批转换与审计（复用匹配的识别缓存）：
+
+```sh
+BRICKFORM_BENCH_PYTHON=work/semantic-engine/.venv/bin/python npm run benchmark:images -- --scene-dir=outputs/identity-calibration
+node --experimental-strip-types scripts/benchmark-geometry.ts outputs/catalog-color-calibration
+node --experimental-strip-types scripts/benchmark-supports.ts outputs/catalog-color-calibration
+node --experimental-strip-types scripts/benchmark-region-consensus.ts outputs/catalog-color-calibration
+node --experimental-strip-types scripts/benchmark-procurement.ts outputs/catalog-color-calibration
+node --experimental-strip-types scripts/benchmark-slopes.ts outputs/catalog-color-calibration
+work/semantic-engine/.venv/bin/python scripts/render-transparency.test.py
+```
+
+生产指纹：`4776a5a3dda4ffcfd7da82e9e4935c37976bb58358a535b437d048bfb0693f3d`。本批的采购来源/替代追溯、原色板守卫、最终模型 SHA 与实际渲染记录在 `benchmarks/catalog-color-{images,geometry,order,slopes,materials,procurement,conservation,temple-border,render-review}-2026-10-02.json`；不会将显示透明度、颜色替代、连接图或通过条数合并成“可实物搭建”的结论。
 
 ### 当前限制
 

@@ -8,7 +8,14 @@ import {
 } from './aesthetic-packing.ts';
 import { connectUnsupportedGroups } from './support-design.ts';
 import { gridConnections, groundedIds } from './grid-connections.ts';
-export const PALETTE = [
+export type PaletteColor = {
+  name: string;
+  hex: string;
+  ldraw: number;
+  lego: number;
+  opacity?: number;
+};
+export const PALETTE: PaletteColor[] = [
   { name: '白色', hex: '#F4F4F4', ldraw: 15, lego: 1 },
   { name: '黑色', hex: '#242424', ldraw: 0, lego: 26 },
   { name: '亮红色', hex: '#C91A09', ldraw: 4, lego: 21 },
@@ -23,7 +30,23 @@ export const PALETTE = [
   { name: '浅灰色', hex: '#969696', ldraw: 71, lego: 194 },
   { name: '深灰色', hex: '#646464', ldraw: 72, lego: 199 },
   { name: '沙绿色', hex: '#708E7C', ldraw: 378, lego: 151 },
+  // LDraw display alpha, not a measured optical material. Existing IDs stay fixed.
+  {
+    name: '透明橙色',
+    hex: '#F08F1C',
+    ldraw: 57,
+    lego: 182,
+    opacity: 128 / 255,
+  },
 ];
+/** Photograph radiance cannot establish that an ordinary surface is translucent. */
+export function isOpaquePaletteColor(index: number) {
+  return (
+    Number.isInteger(index) &&
+    !!PALETTE[index] &&
+    (PALETTE[index].opacity ?? 1) >= 1
+  );
+}
 // Coordinates use studs in X/Z and plate units (3.2 mm) in Y.
 export type Brick = {
   id: number;
@@ -35,6 +58,7 @@ export type Brick = {
   d: number;
   h: number;
   color: number;
+  colorChoice?: import('./part-color-policy.ts').PartColorSubstitution;
   /** Upright quarter turns; needed for asymmetric slopes, even square parts. */
   rotation?: number;
   support?: boolean;
@@ -223,7 +247,7 @@ export function nearestColor(
   let best = 0,
     distance = Infinity;
   PALETTE.forEach((c, i) => {
-    if (!expanded && i >= 7) return;
+    if (!isOpaquePaletteColor(i) || (!expanded && i >= 7)) return;
     const hex = parseInt(c.hex.slice(1), 16);
     const delta =
       (r - (hex >> 16)) ** 2 +

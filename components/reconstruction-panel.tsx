@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Box, Upload, LoaderCircle } from 'lucide-react';
 import type { Model, Raster } from '@/lib/brick-engine';
-import { PALETTE } from '@/lib/brick-engine';
+import { PALETTE, isOpaquePaletteColor } from '@/lib/brick-engine';
 import type { TriangleMesh } from '@/lib/mesh-types';
 import { readGLB } from '@/lib/read-glb';
 import ComponentEditor from './component-editor';
@@ -855,7 +855,12 @@ export default function ReconstructionPanel({
     const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
     const colors = new Uint8Array(draft.colors.length);
     for (let i = 0; i < colors.length; i += 3) colors.set(rgb, i);
-    setDraft({ ...draft, colors, coloring: undefined, materialDesign: undefined });
+    setDraft({
+      ...draft,
+      colors,
+      coloring: undefined,
+      materialDesign: undefined,
+    });
   }
   if (!active) return null;
   const modeSwitch = (
@@ -1499,11 +1504,13 @@ export default function ReconstructionPanel({
                 <option value="" disabled>
                   保留当前颜色
                 </option>
-                {PALETTE.map((color) => (
-                  <option key={color.hex} value={color.hex}>
-                    {color.name}
-                  </option>
-                ))}
+                {PALETTE.map((color, index) =>
+                  isOpaquePaletteColor(index) ? (
+                    <option key={color.hex} value={color.hex}>
+                      {color.name}
+                    </option>
+                  ) : null,
+                )}
               </select>
               <span>可手动覆盖为单色，再点击“按参考图恢复配色”重新取色。</span>
             </label>

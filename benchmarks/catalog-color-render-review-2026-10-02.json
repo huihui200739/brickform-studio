@@ -1,0 +1,221 @@
+{
+  "date": "2026-10-02",
+  "conversionFingerprint": "4776a5a3dda4ffcfd7da82e9e4935c37976bb58358a535b437d048bfb0693f3d",
+  "scope": "Actual vendored catalog geometry, current generated Temple48 and controlled transparent-flame occlusion scene; no website/browser GPU or physical build validation.",
+  "renderer": {
+    "path": "scripts/render-assembly.py",
+    "sha256": "d522580fc476fed98518507fb7070e4b58ffc977fe0777a970c574b7eb6aa03e"
+  },
+  "compositor": {
+    "path": "scripts/render_transparency.py",
+    "sha256": "c6cd6f772b3d9826555d155e840f695670ec159a0098491de75169c078482f2f"
+  },
+  "geometry": {
+    "path": "public/parts/geometry.json",
+    "sha256": "cc59df77484c5c0fcdd77e178dd500cfa618b2a99c6cb32d4f75b3a2eebd8330"
+  },
+  "colorSource": {
+    "url": "https://library.ldraw.org/library/official/LDConfig.ldr",
+    "checkedAt": "2026-10-02",
+    "snapshot": {
+      "path": "outputs/catalog-color-calibration/LDConfig.ldr",
+      "sha256": "0178cd14fba46acb9df049c835e60e223b134d178f7e928ace0be1dfbe78895d"
+    },
+    "LEGO": 182,
+    "LDraw": 57,
+    "BrickLink": 98,
+    "hex": "#F08F1C",
+    "displayAlpha": 0.5019607843137255,
+    "opticalMeasurement": false
+  },
+  "temple": {
+    "model": {
+      "path": "outputs/catalog-color-calibration/temple-standard-48.json",
+      "sha256": "a84c6ecb5976c5285d7d6c3fe38dcb74295e6689d39858506dbc2945888001fd"
+    },
+    "renders": [
+      {
+        "path": "outputs/catalog-color-calibration/temple-standard-48-hero.png",
+        "sha256": "e9ec09838411db3bf02887b52dc54366fb3f7ba5acfa0d221c1d28ece9f15f90"
+      },
+      {
+        "path": "outputs/catalog-color-calibration/temple-standard-48-front.png",
+        "sha256": "542dcd320b0165d381803ffe5196f4f6735451b67d8fac8d074cf338b4b5f98b"
+      }
+    ],
+    "parts": [
+      {
+        "id": 8589,
+        "part": "4497",
+        "color": 1,
+        "pose": {
+          "matrix": [
+            -1,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            -1
+          ],
+          "position": [
+            24.783610592710435,
+            -394.9094765586055,
+            6.2267583487230596
+          ]
+        },
+        "colorChoice": {
+          "requestedColor": 11,
+          "selectedColor": 1,
+          "reason": "reviewed-unsupported-catalog-color",
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=4497",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        }
+      },
+      {
+        "id": 8604,
+        "part": "6126b",
+        "color": 14,
+        "pose": {
+          "matrix": [
+            1,
+            0,
+            0,
+            0,
+            6.123233995736766e-17,
+            -1,
+            0,
+            1,
+            6.123233995736766e-17
+          ],
+          "position": [
+            -140,
+            -394,
+            60
+          ]
+        },
+        "colorChoice": {
+          "requestedColor": 6,
+          "selectedColor": 14,
+          "reason": "reviewed-unsupported-catalog-color",
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        }
+      },
+      {
+        "id": 8609,
+        "part": "6126b",
+        "color": 14,
+        "pose": {
+          "matrix": [
+            1,
+            0,
+            0,
+            0,
+            6.123233995736766e-17,
+            -1,
+            0,
+            1,
+            6.123233995736766e-17
+          ],
+          "position": [
+            140,
+            -394,
+            60
+          ]
+        },
+        "colorChoice": {
+          "requestedColor": 6,
+          "selectedColor": 14,
+          "reason": "reviewed-unsupported-catalog-color",
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        }
+      }
+    ],
+    "review": {
+      "kitAppearancePassed": false,
+      "visibleProblems": [
+        "Shaded/reference-colored jambs and fascia",
+        "Stepped and coarse structural detailing"
+      ],
+      "physicalBuildVerified": false
+    }
+  },
+  "controlledScene": {
+    "date": "2026-10-02",
+    "geometry": "public/parts/geometry.json",
+    "geometrySHA256": "cc59df77484c5c0fcdd77e178dd500cfa618b2a99c6cb32d4f75b3a2eebd8330",
+    "alpha": 0.5019607843137255,
+    "displayApproximation": true,
+    "refractionValidated": false,
+    "scenes": [
+      {
+        "name": "wall",
+        "model": "outputs/transparent-flame-calibration/wall.json",
+        "modelSHA256": "efaad2f3ec7f6a3853e746932fad75e66bf576b1aee612cd293951252dee8b31",
+        "render": "outputs/transparent-flame-calibration/wall.png",
+        "renderSHA256": "71419b76987297bc79b0d68ca56dacf08c2db3cb33e861f1297759cbdb72c394"
+      },
+      {
+        "name": "transparent-flame",
+        "model": "outputs/transparent-flame-calibration/transparent-flame.json",
+        "modelSHA256": "686772e9291f8a10d67dd68e693fba9d1d5f39cd922721c7a0040a3485fbd8f4",
+        "render": "outputs/transparent-flame-calibration/transparent-flame.png",
+        "renderSHA256": "7e0e72e4379c39cf3ab9502e278fc42a138c2cb9df1c8c4dc89ac8277d8ef349"
+      },
+      {
+        "name": "hidden-flame",
+        "model": "outputs/transparent-flame-calibration/hidden-flame.json",
+        "modelSHA256": "1c2701ed25ecc5ee3851c71c2359d8e0dc07b3258a47a52496b5eb74469cef3e",
+        "render": "outputs/transparent-flame-calibration/hidden-flame.png",
+        "renderSHA256": "71419b76987297bc79b0d68ca56dacf08c2db3cb33e861f1297759cbdb72c394"
+      }
+    ],
+    "opaqueRendererUnchanged": {
+      "baselineCommit": "a5ec92c5df987887760aa53078ef9db989ee1e87",
+      "samePNGBytes": true,
+      "sha256": "71419b76987297bc79b0d68ca56dacf08c2db3cb33e861f1297759cbdb72c394"
+    }
+  },
+  "verification": {
+    "tests": 230,
+    "logs": [
+      {
+        "path": "outputs/catalog-color-calibration/tests.log",
+        "sha256": "93c8dcc427b8b9a5fe379155517ff1810c5315c84ce715f7d5eb894049c3d797"
+      },
+      {
+        "path": "outputs/catalog-color-calibration/typecheck.log",
+        "sha256": "e0579bdc04ff10efa2b9f9f6b1a2f4de224d420cb024dc8ec5d3eaef1a8e7ea6"
+      },
+      {
+        "path": "outputs/catalog-color-calibration/build.log",
+        "sha256": "fd126672091f6f597280ae3d3db1fcda5112296a1c92d22024a00abbe9851c44"
+      },
+      {
+        "path": "outputs/catalog-color-calibration/render-tests.log",
+        "sha256": "172244add5687cbda820f79c032834708e5d4978b63b193b19c7a634891064a2"
+      },
+      {
+        "path": "outputs/catalog-color-calibration/lint.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "actualTransparencyRegressions": 3,
+    "browserGPUValidated": false,
+    "refractionValidated": false,
+    "physicalBuildVerified": false
+  }
+}

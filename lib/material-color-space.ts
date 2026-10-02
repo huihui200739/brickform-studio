@@ -1,4 +1,4 @@
-import { PALETTE } from './brick-engine.ts';
+import { PALETTE, isOpaquePaletteColor } from './brick-engine.ts';
 
 export function lab(r: number, g: number, b: number) {
   const f = (v: number) => {
@@ -23,6 +23,7 @@ export function match(r: number, g: number, b: number) {
   let index = 0,
     best = Infinity;
   colors.forEach((c, i) => {
+    if (!isOpaquePaletteColor(i)) return;
     const dist =
       0.5 * (c[0] - p[0]) ** 2 + (c[1] - p[1]) ** 2 + (c[2] - p[2]) ** 2;
     if (dist < best) {

@@ -1,4 +1,4 @@
-import type { Raster } from './brick-engine.ts';
+import { isOpaquePaletteColor, type Raster } from './brick-engine.ts';
 import { colors, lab, match } from './material-color-space.ts';
 
 export type ReferenceMaterialRegion = {
@@ -205,6 +205,7 @@ export function referenceMaterials(
         }))
         .filter(
           (c) =>
+            isOpaquePaletteColor(c.color) &&
             chroma(colors[c.color]) >= 20 &&
             c.hueDifference <= 30 &&
             c.distance <= originalDistance + 3 &&

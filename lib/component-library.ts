@@ -1,6 +1,12 @@
 import type { Brick } from './brick-engine.ts';
 import { componentBricks } from './component-parts.ts';
-import { simplifiedTree, reliefStatue, simplifiedStatue, simplifiedStandingStatue, forcedVoxelSilhouette } from './semantic-templates.ts';
+import {
+  simplifiedTree,
+  reliefStatue,
+  simplifiedStatue,
+  simplifiedStandingStatue,
+  forcedVoxelSilhouette,
+} from './semantic-templates.ts';
 import type { SceneElementInstance, SceneCategory } from './scene-elements.ts';
 export type {
   SceneCategory,
@@ -56,7 +62,7 @@ export const COMPONENT_LIBRARY: LegoComponentTemplate[] = [
     tags: ['flame'],
     bboxStuds: { width: 2, depth: 2, height: 13 },
     anchor: { kind: 'surface', localPoint: [0, 0, 0] },
-    colors: [1, 7],
+    colors: [1, 7, 14],
     representation: 'component',
     build: () => componentBricks('brazier'),
     fallback: 'voxel',
@@ -68,7 +74,7 @@ export const COMPONENT_LIBRARY: LegoComponentTemplate[] = [
     tags: ['figure'],
     bboxStuds: { width: 6, depth: 5, height: 20 },
     anchor: { kind: 'ground', localPoint: [0, 0, 0] },
-    colors: [11],
+    colors: [1, 11],
     representation: 'component',
     build: () => componentBricks('statue'),
     fallback: 'relief',

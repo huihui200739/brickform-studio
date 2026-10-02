@@ -6,7 +6,10 @@ import {
   type Model,
 } from './brick-engine.ts';
 import { assemblyDiagram, orientationLabel } from './assembly-diagram.ts';
-import { procurementReport } from './purchase-inventory.ts';
+import {
+  procurementReport,
+  purchaseColorChoiceSummary,
+} from './purchase-inventory.ts';
 import {
   stageBricks,
   cleanStageName,
@@ -71,7 +74,7 @@ function purchaseTable(model: Model) {
     unverified: '待核实',
     'unsupported-color': '此颜色未收录',
   };
-  return `<section class="page"><header>BRICKFORM / 采购核对</header><h2>采购清单</h2><p>三维模型 ${report.sourceBrickCount} 件子件，对应 ${report.purchaseQuantity} 件采购单位。目录已核实 ${report.catalogConfirmed} 项，未核实 ${report.unverified} 项，颜色待替换 ${report.unsupportedColors} 项。目录记录不代表实时库存。</p>${report.assemblyStepsRequireReview ? '<p class="note">人仔躯干和腿部按已装配总成采购。后续拼装图仍分列几何子件，需复核总成安装步骤及姿态，请勿按图拆卸人仔。</p>' : ''}<table><thead><tr><th>采购零件 / 来源 LDraw 编号</th><th>BrickLink 编号</th><th>颜色</th><th>数量</th><th>目录记录</th></tr></thead><tbody>${report.lines.map((line) => `<tr><td>${esc(line.name)}<small>${esc(line.ldrawParts.join(' / '))}</small></td><td>${line.catalogUrl ? `<a href="${esc(line.catalogUrl)}">${esc(line.bricklinkId!)}</a>` : '未核实'}</td><td>${esc(PALETTE[line.color].name)}</td><td>${line.quantity}</td><td>${status[line.status]}<small>${esc(line.reason)}</small></td></tr>`).join('')}</tbody></table><p>可下载采购 CSV 查看来源零件序号、证据链接及核对日期。未核实的编号或颜色组合需购买前确认。</p></section>`;
+  return `<section class="page"><header>BRICKFORM / 采购核对</header><h2>采购清单</h2><p>三维模型 ${report.sourceBrickCount} 件子件，对应 ${report.purchaseQuantity} 件采购单位。目录已核实 ${report.catalogConfirmed} 项，未核实 ${report.unverified} 项，颜色待替换 ${report.unsupportedColors} 项。目录记录不代表实时库存。</p>${report.assemblyStepsRequireReview ? '<p class="note">人仔躯干和腿部按已装配总成采购。后续拼装图仍分列几何子件，需复核总成安装步骤及姿态，请勿按图拆卸人仔。</p>' : ''}<table><thead><tr><th>采购零件 / 来源 LDraw 编号</th><th>BrickLink 编号</th><th>颜色</th><th>数量</th><th>目录记录</th></tr></thead><tbody>${report.lines.map((line) => `<tr><td>${esc(line.name)}<small>${esc(line.ldrawParts.join(' / '))}</small></td><td>${line.catalogUrl ? `<a href="${esc(line.catalogUrl)}">${esc(line.bricklinkId!)}</a>` : '未核实'}</td><td>${esc(PALETTE[line.color].name)}${line.colorChoices.length ? `<small>目录颜色替代：${esc(purchaseColorChoiceSummary(line))}</small>` : ''}</td><td>${line.quantity}</td><td>${status[line.status]}<small>${esc(line.reason)}</small></td></tr>`).join('')}</tbody></table><p>可下载采购 CSV 查看来源零件序号、证据链接及核对日期。未核实的编号或颜色组合需购买前确认。</p></section>`;
 }
 export type ManualRange = { start: number; end: number };
 export function manualHTML(model: Model, range?: ManualRange) {

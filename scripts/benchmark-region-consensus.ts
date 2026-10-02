@@ -7,8 +7,14 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
-import type { Raster } from '../lib/brick-engine.ts';
-import { colors, lab, rgb } from '../lib/material-color-space.ts';
+import {
+  PALETTE,
+  isOpaquePaletteColor,
+  nearestColor,
+  type PaletteColor,
+  type Raster,
+} from '../lib/brick-engine.ts';
+import { colors, lab, match, rgb } from '../lib/material-color-space.ts';
 import { referenceMask } from '../lib/reference-colors.ts';
 import {
   referenceMaterials,
@@ -119,6 +125,11 @@ const baselineColors = (await import(pathToFileURL(colorFile).href)) as {
   colors: number[][];
   rgb: number[][];
 };
+const baselinePalette = (await import(pathToFileURL(paletteFile).href)) as {
+  PALETTE: PaletteColor[];
+};
+if (baselinePalette.PALETTE.length !== 14)
+  throw Error('Pinned baseline must retain its original 14-color palette.');
 const fingerprint = conversionFingerprint();
 const same = (a: ArrayLike<number>, b: ArrayLike<number>) =>
   a.length === b.length && Array.from(a).every((value, i) => value === b[i]);
@@ -178,8 +189,40 @@ const ids = [
   'temple-original',
 ];
 const cases = [];
+const baselinePaletteLength = baselinePalette.PALETTE.length;
+const prefixPalettePreserved =
+  JSON.stringify(PALETTE.slice(0, baselinePaletteLength)) ===
+  JSON.stringify(baselinePalette.PALETTE);
+const prefixRGBPreserved =
+  JSON.stringify(rgb.slice(0, baselinePaletteLength)) ===
+  JSON.stringify(baselineColors.rgb);
+const appendedCatalogOnlyColors = PALETTE.slice(baselinePaletteLength).map(
+  (color, offset) => {
+    const index = baselinePaletteLength + offset;
+    const [r, g, b] = rgb[index];
+    return {
+      index,
+      ...color,
+      opaqueInferenceEligible: isOpaquePaletteColor(index),
+      rgbMatch: nearestColor(r, g, b, true),
+      labMatch: match(r, g, b),
+    };
+  },
+);
+const appendedColorsExcluded = appendedCatalogOnlyColors.every(
+  (color) =>
+    !color.opaqueInferenceEligible &&
+    isOpaquePaletteColor(color.rgbMatch) &&
+    isOpaquePaletteColor(color.labMatch),
+);
+const opaqueCandidates = colors.flatMap((color, index) =>
+  isOpaquePaletteColor(index) ? [{ index, lab: color }] : [],
+);
 const palettePreserved =
-  JSON.stringify(rgb) === JSON.stringify(baselineColors.rgb);
+  prefixPalettePreserved &&
+  prefixRGBPreserved &&
+  baselinePalette.PALETTE.every((_, index) => isOpaquePaletteColor(index)) &&
+  appendedColorsExcluded;
 for (const id of ids) {
   const source =
     id === 'temple-standard'
@@ -232,7 +275,20 @@ for (const id of ids) {
   };
   fail(
     palettePreserved,
-    'Current palette differs from the pinned baseline palette.',
+    'Pinned palette prefix changed or an appended color entered opaque inference.',
+  );
+  const opaqueRegionChoices = [current, currentOff].every(
+    (materials) =>
+      materials.design.regions.every((region) =>
+        isOpaquePaletteColor(region.color),
+      ) &&
+      Array.from(materials.palette).every(
+        (color, pixel) => !mask[pixel] || isOpaquePaletteColor(color),
+      ),
+  );
+  fail(
+    opaqueRegionChoices,
+    'A catalog-only color entered ordinary reference-region inference.',
   );
   fail(
     same(mask, baselineMask.mask),
@@ -312,8 +368,8 @@ for (const id of ids) {
       chroma(p) >= 25 &&
       chroma(colors[prior.color]) < 5;
     const originalDistance = weightedDistance(p, colors[prior.color]);
-    const candidates = colors
-      .map((color, index) => ({
+    const candidates = opaqueCandidates
+      .map(({ lab: color, index }) => ({
         color: index,
         distance: weightedDistance(p, color),
         hueDifference: hueDifference(p, color),
@@ -481,6 +537,7 @@ for (const id of ids) {
         countedNormalizedPixels === current.design.normalizedPixels,
       witnessPixelsPreserved: changedWitnessPixels === 0,
       changedPixelsDocumented: changedUndocumentedPixels === 0,
+      opaqueRegionChoices,
       deterministicChoicesAndWitnesses: failures.length === 0,
     },
     historicalBaselinePalette,
@@ -510,6 +567,16 @@ const result = {
   baselineRuntimeDependencies:
     'Pinned material inference, color matching, palette and foreground mask; no current referenceMaterials import in the baseline module.',
   palettePreserved,
+  paletteGate: {
+    baselinePaletteLength,
+    currentPaletteLength: PALETTE.length,
+    preservedPrefixIndices: baselinePalette.PALETTE.map((_, index) => index),
+    prefixPalettePreserved,
+    prefixRGBPreserved,
+    appendedColorsExcluded,
+    opaqueCandidateIndices: opaqueCandidates.map((color) => color.index),
+    appendedCatalogOnlyColors,
+  },
   prototypeResultsSha256: prototypePath
     ? sha(readFileSync(resolve(prototypePath)))
     : undefined,
@@ -525,6 +592,8 @@ const result = {
     minimumWitnessPixels: 'max(64, 0.01 * foregroundPixels)',
     witnesses:
       'Frozen baseline matches; corrected regions never become witnesses.',
+    candidates:
+      'Opaque palette colors only; appended catalog-only colors excluded.',
   },
   scope:
     'Six cached public engine sample renders plus two exact user Temple raster fixtures. Region-palette replay only; no mesh inference, projection, conversion, purchasing or physical build.',

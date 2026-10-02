@@ -1,7 +1,5 @@
 import {
-  ASSEMBLY_PARTS,
   IDENTITY,
-  add,
   multiply,
   rotate,
   transform,
@@ -9,10 +7,10 @@ import {
   type M3,
   type V3,
 } from './assembly-catalog.ts';
-import { SPECIAL_DATA } from './special-part-data.ts';
 import { SPECIAL_PORTS } from './special-connectors.ts';
 import type { Brick } from './brick-engine.ts';
 import type { ComponentKind } from './semantic-components.ts';
+import { choosePartColor } from './part-color-policy.ts';
 const rx = (degree: number): M3 => {
   const c = Math.cos((degree * Math.PI) / 180),
     s = Math.sin((degree * Math.PI) / 180);
@@ -32,10 +30,12 @@ export function componentBricks(kind: ComponentKind): Brick[] {
     matrix: M3,
     installation: string,
   ) {
+    const choice = choosePartColor(part, color);
     const b: Brick = {
       id: bricks.length + 1,
       part,
-      color,
+      color: choice.color,
+      ...(choice.substitution ? { colorChoice: choice.substitution } : {}),
       pose: { position, matrix },
       x: 0,
       y: 0,

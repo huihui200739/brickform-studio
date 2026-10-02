@@ -13,6 +13,7 @@ import {
 import { PALETTE, type Model, type Brick } from '@/lib/brick-engine';
 
 import { viewerGeometry, viewerPose } from '@/lib/assembly-render';
+import { paletteMaterial } from '@/lib/palette-rendering';
 import {
   explodedLayers,
   visibleInPreview,
@@ -144,13 +145,15 @@ export default function AssemblyViewer({
           edgeGeometries = new Map<string, THREE.EdgesGeometry>();
         const materials: THREE.Material[] = [];
         const groups: {
-          mesh: THREE.InstancedMesh;
+          mesh: THREE.InstancedMesh | THREE.Mesh;
           parts: Brick[];
           edges: THREE.LineSegments[];
         }[] = [];
         const entries = new Map<string, Brick[]>();
         for (const b of model.bricks) {
-          const key = `${b.part}-${b.color}`;
+          // Three sorts transparent objects, but cannot sort their individual
+          // instances as the camera rotates. Give each transparent part a mesh.
+          const key = `${b.part}-${b.color}${paletteMaterial(PALETTE[b.color]).transparent ? `-${b.id}` : ''}`;
           entries.set(key, [...(entries.get(key) || []), b]);
         }
         const lineMaterial = new THREE.LineBasicMaterial({
@@ -179,24 +182,35 @@ export default function AssemblyViewer({
             edgeGeometries.set(b.part, new THREE.EdgesGeometry(geometry, 35));
           }
           const material = new THREE.MeshStandardMaterial({
-            color: PALETTE[b.color].hex,
+            ...paletteMaterial(PALETTE[b.color]),
             roughness: 0.27,
             metalness: 0,
           });
           materials.push(material);
-          const mesh = new THREE.InstancedMesh(
-            geometry,
-            material,
-            parts.length,
-          );
-          mesh.castShadow = true;
+          const mesh = material.transparent
+            ? new THREE.Mesh(geometry, material)
+            : new THREE.InstancedMesh(geometry, material, parts.length);
+          if (!(mesh instanceof THREE.InstancedMesh))
+            mesh.matrixAutoUpdate = false;
+          // The default shadow pass treats alpha as opaque. Avoid inventing a
+          // solid flame shadow; colored transmission shadows are not modeled.
+          mesh.castShadow = !material.transparent;
           mesh.receiveShadow = true;
           mesh.frustumCulled = false;
           scene.add(mesh);
+          const edgeMaterial = material.transparent
+            ? new THREE.LineBasicMaterial({
+                color: '#383523',
+                transparent: true,
+                opacity: 0.16 * material.opacity,
+                depthWrite: false,
+              })
+            : lineMaterial;
+          if (edgeMaterial !== lineMaterial) materials.push(edgeMaterial);
           const edges = parts.map(() => {
             const edge = new THREE.LineSegments(
               edgeGeometries.get(b.part),
-              lineMaterial,
+              edgeMaterial,
             );
             edge.matrixAutoUpdate = false;
             scene.add(edge);
@@ -257,7 +271,9 @@ export default function AssemblyViewer({
                 visibleInPreview(b, live.current) &&
                 (!live.current.exploded || layout.offsets.has(b.step ?? 0));
               if (!visible) {
-                g.mesh.setMatrixAt(i, zero);
+                if (g.mesh instanceof THREE.InstancedMesh)
+                  g.mesh.setMatrixAt(i, zero);
+                else g.mesh.visible = false;
                 g.edges[i].visible = false;
                 return;
               }
@@ -268,11 +284,17 @@ export default function AssemblyViewer({
                 g.mesh.geometry.computeBoundingBox();
               partBounds.copy(g.mesh.geometry.boundingBox!).applyMatrix4(m);
               visibleBounds.union(partBounds);
-              g.mesh.setMatrixAt(i, m);
+              if (g.mesh instanceof THREE.InstancedMesh)
+                g.mesh.setMatrixAt(i, m);
+              else {
+                g.mesh.matrix.copy(m);
+                g.mesh.visible = true;
+              }
               g.edges[i].matrix.copy(m);
               g.edges[i].visible = true;
             });
-            g.mesh.instanceMatrix.needsUpdate = true;
+            if (g.mesh instanceof THREE.InstancedMesh)
+              g.mesh.instanceMatrix.needsUpdate = true;
           }
         };
         const alignLabels = (direction: number[]) => {
@@ -394,7 +416,9 @@ export default function AssemblyViewer({
             l.texture.dispose();
             l.material.dispose();
           });
-          groups.forEach((g) => g.mesh.dispose());
+          groups.forEach((g) => {
+            if (g.mesh instanceof THREE.InstancedMesh) g.mesh.dispose();
+          });
           floor.geometry.dispose();
           (floor.material as THREE.Material).dispose();
           renderer.dispose();

@@ -1,0 +1,273 @@
+{
+  "baseline": "a5ec92c",
+  "cases": [
+    {
+      "id": "temple-original",
+      "resolution": 28,
+      "beforeSha256": "2da4de820b12a1258c1e885e253fc1f66d695a2cbcba68366fb52b5491672b55",
+      "afterSha256": "a7e36c603db6a44a6290f54a7c7b42ef2058ea6a17994b9a49c578574a757f42",
+      "bricks": 2953,
+      "colorSubstitutions": [
+        {
+          "brickId": 2942,
+          "part": "4497",
+          "old": 11,
+          "selected": 1,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=4497",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        },
+        {
+          "brickId": 2948,
+          "part": "6126b",
+          "old": 6,
+          "selected": 14,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        },
+        {
+          "brickId": 2953,
+          "part": "6126b",
+          "old": 6,
+          "selected": 14,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        }
+      ],
+      "geometryAndOtherColorsUnchanged": true,
+      "unexpectedChanges": []
+    },
+    {
+      "id": "temple-original",
+      "resolution": 36,
+      "beforeSha256": "afd163d10c31df516c527acd10bd8e97f9a98077ae57f13a7a32be9277592561",
+      "afterSha256": "1e262db5f8b0297bf131d43f95cf4dedb890cec0a68326d124011ed377398189",
+      "bricks": 4986,
+      "colorSubstitutions": [
+        {
+          "brickId": 4975,
+          "part": "4497",
+          "old": 11,
+          "selected": 1,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=4497",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        },
+        {
+          "brickId": 4981,
+          "part": "6126b",
+          "old": 6,
+          "selected": 14,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        },
+        {
+          "brickId": 4986,
+          "part": "6126b",
+          "old": 6,
+          "selected": 14,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        }
+      ],
+      "geometryAndOtherColorsUnchanged": true,
+      "unexpectedChanges": []
+    },
+    {
+      "id": "temple-original",
+      "resolution": 48,
+      "beforeSha256": "ff043cccc3dfb9c9e847ba5c3a44dc615b54a34e34db159aefd76e559817c512",
+      "afterSha256": "1db33bf63d090f824d3610253a46a1b54950bc316be45d292169af3b5f8c1580",
+      "bricks": 9695,
+      "colorSubstitutions": [
+        {
+          "brickId": 9684,
+          "part": "4497",
+          "old": 11,
+          "selected": 1,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=4497",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        },
+        {
+          "brickId": 9690,
+          "part": "6126b",
+          "old": 6,
+          "selected": 14,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        },
+        {
+          "brickId": 9695,
+          "part": "6126b",
+          "old": 6,
+          "selected": 14,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        }
+      ],
+      "geometryAndOtherColorsUnchanged": true,
+      "unexpectedChanges": []
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 28,
+      "beforeSha256": "82ae5e322ada558d51a1b60231759482de2e7fe68e11258853bee45f57bb50af",
+      "afterSha256": "f2caaa764ad87a90f8a92b7857befbaf315db3aaa938e4a0c6744c2dcbaae563",
+      "bricks": 2588,
+      "colorSubstitutions": [
+        {
+          "brickId": 2568,
+          "part": "4497",
+          "old": 11,
+          "selected": 1,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=4497",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        },
+        {
+          "brickId": 2583,
+          "part": "6126b",
+          "old": 6,
+          "selected": 14,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        },
+        {
+          "brickId": 2588,
+          "part": "6126b",
+          "old": 6,
+          "selected": 14,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        }
+      ],
+      "geometryAndOtherColorsUnchanged": true,
+      "unexpectedChanges": []
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 36,
+      "beforeSha256": "059fc907600aa91d4d45a37f50ad95a8dfdecc5381abf3b044ba291d365bcf19",
+      "afterSha256": "37f9142bf4d1be8193c2dbe570dd7a97ed3015cd22197e1350f24013e20a122a",
+      "bricks": 4414,
+      "colorSubstitutions": [
+        {
+          "brickId": 4394,
+          "part": "4497",
+          "old": 11,
+          "selected": 1,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=4497",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        },
+        {
+          "brickId": 4409,
+          "part": "6126b",
+          "old": 6,
+          "selected": 14,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        },
+        {
+          "brickId": 4414,
+          "part": "6126b",
+          "old": 6,
+          "selected": 14,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        }
+      ],
+      "geometryAndOtherColorsUnchanged": true,
+      "unexpectedChanges": []
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 48,
+      "beforeSha256": "a3e9cb92e169c6929b636b69bcbf1c1b64172dc044940002ac985a85915208dd",
+      "afterSha256": "a84c6ecb5976c5285d7d6c3fe38dcb74295e6689d39858506dbc2945888001fd",
+      "bricks": 8609,
+      "colorSubstitutions": [
+        {
+          "brickId": 8589,
+          "part": "4497",
+          "old": 11,
+          "selected": 1,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=4497",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        },
+        {
+          "brickId": 8604,
+          "part": "6126b",
+          "old": 6,
+          "selected": 14,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        },
+        {
+          "brickId": 8609,
+          "part": "6126b",
+          "old": 6,
+          "selected": 14,
+          "source": {
+            "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b",
+            "checkedAt": "2026-10-02",
+            "kind": "bricklink-catalog"
+          }
+        }
+      ],
+      "geometryAndOtherColorsUnchanged": true,
+      "unexpectedChanges": []
+    }
+  ],
+  "passed": true,
+  "replayedOn": "2026-10-02",
+  "sourceEvidenceSha256": "7e0d29ce27a828438a7f7593fbf7b04b6eb6db56b0bf53ea3ad60cc3f877c740",
+  "date": "2026-10-02"
+}

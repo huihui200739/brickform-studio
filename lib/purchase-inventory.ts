@@ -1,4 +1,5 @@
 import { PALETTE, PARTS, type Brick } from './brick-engine.ts';
+import type { PartColorSubstitution } from './part-color-policy.ts';
 
 /** A bounded audit snapshot, not a live stock or physical-build check. */
 export const PURCHASE_CATALOG_CHECKED_AT = '2026-10-02';
@@ -28,6 +29,7 @@ export type PurchaseLine = {
   ldrawParts: string[];
   brickIds: number[];
   assembled: boolean;
+  colorChoices: Array<PartColorSubstitution & { brickId: number }>;
   bricklinkId?: string;
   bricklinkColor?: number;
   status: PurchaseStatus;
@@ -112,6 +114,7 @@ for (const [ldrawId, bricklinkId] of Object.entries({
 PURCHASE_PARTS['6126b'] = {
   bricklinkId: '6126b',
   mappingSource: catalogSource('6126b'),
+  confirmedLegoColors: [182],
   unsupportedLegoColors: [106],
   colorSource: catalogSource('6126b'),
 };
@@ -151,12 +154,30 @@ const COLOR_IDS: Record<number, { bricklink: number; ldraw: number }> = {
   194: { bricklink: 86, ldraw: 71 },
   199: { bricklink: 85, ldraw: 72 },
   151: { bricklink: 48, ldraw: 378 },
+  182: { bricklink: 98, ldraw: 57 },
 };
 export const PURCHASE_COLOR_SOURCE = {
   url: 'https://v2.bricklink.com/en-us/catalog/color-guide',
   checkedAt: PURCHASE_CATALOG_CHECKED_AT,
   kind: 'bricklink-catalog',
 } satisfies PurchaseSource;
+
+/** Only checked positive and negative catalog evidence can drive selection.
+ * An unknown entry or absent color stays unverified, rather than being rejected. */
+export function partColorEvidence(part: string) {
+  const entry = PURCHASE_PARTS[part];
+  if (!entry?.colorSource) return undefined;
+  return {
+    confirmedPaletteColors: PALETTE.flatMap((color, index) =>
+      entry.confirmedLegoColors?.includes(color.lego) &&
+      COLOR_IDS[color.lego]?.ldraw === color.ldraw
+        ? [index]
+        : [],
+    ),
+    unsupportedLegoColors: [...(entry.unsupportedLegoColors ?? [])],
+    source: { ...entry.colorSource },
+  };
+}
 
 const ASSEMBLIES = [
   {
@@ -212,6 +233,9 @@ function lineFor(
     ldrawParts: [...new Set(members.map((b) => b.part))].sort(),
     brickIds: members.map((b) => b.id).sort((a, b) => a - b),
     assembled,
+    colorChoices: members.flatMap((b) =>
+      b.colorChoice ? [{ ...b.colorChoice, brickId: b.id }] : [],
+    ),
     bricklinkId: entry?.bricklinkId,
     bricklinkColor,
     status,
@@ -300,12 +324,19 @@ export function purchaseInventory(bricks: readonly Brick[]): PurchaseLine[] {
     if (line) {
       line.quantity++;
       line.brickIds.push(...unit.brickIds);
-    } else grouped.set(key, { ...unit, brickIds: [...unit.brickIds] });
+      line.colorChoices.push(...unit.colorChoices);
+    } else
+      grouped.set(key, {
+        ...unit,
+        brickIds: [...unit.brickIds],
+        colorChoices: [...unit.colorChoices],
+      });
   }
   return [...grouped.values()]
     .map((line) => ({
       ...line,
       brickIds: line.brickIds.sort((a, b) => a - b),
+      colorChoices: line.colorChoices.sort((a, b) => a.brickId - b.brickId),
     }))
     .sort(
       (a, b) =>
@@ -344,6 +375,19 @@ export function procurementReport(
   };
 }
 
+export function purchaseColorChoiceSummary(
+  line: Pick<PurchaseLine, 'colorChoices'>,
+) {
+  return [
+    ...new Set(
+      line.colorChoices.map(
+        (choice) =>
+          `${PALETTE[choice.requestedColor]?.name ?? choice.requestedColor} → ${PALETTE[choice.selectedColor]?.name ?? choice.selectedColor}`,
+      ),
+    ),
+  ].join('；');
+}
+
 /** Quoted columns keep traceability and evidence intact when exported to CSV. */
 export function purchaseInventoryCSV(bricks: readonly Brick[]): string {
   const quote = (value: string | number | undefined) =>
@@ -361,6 +405,8 @@ export function purchaseInventoryCSV(bricks: readonly Brick[]): string {
     '核对说明',
     '来源',
     '核对日期',
+    '生成时颜色替代',
+    '颜色替代依据',
   ];
   const rows = purchaseInventory(bricks).map((line) => {
     const color = PALETTE[line.color];
@@ -377,6 +423,19 @@ export function purchaseInventoryCSV(bricks: readonly Brick[]): string {
       line.reason,
       line.sourceUrl,
       line.checkedAt,
+      line.colorChoices
+        .map(
+          (c) =>
+            `#${c.brickId}: ${PALETTE[c.requestedColor]?.name ?? c.requestedColor} → ${PALETTE[c.selectedColor]?.name ?? c.selectedColor}`,
+        )
+        .join(' / '),
+      [
+        ...new Set(
+          line.colorChoices.map(
+            (c) => `${c.source.url} (${c.source.checkedAt})`,
+          ),
+        ),
+      ].join(' / '),
     ];
   });
   return (

@@ -53,6 +53,7 @@ import {
   validateModel,
   toLDraw,
   PALETTE,
+  isOpaquePaletteColor,
   type Raster,
   type Options,
   type Model,
@@ -71,6 +72,7 @@ import { csv, download, manualHTML } from '@/lib/manual';
 import {
   procurementReport,
   purchaseInventoryCSV,
+  purchaseColorChoiceSummary,
 } from '@/lib/purchase-inventory';
 const backgroundItems = [
   { value: 'auto', label: '自动去除背景' },
@@ -666,21 +668,23 @@ export default function Home() {
                 value={String(duck.bodyColor)}
                 onValueChange={(v) => changeDuck({ bodyColor: Number(v) })}
               >
-                {PALETTE.map((p, i) => (
-                  <label
-                    title={p.name}
-                    className={duck.bodyColor === i ? 'selected' : ''}
-                    key={p.name}
-                    style={{ '--swatch': p.hex } as React.CSSProperties}
-                    htmlFor={`palette-${i}`}
-                  >
-                    <RadioGroupItem
-                      id={`palette-${i}`}
-                      value={String(i)}
-                      aria-label={p.name}
-                    />
-                  </label>
-                ))}
+                {PALETTE.map((p, i) =>
+                  isOpaquePaletteColor(i) ? (
+                    <label
+                      title={p.name}
+                      className={duck.bodyColor === i ? 'selected' : ''}
+                      key={p.name}
+                      style={{ '--swatch': p.hex } as React.CSSProperties}
+                      htmlFor={`palette-${i}`}
+                    >
+                      <RadioGroupItem
+                        id={`palette-${i}`}
+                        value={String(i)}
+                        aria-label={p.name}
+                      />
+                    </label>
+                  ) : null,
+                )}
               </RadioGroup>
               <div className="field-title" id="beak-color-label">
                 鸭嘴配色
@@ -1180,6 +1184,12 @@ export default function Home() {
                                   />
                                   {PALETTE[p.color].name}
                                 </span>
+                                {p.colorChoices.length > 0 && (
+                                  <small>
+                                    目录颜色替代：
+                                    {purchaseColorChoiceSummary(p)}
+                                  </small>
+                                )}
                               </TableCell>
                               <TableCell className="quantity">
                                 {p.quantity}

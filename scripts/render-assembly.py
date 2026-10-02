@@ -1,9 +1,12 @@
 """Offline geometry inspection, independent of the website or its browser UI."""
 import json, sys, numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image
+from render_transparency import composite_fragments
 model=json.load(open(sys.argv[1]))
 parts=json.load(open('public/parts/geometry.json'))
-palette=['#F4F4F4','#242424','#C91A09','#F2CD37','#0055BF','#237841','#FE8A18','#D7BA8C','#897D62','#5F3109','#352100','#969696','#646464','#708E7C']
+palette=['#F4F4F4','#242424','#C91A09','#F2CD37','#0055BF','#237841','#FE8A18','#D7BA8C','#897D62','#5F3109','#352100','#969696','#646464','#708E7C','#F08F1C']
+# Official LDraw display alpha, not a measured refraction/absorption model.
+opacity=[1.0]*14+[128/255]
 view=sys.argv[3] if len(sys.argv)>3 else 'hero'
 views={'hero':[-1.3,.8,1.5],'front':[.0001,.05,1],'side':[-1,.04,0],'back':[.0001,.08,-1],'top':[.0001,1,.01]}
 if view not in views:raise ValueError('Unknown inspection view: '+view)
@@ -13,6 +16,8 @@ up=np.cross(camera,right)
 light=np.array([-.4,1,.6]);light/=np.linalg.norm(light)
 triangles=[]
 lines=[]
+transparent_triangles=[]
+transparent_lines=[]
 edge_cache={}
 for part,g in parts.items():
     ps=np.array(g['positions']).reshape(-1,3,3);ns=np.array(g['normals']).reshape(-1,3,3).mean(axis=1)
@@ -36,13 +41,21 @@ for b in model['bricks']:
     if len(edge_cache[b['part']]):
         es=edge_cache[b['part']].reshape(-1,3)
         es=(es@matrix.T+np.array(b['pose']['position']))*np.array([1,-1,1])
-        lines.extend(np.column_stack([es@right,-es@up,es@camera]).reshape(-1,2,3))
+        part_lines=np.column_stack([es@right,-es@up,es@camera]).reshape(-1,2,3)
+        if opacity[b['color']]<1:
+            transparent_lines.extend((line,opacity[b['color']]) for line in part_lines)
+        else:
+            lines.extend(part_lines)
     color=np.array([int(palette[b['color']][i:i+2],16) for i in [1,3,5]])
     for points,n in zip(projected,ns):
         if n@camera<-.05:continue
         brightness=.68+.32*max(0,n@light)
-        triangles.append((points,tuple(np.clip(color*brightness,0,255).astype(int))))
-allpoints=np.vstack([t[0] for t in triangles]);mi=allpoints[:,:2].min(axis=0);ma=allpoints[:,:2].max(axis=0)
+        shaded=tuple(np.clip(color*brightness,0,255).astype(int))
+        if opacity[b['color']]<1:
+            transparent_triangles.append((points,shaded,opacity[b['color']]))
+        else:
+            triangles.append((points,shaded))
+allpoints=np.vstack([t[0] for t in triangles+transparent_triangles]);mi=allpoints[:,:2].min(axis=0);ma=allpoints[:,:2].max(axis=0)
 W=max(400,min(2400,int(sys.argv[4]))) if len(sys.argv)>4 else 1600
 H=round(W*1500/1600);pad=W*.1;scale=min((W-pad)/(ma[0]-mi[0]),(H-pad)/(ma[1]-mi[1]));offset=np.array([W/2,H/2])-(ma+mi)/2*scale
 pixels=np.full((H,W,3),[237,240,244],dtype=np.uint8);depth=np.full((H,W),-np.inf)
@@ -67,4 +80,36 @@ for line in lines:
     visible=z>=depth[xy[:,1],xy[:,0]]-.15
     xy=xy[visible]
     pixels[xy[:,1],xy[:,0]]=(pixels[xy[:,1],xy[:,0]]*.82).astype(np.uint8)
+# Collect translucent fragments only after the opaque depth buffer is final.
+# Every pixel is composed back to front, rather than sorting triangle centers
+# (which is incorrect for overlapping or intersecting transparent parts).
+fragments=[]
+for pts,col,alpha in transparent_triangles:
+    p=pts[:,:2]*scale+offset
+    lo=np.maximum(np.floor(p.min(axis=0)).astype(int),0);hi=np.minimum(np.ceil(p.max(axis=0)).astype(int),[W-1,H-1])
+    if np.any(hi<lo):continue
+    x,y=np.meshgrid(np.arange(lo[0],hi[0]+1)+.5,np.arange(lo[1],hi[1]+1)+.5)
+    a,b,c=p;den=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1])
+    if abs(den)<1e-8:continue
+    wa=((b[1]-c[1])*(x-c[0])+(c[0]-b[0])*(y-c[1]))/den
+    wb=((c[1]-a[1])*(x-c[0])+(a[0]-c[0])*(y-c[1]))/den
+    wc=1-wa-wb;z=wa*pts[0,2]+wb*pts[1,2]+wc*pts[2,2]
+    sub=depth[lo[1]:hi[1]+1,lo[0]:hi[0]+1]
+    mask=(wa>=-1e-5)&(wb>=-1e-5)&(wc>=-1e-5)&(z>sub)
+    rows,cols=np.nonzero(mask)
+    if len(rows):
+        fragments.append(((rows+lo[1])*W+cols+lo[0],z[mask],col,alpha))
+# Transparent feature edges are fragments too, so opaque geometry hides them
+# and a nearer transparent part tints them instead of drawing on top of it.
+for line,alpha in transparent_lines:
+    p=line[:,:2]*scale+offset
+    steps=max(2,int(np.max(np.abs(p[1]-p[0])))+1)
+    t=np.linspace(0,1,steps);xy=np.round(p[0]+t[:,None]*(p[1]-p[0])).astype(int)
+    z=line[0,2]+t*(line[1,2]-line[0,2])
+    valid=(xy[:,0]>=0)&(xy[:,0]<W)&(xy[:,1]>=0)&(xy[:,1]<H)
+    xy=xy[valid];z=z[valid]
+    visible=z>=depth[xy[:,1],xy[:,0]]-.15
+    xy=xy[visible];z=z[visible]
+    if len(xy):fragments.append((xy[:,1]*W+xy[:,0],z,(40,37,25),.18*alpha))
+composite_fragments(pixels,fragments)
 Image.fromarray(pixels).resize((W//2,H//2),Image.Resampling.LANCZOS).save(sys.argv[2])

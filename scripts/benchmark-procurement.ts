@@ -85,6 +85,43 @@ const coreEvidence = [
     'Primary catalog Known Colors; recorded production/color evidence, no inventory claim.',
 }));
 const coreById = new Map(coreEvidence.map((entry) => [entry.id, entry]));
+// Independent positive/negative catalog observations for the two generated
+// components. Do not use the production color-selection policy as an oracle.
+const selectedColorEvidence = [
+  {
+    id: '6126b',
+    requestedColor: 6,
+    requestedLegoColor: 106,
+    selectedColor: 14,
+    selectedLegoColor: 182,
+    selectedLDrawColor: 57,
+    selectedBrickLinkColor: 98,
+    confirmedLegoColors: [182],
+    unsupportedLegoColors: [106],
+    sourceUrl: 'https://www.bricklink.com/v2/catalog/catalogitem.page?P=6126b',
+    checkedAt: '2026-10-02',
+    evidence:
+      'Primary catalog Known Colors records Trans-Orange, omits Bright Orange; no inventory claim.',
+  },
+  {
+    id: '4497',
+    requestedColor: 11,
+    requestedLegoColor: 194,
+    selectedColor: 1,
+    selectedLegoColor: 26,
+    selectedLDrawColor: 0,
+    selectedBrickLinkColor: 11,
+    confirmedLegoColors: [26, 28, 192, 308],
+    unsupportedLegoColors: [194],
+    sourceUrl: 'https://www.bricklink.com/v2/catalog/catalogitem.page?P=4497',
+    checkedAt: '2026-10-02',
+    evidence:
+      'Primary catalog Known Colors records Black, omits Light Bluish Gray; no inventory claim.',
+  },
+];
+const selectedColorByPart = new Map(
+  selectedColorEvidence.map((entry) => [entry.id, entry]),
+);
 const assemblies: Record<
   string,
   { members: Record<string, number>; sourceUrl: string }
@@ -119,6 +156,107 @@ const times = (counts: Record<string, number>, quantity: number) =>
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([part, count]) => [part, count * quantity]),
   );
+const choiceRecord = (
+  part: string,
+  choice: PurchaseLine['colorChoices'][number],
+) => ({
+  brickId: choice.brickId,
+  part,
+  requestedColor: choice.requestedColor,
+  selectedColor: choice.selectedColor,
+  reason: choice.reason,
+  source: {
+    url: choice.source?.url,
+    checkedAt: choice.source?.checkedAt,
+    kind: choice.source?.kind,
+  },
+});
+const sortedChoices = (choices: ReturnType<typeof choiceRecord>[]) =>
+  [...choices].sort((a, b) => a.brickId - b.brickId);
+
+// Imported legacy colors remain explicit negative observations. Unknown
+// combinations remain unverified and are not silently recolored by purchasing.
+const controls = [
+  ...selectedColorEvidence.map((entry) => ({
+    id: `legacy-${entry.id}`,
+    part: entry.id,
+    color: entry.requestedColor,
+    status: 'unsupported-color',
+    sourceUrl: entry.sourceUrl,
+  })),
+  { id: 'unknown-part', part: 'unknown-part', color: 11, status: 'unverified' },
+  { id: 'unreviewed-part', part: '15068', color: 11, status: 'unverified' },
+  {
+    id: 'unreviewed-flame-color',
+    part: '6126b',
+    color: 11,
+    status: 'unverified',
+  },
+  {
+    id: 'unreviewed-core-color',
+    part: '3010',
+    color: 10,
+    status: 'unverified',
+  },
+  { id: 'invalid-color', part: '3001', color: 999, status: 'unverified' },
+  { id: 'invalid-color-nan', part: '3001', color: NaN, status: 'unverified' },
+  ...['constructor', '__proto__', 'toString'].map((part) => ({
+    id: `unknown-${part}`,
+    part,
+    color: 11,
+    status: 'unverified',
+  })),
+].map((control) => {
+  const brick: Brick = {
+    id: 1,
+    part: control.part,
+    color: control.color,
+    x: 0,
+    y: 0,
+    z: 0,
+    w: 1,
+    d: 1,
+    h: 1,
+  };
+  const before = JSON.stringify(brick);
+  const report = procurementReport([brick]);
+  const [line] = report.lines;
+  const failures: string[] = [];
+  if (
+    report.lines.length !== 1 ||
+    line.status !== control.status ||
+    !Object.is(line.color, control.color) ||
+    line.colorChoices.length !== 0 ||
+    !same(line.brickIds, [brick.id]) ||
+    report.stockChecked !== false ||
+    JSON.stringify(brick) !== before
+  )
+    failures.push(
+      'Legacy/unknown control changed color, status, trace or source.',
+    );
+  if (
+    'sourceUrl' in control &&
+    (line.colorSource?.url !== control.sourceUrl ||
+      line.colorSource?.kind !== 'bricklink-catalog' ||
+      line.checkedAt !== '2026-10-02' ||
+      !line.reason.includes('Known Colors 未收录') ||
+      !line.reason.includes('不代表不存在或缺货'))
+  )
+    failures.push(
+      'Legacy negative control lacks dated, bounded catalog evidence.',
+    );
+  return {
+    id: control.id,
+    part: control.part,
+    color: Number.isNaN(control.color) ? 'NaN' : control.color,
+    expectedStatus: control.status,
+    status: line.status,
+    unchanged: JSON.stringify(brick) === before,
+    colorChoices: line.colorChoices,
+    passed: failures.length === 0,
+    failures,
+  };
+});
 
 const cases = support.cases.map((row) => {
   const modelPath = row.id.startsWith('temple-')
@@ -150,6 +288,75 @@ const cases = support.cases.map((row) => {
   );
   const report = procurementReport(model);
   const csv = purchaseInventoryCSV(model.bricks);
+  const sourceColorChoices = sortedChoices(
+    model.bricks.flatMap((brick) =>
+      brick.colorChoice
+        ? [
+            choiceRecord(brick.part, {
+              ...brick.colorChoice,
+              brickId: brick.id,
+            }),
+          ]
+        : [],
+    ),
+  );
+  const purchaseColorChoices = sortedChoices(
+    report.lines.flatMap((line) =>
+      line.colorChoices.map((choice) => choiceRecord(line.part, choice)),
+    ),
+  );
+  const everySourceColorChoiceTracedExactlyOnce =
+    same(sourceColorChoices, purchaseColorChoices) &&
+    new Set(purchaseColorChoices.map((choice) => choice.brickId)).size ===
+      sourceColorChoices.length;
+  check(
+    everySourceColorChoiceTracedExactlyOnce,
+    'Grouped purchase lines lose, duplicate or change a source color-choice trace.',
+  );
+  let checkedGeneratedColorChoices = 0;
+  if (row.id.startsWith('temple-'))
+    for (const [part, quantity] of [
+      ['6126b', 2],
+      ['4497', 1],
+    ] as const)
+      check(
+        model.bricks.filter((brick) => brick.part === part).length === quantity,
+        `Final Temple must retain ${quantity} generated ${part} color-choice witnesses.`,
+      );
+  for (const brick of model.bricks) {
+    const evidence = selectedColorByPart.get(brick.part);
+    if (!evidence) {
+      check(
+        !brick.colorChoice,
+        `Brick ${brick.id}/${brick.part}: an unreviewed combination acquired color-choice provenance.`,
+      );
+      continue;
+    }
+    checkedGeneratedColorChoices++;
+    const expected: NonNullable<Brick['colorChoice']> = {
+      requestedColor: evidence.requestedColor,
+      selectedColor: evidence.selectedColor,
+      reason: 'reviewed-unsupported-catalog-color',
+      source: {
+        url: evidence.sourceUrl,
+        checkedAt: evidence.checkedAt,
+        kind: 'bricklink-catalog',
+      },
+    };
+    check(
+      brick.color === evidence.selectedColor &&
+        !!brick.colorChoice &&
+        same(
+          choiceRecord(brick.part, { ...brick.colorChoice, brickId: brick.id }),
+          choiceRecord(brick.part, { ...expected, brickId: brick.id }),
+        ) &&
+        PALETTE[evidence.requestedColor]?.lego ===
+          evidence.requestedLegoColor &&
+        PALETTE[brick.color]?.lego === evidence.selectedLegoColor &&
+        PALETTE[brick.color]?.ldraw === evidence.selectedLDrawColor,
+      `Brick ${brick.id}/${brick.part}: generated color or provenance differs from the independent catalog observation.`,
+    );
+  }
   const traceIds = report.lines.flatMap((line) => line.brickIds);
   check(
     same(sorted(traceIds), sorted(model.bricks.map((b) => b.id))),
@@ -196,6 +403,7 @@ const cases = support.cases.map((row) => {
     'Report must not claim live stock verification.',
   );
   let checkedCoreClaims = 0;
+  let checkedSelectedColorClaims = 0;
   const lineFailures = new Map<PurchaseLine, string[]>();
   for (const line of report.lines) {
     const lineChecks: string[] = [];
@@ -208,6 +416,38 @@ const cases = support.cases.map((row) => {
       'Trace includes an unknown source ID.',
     );
     const knownMembers = members.filter((brick): brick is Brick => !!brick);
+    const memberColorChoices = sortedChoices(
+      knownMembers.flatMap((brick) =>
+        brick.colorChoice
+          ? [
+              choiceRecord(brick.part, {
+                ...brick.colorChoice,
+                brickId: brick.id,
+              }),
+            ]
+          : [],
+      ),
+    );
+    fail(
+      same(
+        sortedChoices(
+          line.colorChoices.map((choice) => choiceRecord(line.part, choice)),
+        ),
+        memberColorChoices,
+      ),
+      'Grouped line does not conserve every member color-choice ID, request, selection and provenance.',
+    );
+    for (const choice of line.colorChoices) {
+      const brick = byId.get(choice.brickId);
+      fail(
+        !!brick?.colorChoice &&
+          line.brickIds.includes(choice.brickId) &&
+          choice.requestedColor !== choice.selectedColor &&
+          choice.selectedColor === brick.color &&
+          choice.selectedColor === line.color,
+        `Color-choice trace ${choice.brickId} is spurious, unchanged or has the wrong selected color.`,
+      );
+    }
     fail(
       Number.isInteger(line.quantity) && line.quantity > 0,
       'Invalid purchase quantity.',
@@ -319,7 +559,34 @@ const cases = support.cases.map((row) => {
           'Core catalog source does not match the reviewed ledger.',
         );
       }
+      const selected = selectedColorByPart.get(line.part);
+      if (selected) {
+        checkedSelectedColorClaims++;
+        fail(
+          line.color === selected.selectedColor &&
+            PALETTE[line.color]?.lego === selected.selectedLegoColor &&
+            PALETTE[line.color]?.ldraw === selected.selectedLDrawColor &&
+            line.bricklinkColor === selected.selectedBrickLinkColor &&
+            line.bricklinkId === selected.id,
+          'Selected component color namespaces differ from the independent positive observation.',
+        );
+        fail(
+          line.colorSource?.url === selected.sourceUrl &&
+            line.mappingSource?.url === selected.sourceUrl &&
+            line.mappingSource?.kind === 'bricklink-catalog' &&
+            line.sourceUrl === selected.sourceUrl &&
+            line.checkedAt === selected.checkedAt &&
+            line.colorSource?.checkedAt === selected.checkedAt &&
+            line.mappingSource?.checkedAt === selected.checkedAt,
+          'Selected component lacks its dated primary catalog positive source.',
+        );
+      }
     }
+    if (selectedColorByPart.has(line.part))
+      fail(
+        line.status === 'catalog-confirmed',
+        'Generated reviewed component remains an unsupported or unverified purchase combination.',
+      );
     if (line.status === 'unsupported-color') {
       fail(
         !!line.colorSource && line.checkedAt === PURCHASE_CATALOG_CHECKED_AT,
@@ -392,6 +659,12 @@ const cases = support.cases.map((row) => {
     stockChecked: report.stockChecked,
     physicalBuildVerified: false,
     checkedCoreClaims,
+    checkedSelectedColorClaims,
+    checkedGeneratedColorChoices,
+    everySourceColorChoiceTracedExactlyOnce,
+    changedSourceBricks: sourceColorChoices.length,
+    sourceColorChoices,
+    purchaseColorChoices,
     csvSha256: sha(csv),
     lines: report.lines.map((line) => ({
       ...line,
@@ -414,7 +687,9 @@ for (const row of cases) {
       `A final model changed during procurement audit: ${row.modelPath}`,
     );
 }
-const passed = cases.every((row) => row.passed);
+const passed =
+  cases.every((row) => row.passed) &&
+  controls.every((control) => control.passed);
 const output = {
   date: '2026-10-02',
   conversionFingerprint: current,
@@ -422,6 +697,8 @@ const output = {
   scope:
     'Independent procurement/traceability audit of the 12 exact final models pinned by support-results.json. No regeneration, new catalog lookup, substitutions or model edits.',
   catalogEvidence: coreEvidence,
+  selectedColorEvidence,
+  compatibilityControls: controls,
   cases,
   passed,
   procurementReady: false,
@@ -443,6 +720,25 @@ console.log(
     unverified: cases.reduce((n, row) => n + row.unverified, 0),
     unsupportedColors: cases.reduce((n, row) => n + row.unsupportedColors, 0),
     assembledQuantity: cases.reduce((n, row) => n + row.assembledQuantity, 0),
+    changedSourceBricks: cases.reduce(
+      (n, row) => n + row.changedSourceBricks,
+      0,
+    ),
+    tracedColorChoices: cases.reduce(
+      (n, row) => n + row.purchaseColorChoices.length,
+      0,
+    ),
+    compatibilityControls: controls.length,
+    failures: [
+      ...cases.flatMap((row) =>
+        row.failures.map(
+          (failure) => `${row.id}:${row.resolution}: ${failure}`,
+        ),
+      ),
+      ...controls.flatMap((control) =>
+        control.failures.map((failure) => `${control.id}: ${failure}`),
+      ),
+    ],
   }),
 );
 if (!passed) process.exitCode = 1;

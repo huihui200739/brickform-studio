@@ -12,6 +12,7 @@ import {
   LoaderCircle,
 } from 'lucide-react';
 import { PALETTE, type Model } from '@/lib/brick-engine';
+import { paletteMaterial } from '@/lib/palette-rendering';
 export default function ModelViewer({
   model,
   layer,
@@ -132,15 +133,37 @@ export default function ModelViewer({
       bodies: THREE.InstancedMesh;
       studs: THREE.InstancedMesh;
     }[] = [];
+    const transparentParts: {
+      brick: Model['bricks'][number];
+      body: THREE.Mesh;
+      studs: THREE.Mesh[];
+    }[] = [];
     PALETTE.forEach((color, index) => {
       const bricks = model.bricks.filter((b) => b.color === index);
       if (!bricks.length) return;
       const mat = new THREE.MeshStandardMaterial({
-        color: color.hex,
+        ...paletteMaterial(color),
         roughness: 0.3,
         metalness: 0,
       });
       materials.push(mat);
+      if (mat.transparent) {
+        for (const brick of bricks) {
+          const body = new THREE.Mesh(bodyGeometry, mat),
+            studs = Array.from(
+              { length: brick.w * brick.d },
+              () => new THREE.Mesh(studGeometry, mat),
+            );
+          for (const mesh of [body, ...studs]) {
+            mesh.matrixAutoUpdate = false;
+            mesh.castShadow = false;
+            mesh.receiveShadow = true;
+          }
+          scene.add(body, ...studs);
+          transparentParts.push({ brick, body, studs });
+        }
+        return;
+      }
       const bodies = new THREE.InstancedMesh(bodyGeometry, mat, bricks.length),
         studs = new THREE.InstancedMesh(
           studGeometry,
@@ -189,6 +212,33 @@ export default function ModelViewer({
         });
         bodies.instanceMatrix.needsUpdate = true;
         studs.instanceMatrix.needsUpdate = true;
+      }
+      for (const { brick: b, body, studs } of transparentParts) {
+        const visible = b.y <= limit,
+          base = b.y * 0.4 * (expand ? 1.55 : 1);
+        body.visible = visible;
+        object.position.set(
+          b.x + b.w / 2 - model.width / 2,
+          base + b.h * 0.2,
+          b.z + b.d / 2 - model.depth / 2,
+        );
+        object.scale.set(b.w - 0.028, b.h * 0.4 - 0.018, b.d - 0.028);
+        object.updateMatrix();
+        body.matrix.copy(object.matrix);
+        let i = 0;
+        for (let x = 0; x < b.w; x++)
+          for (let z = 0; z < b.d; z++) {
+            const stud = studs[i++];
+            stud.visible = visible;
+            object.position.set(
+              b.x + x + 0.5 - model.width / 2,
+              base + b.h * 0.4 + 0.075,
+              b.z + z + 0.5 - model.depth / 2,
+            );
+            object.scale.setScalar(1);
+            object.updateMatrix();
+            stud.matrix.copy(object.matrix);
+          }
       }
     };
     control.current = {
