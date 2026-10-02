@@ -63,6 +63,7 @@ export type Model = {
   platformDesign?: import('./platform-design.ts').PlatformDesign;
   materialDesign?: import('./reference-materials.ts').ReferenceMaterialDesign;
   surfaceDesign?: import('./surface-design.ts').SurfaceDesign;
+  voxelMaterialDesign?: import('./voxel-materials.ts').VoxelMaterialDesign;
   slopeDesign?: import('./slope-design.ts').SlopeDesign;
   clearanceVolumes?: import('./scene/scene-types.ts').BBox3d[];
   repeatedGroups?: import('./scene-elements.ts').RepeatedElementGroup[];

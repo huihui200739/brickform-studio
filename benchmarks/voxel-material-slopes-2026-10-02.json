@@ -1,0 +1,2209 @@
+{
+  "date": "2026-10-01",
+  "conversionFingerprint": "0b94c66d5c00764722a95915079a2c1f933b2c257ffbd2a70d6e88f0576f2758",
+  "passed": true,
+  "scope": "Six public engine sample renders and two user Temple fixtures at three sizes. Replayed cached native meshes and actual learned observations; no new native inference or physical build.",
+  "cases": [
+    {
+      "id": "house",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "63dfa62dc5a19a1a3bd2df1d1589644f98dea501a4b31cb02a71679d0c74a0e7",
+      "meshSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "5958c4729a889b3951068a4bbd221110d9d3324b7afece1a0c6d31b9f56fafc2",
+      "baseline": {
+        "bricks": 2955,
+        "supports": 191
+      },
+      "bricks": 3146,
+      "supports": 184,
+      "steps": 575,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 74,
+        "addedColumns": 76,
+        "addedCells": 654
+      },
+      "emittedApproaches": {
+        "tested": 3133,
+        "upward": 156,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 3146,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3146
+      },
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree"
+        },
+        {
+          "id": "image-tree-1",
+          "kind": "tree"
+        }
+      ],
+      "platformPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [
+        {
+          "regionId": "slope-region-1",
+          "part": "3298",
+          "x": 20,
+          "y": 26,
+          "z": 17,
+          "rotation": 3,
+          "color": 4,
+          "rmsStuds": 0.22711509386197254,
+          "voxelRmsStuds": 0.725046653339225,
+          "maxErrorStuds": 0.3388347697277272,
+          "evaluatedSamples": 16,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.12932343034858834,
+          "normalSupport": 0.9,
+          "emittedId": 1961,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1796,
+            1454,
+            1462,
+            1806,
+            1907
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-1",
+          "part": "3039",
+          "x": 19,
+          "y": 29,
+          "z": 17,
+          "rotation": 3,
+          "color": 4,
+          "rmsStuds": 0.25037718857843444,
+          "voxelRmsStuds": 0.7801427903517562,
+          "maxErrorStuds": 0.28834422615738475,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.085643232909116,
+          "normalSupport": 1,
+          "emittedId": 2130,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1960,
+            1660,
+            1961
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "3298",
+          "x": 8,
+          "y": 28,
+          "z": 16,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.19705711940431042,
+          "voxelRmsStuds": 0.58637574435977,
+          "maxErrorStuds": 0.30227213260745245,
+          "evaluatedSamples": 16,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.12154204841784864,
+          "normalSupport": 1,
+          "emittedId": 2034,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1902,
+            1583,
+            1995,
+            1996
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-3",
+          "part": "3039",
+          "x": 9,
+          "y": 28,
+          "z": 6,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.15382568540086278,
+          "voxelRmsStuds": 0.7832613500208657,
+          "maxErrorStuds": 0.21852312755325798,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.0942136714923506,
+          "normalSupport": 1,
+          "emittedId": 2018,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1882,
+            1887,
+            1883,
+            1888
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-3",
+          "part": "3298",
+          "x": 7,
+          "y": 25,
+          "z": 7,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.23874660872361228,
+          "voxelRmsStuds": 0.5677489452785957,
+          "maxErrorStuds": 0.4115211809846109,
+          "evaluatedSamples": 16,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.1484997847367029,
+          "normalSupport": 0.9,
+          "emittedId": 1887,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1839,
+            1746,
+            1848
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-3",
+          "part": "4286",
+          "x": 7,
+          "y": 25,
+          "z": 6,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.20834060276598454,
+          "voxelRmsStuds": 0.39064362889271814,
+          "maxErrorStuds": 0.3599635917871691,
+          "evaluatedSamples": 8,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.14670940333945384,
+          "normalSupport": 0.9,
+          "emittedId": 1882,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            1839,
+            1840,
+            1841
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "3039",
+          "x": 7,
+          "y": 25,
+          "z": 15,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.09009491390682312,
+          "voxelRmsStuds": 0.5519333757034546,
+          "maxErrorStuds": 0.11594779725104765,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.12616400356752192,
+          "normalSupport": 0.875,
+          "emittedId": 1902,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1581
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "3039",
+          "x": 7,
+          "y": 25,
+          "z": 17,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.09460909883156869,
+          "voxelRmsStuds": 0.5330983711720535,
+          "maxErrorStuds": 0.1048999110596931,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.1366248671247371,
+          "normalSupport": 0.875,
+          "emittedId": 1583,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1581,
+            1584,
+            1582
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "4286",
+          "x": 8,
+          "y": 28,
+          "z": 18,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.19720182184990076,
+          "voxelRmsStuds": 0.5639016339935645,
+          "maxErrorStuds": 0.278432598167214,
+          "evaluatedSamples": 8,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.11530928889436251,
+          "normalSupport": 1,
+          "emittedId": 2035,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            1583,
+            1995,
+            1997
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "3039",
+          "x": 7,
+          "y": 25,
+          "z": 13,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.09588352696529609,
+          "voxelRmsStuds": 0.5709259425621549,
+          "maxErrorStuds": 0.14147869340451535,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.11573879144760146,
+          "normalSupport": 0.875,
+          "emittedId": 1901,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1431,
+            1581
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "3039",
+          "x": 7,
+          "y": 25,
+          "z": 11,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.12141096653266774,
+          "voxelRmsStuds": 0.6151932934482796,
+          "maxErrorStuds": 0.18806863652488737,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.11518496549019094,
+          "normalSupport": 0.875,
+          "emittedId": 1896,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1431
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "3039",
+          "x": 7,
+          "y": 25,
+          "z": 9,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.154613057111102,
+          "voxelRmsStuds": 0.6588021351573831,
+          "maxErrorStuds": 0.22263464576258585,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.12035195543984992,
+          "normalSupport": 0.875,
+          "emittedId": 1893,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1839,
+            1431,
+            1750
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-4",
+          "part": "3040b",
+          "x": 21,
+          "y": 25,
+          "z": 19,
+          "rotation": 3,
+          "color": 4,
+          "rmsStuds": 0.17588967010017292,
+          "voxelRmsStuds": 0.6766793493741052,
+          "maxErrorStuds": 0.24018026861483577,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.1141826829957675,
+          "normalSupport": 0.8541666666666666,
+          "emittedId": 1464,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            1465,
+            1463
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-5",
+          "part": "3040b",
+          "x": 7,
+          "y": 24,
+          "z": 5,
+          "rotation": 1,
+          "color": 4,
+          "rmsStuds": 0.18053541806543996,
+          "voxelRmsStuds": 0.37870458130465934,
+          "maxErrorStuds": 0.2484171799765118,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.12628765201517855,
+          "normalSupport": 0.8541666666666666,
+          "emittedId": 1737,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            1434,
+            1738
+          ],
+          "passed": true
+        }
+      ],
+      "regions": [
+        {
+          "id": "slope-region-1",
+          "rotation": 3,
+          "color": 4,
+          "pieces": 2,
+          "chainedJoints": 1,
+          "evaluatedSamples": 24,
+          "rmsStuds": 0.23512497973085583,
+          "voxelRmsStuds": 0.7438655954706345,
+          "jointsInFinalModel": 1,
+          "passed": true
+        },
+        {
+          "id": "slope-region-2",
+          "rotation": 1,
+          "color": 4,
+          "pieces": 7,
+          "chainedJoints": 3,
+          "evaluatedSamples": 64,
+          "rmsStuds": 0.1506066985633901,
+          "voxelRmsStuds": 0.5844786007643288,
+          "jointsInFinalModel": 3,
+          "passed": true
+        },
+        {
+          "id": "slope-region-3",
+          "rotation": 1,
+          "color": 4,
+          "pieces": 3,
+          "chainedJoints": 2,
+          "evaluatedSamples": 32,
+          "rmsStuds": 0.21276044898194202,
+          "voxelRmsStuds": 0.5938809891217466,
+          "jointsInFinalModel": 2,
+          "passed": true
+        },
+        {
+          "id": "slope-region-4",
+          "rotation": 3,
+          "color": 4,
+          "pieces": 1,
+          "chainedJoints": 0,
+          "evaluatedSamples": 4,
+          "rmsStuds": 0.17588967010017292,
+          "voxelRmsStuds": 0.6766793493741052,
+          "jointsInFinalModel": 0,
+          "passed": true
+        },
+        {
+          "id": "slope-region-5",
+          "rotation": 1,
+          "color": 4,
+          "pieces": 1,
+          "chainedJoints": 0,
+          "evaluatedSamples": 4,
+          "rmsStuds": 0.18053541806543996,
+          "voxelRmsStuds": 0.37870458130465934,
+          "jointsInFinalModel": 0,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "locomotive",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "df4284dabd513c4826d1cda8ad2dc6687ee4c30229d41c3d631749329175c90c",
+      "meshSha256": "5b8be986de0fe82f66561518736b09237145beabe2891705710314ca88a9703a",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "d07773f837f5d6a0a0fcfda619473498e37e25caefed81c49e9b93e7e0b100f5",
+      "baseline": {
+        "bricks": 2624,
+        "supports": 232
+      },
+      "bricks": 3028,
+      "supports": 161,
+      "steps": 608,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 82,
+        "addedColumns": 92,
+        "addedCells": 431
+      },
+      "emittedApproaches": {
+        "tested": 3028,
+        "upward": 525,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 3028,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3028
+      },
+      "applied": [],
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [],
+      "regions": []
+    },
+    {
+      "id": "horse",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "66305f50ddd7d90e521d718952c702b9fb71c30efe6970d39d918f6dbf5b6ec3",
+      "meshSha256": "718a8090e059a2aba32700f69a6b41f3771ed94df031b8b22bbcb7abe43adedb",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "46440d66bc10784fcec90a326c9e3b635652eeb3dc71a4d74804baa39ef3c214",
+      "baseline": {
+        "bricks": 1630,
+        "supports": 240
+      },
+      "bricks": 1793,
+      "supports": 259,
+      "steps": 473,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 70,
+        "addedColumns": 71,
+        "addedCells": 911
+      },
+      "emittedApproaches": {
+        "tested": 1793,
+        "upward": 371,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 1793,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 1793
+      },
+      "applied": [],
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [],
+      "regions": []
+    },
+    {
+      "id": "sculpture-head",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "58b926e26c0026df16378e214fb046e63dd0edceacb0f8db8005d9ed3f86949a",
+      "meshSha256": "1e845d750e10e0ba03667991c962ed7db8dc93af2cb7b83dd4bcbf208c848be8",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "e623d8097b672993cab069f0b27cb146429cda32e53f3693045d19cf2063860b",
+      "baseline": {
+        "bricks": 4932,
+        "supports": 694
+      },
+      "bricks": 4965,
+      "supports": 685,
+      "steps": 971,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 123,
+        "addedColumns": 132,
+        "addedCells": 2738
+      },
+      "emittedApproaches": {
+        "tested": 4965,
+        "upward": 2032,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 4965,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 4965
+      },
+      "applied": [],
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [
+        {
+          "regionId": "slope-region-1",
+          "part": "3298",
+          "x": 18,
+          "y": 64,
+          "z": 13,
+          "rotation": 3,
+          "color": 0,
+          "rmsStuds": 0.2385300811432444,
+          "voxelRmsStuds": 0.7576506549382808,
+          "maxErrorStuds": 0.4826279780862919,
+          "evaluatedSamples": 16,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.13063008028993936,
+          "normalSupport": 0.8875,
+          "emittedId": 654,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            653,
+            655,
+            901,
+            652
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-1",
+          "part": "4286",
+          "x": 16,
+          "y": 67,
+          "z": 13,
+          "rotation": 3,
+          "color": 0,
+          "rmsStuds": 0.05957496899225066,
+          "voxelRmsStuds": 0.563008825470584,
+          "maxErrorStuds": 0.12341482467823894,
+          "evaluatedSamples": 8,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.14682676295202035,
+          "normalSupport": 0.8666666666666667,
+          "emittedId": 4852,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            4818,
+            654
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "3298",
+          "x": 11,
+          "y": 66,
+          "z": 8,
+          "rotation": 0,
+          "color": 0,
+          "rmsStuds": 0.15481449225045,
+          "voxelRmsStuds": 0.530775129929157,
+          "maxErrorStuds": 0.2547344261735205,
+          "evaluatedSamples": 16,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.14726334547493516,
+          "normalSupport": 0.8875,
+          "emittedId": 1095,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1407,
+            1096,
+            1266
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-3",
+          "part": "3039",
+          "x": 9,
+          "y": 65,
+          "z": 8,
+          "rotation": 0,
+          "color": 0,
+          "rmsStuds": 0.20761581045204228,
+          "voxelRmsStuds": 0.7511543478672303,
+          "maxErrorStuds": 0.3628999470369294,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.12452280546651324,
+          "normalSupport": 0.984375,
+          "emittedId": 1404,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1405,
+            1623,
+            1408
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-4",
+          "part": "3298",
+          "x": 7,
+          "y": 67,
+          "z": 11,
+          "rotation": 1,
+          "color": 0,
+          "rmsStuds": 0.12177436277337106,
+          "voxelRmsStuds": 0.501883660314787,
+          "maxErrorStuds": 0.3016768922137345,
+          "evaluatedSamples": 16,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.11245616010165747,
+          "normalSupport": 0.9375,
+          "emittedId": 4848,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            977,
+            529
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-5",
+          "part": "3039",
+          "x": 14,
+          "y": 64,
+          "z": 7,
+          "rotation": 0,
+          "color": 0,
+          "rmsStuds": 0.11744117863566442,
+          "voxelRmsStuds": 0.5941889427409192,
+          "maxErrorStuds": 0.24988673918984716,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.13940966765450427,
+          "normalSupport": 0.953125,
+          "emittedId": 1596,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            2049,
+            1595,
+            1597
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-6",
+          "part": "3039",
+          "x": 10,
+          "y": 67,
+          "z": 18,
+          "rotation": 2,
+          "color": 0,
+          "rmsStuds": 0.1707191731752369,
+          "voxelRmsStuds": 0.40083214524438004,
+          "maxErrorStuds": 0.34900420814605937,
+          "evaluatedSamples": 16,
+          "coveredSamples": 0,
+          "planeResidualStuds": 0.1120050855476253,
+          "normalSupport": 0.890625,
+          "emittedId": 1025,
+          "coveredSamplesInFinalModel": 0,
+          "studs": 2,
+          "gridParents": [
+            1026,
+            1307,
+            955
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-7",
+          "part": "3039",
+          "x": 7,
+          "y": 66,
+          "z": 16,
+          "rotation": 1,
+          "color": 0,
+          "rmsStuds": 0.19834210167608932,
+          "voxelRmsStuds": 0.41229613480741484,
+          "maxErrorStuds": 0.34835851401825835,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.1491247883948165,
+          "normalSupport": 0.96875,
+          "emittedId": 444,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            693,
+            445
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-7",
+          "part": "3040b",
+          "x": 7,
+          "y": 66,
+          "z": 15,
+          "rotation": 1,
+          "color": 0,
+          "rmsStuds": 0.2415199227750039,
+          "voxelRmsStuds": 0.3217242524936915,
+          "maxErrorStuds": 0.35319580511321647,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.14189390274945093,
+          "normalSupport": 0.9166666666666666,
+          "emittedId": 442,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            378
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-8",
+          "part": "3040b",
+          "x": 13,
+          "y": 67,
+          "z": 19,
+          "rotation": 2,
+          "color": 0,
+          "rmsStuds": 0.1394007696596231,
+          "voxelRmsStuds": 0.5051470833168733,
+          "maxErrorStuds": 0.20201063164326527,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.14987370328375543,
+          "normalSupport": 0.8541666666666666,
+          "emittedId": 4856,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            4827
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-9",
+          "part": "3040b",
+          "x": 7,
+          "y": 67,
+          "z": 13,
+          "rotation": 1,
+          "color": 0,
+          "rmsStuds": 0.14742195834398497,
+          "voxelRmsStuds": 0.35403890350057127,
+          "maxErrorStuds": 0.22337485640882804,
+          "evaluatedSamples": 8,
+          "coveredSamples": 0,
+          "planeResidualStuds": 0.13130748999575395,
+          "normalSupport": 0.875,
+          "emittedId": 4850,
+          "coveredSamplesInFinalModel": 0,
+          "studs": 1,
+          "gridParents": [
+            529
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-9",
+          "part": "3040b",
+          "x": 7,
+          "y": 67,
+          "z": 14,
+          "rotation": 1,
+          "color": 0,
+          "rmsStuds": 0.1503961773404494,
+          "voxelRmsStuds": 0.46178939106331984,
+          "maxErrorStuds": 0.22378512764044345,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.14928927031376343,
+          "normalSupport": 0.875,
+          "emittedId": 4853,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            377
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-10",
+          "part": "3040b",
+          "x": 13,
+          "y": 65,
+          "z": 8,
+          "rotation": 0,
+          "color": 0,
+          "rmsStuds": 0.2556633521917329,
+          "voxelRmsStuds": 0.33300967711027646,
+          "maxErrorStuds": 0.41388618567597035,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.13435782031021537,
+          "normalSupport": 0.8541666666666666,
+          "emittedId": 4784,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            1427
+          ],
+          "passed": true
+        }
+      ],
+      "regions": [
+        {
+          "id": "slope-region-1",
+          "rotation": 3,
+          "color": 0,
+          "pieces": 2,
+          "chainedJoints": 1,
+          "evaluatedSamples": 24,
+          "rmsStuds": 0.19777291367528327,
+          "voxelRmsStuds": 0.6988199499667465,
+          "jointsInFinalModel": 1,
+          "passed": true
+        },
+        {
+          "id": "slope-region-2",
+          "rotation": 0,
+          "color": 0,
+          "pieces": 1,
+          "chainedJoints": 0,
+          "evaluatedSamples": 16,
+          "rmsStuds": 0.15481449225045,
+          "voxelRmsStuds": 0.530775129929157,
+          "jointsInFinalModel": 0,
+          "passed": true
+        },
+        {
+          "id": "slope-region-3",
+          "rotation": 0,
+          "color": 0,
+          "pieces": 1,
+          "chainedJoints": 0,
+          "evaluatedSamples": 8,
+          "rmsStuds": 0.20761581045204228,
+          "voxelRmsStuds": 0.7511543478672303,
+          "jointsInFinalModel": 0,
+          "passed": true
+        },
+        {
+          "id": "slope-region-4",
+          "rotation": 1,
+          "color": 0,
+          "pieces": 1,
+          "chainedJoints": 0,
+          "evaluatedSamples": 16,
+          "rmsStuds": 0.12177436277337106,
+          "voxelRmsStuds": 0.501883660314787,
+          "jointsInFinalModel": 0,
+          "passed": true
+        },
+        {
+          "id": "slope-region-5",
+          "rotation": 0,
+          "color": 0,
+          "pieces": 1,
+          "chainedJoints": 0,
+          "evaluatedSamples": 8,
+          "rmsStuds": 0.11744117863566442,
+          "voxelRmsStuds": 0.5941889427409192,
+          "jointsInFinalModel": 0,
+          "passed": true
+        },
+        {
+          "id": "slope-region-6",
+          "rotation": 2,
+          "color": 0,
+          "pieces": 1,
+          "chainedJoints": 0,
+          "evaluatedSamples": 16,
+          "rmsStuds": 0.1707191731752369,
+          "voxelRmsStuds": 0.40083214524438004,
+          "jointsInFinalModel": 0,
+          "passed": true
+        },
+        {
+          "id": "slope-region-7",
+          "rotation": 1,
+          "color": 0,
+          "pieces": 2,
+          "chainedJoints": 0,
+          "evaluatedSamples": 12,
+          "rmsStuds": 0.21370622490685678,
+          "voxelRmsStuds": 0.3844835064502735,
+          "jointsInFinalModel": 0,
+          "passed": true
+        },
+        {
+          "id": "slope-region-8",
+          "rotation": 2,
+          "color": 0,
+          "pieces": 1,
+          "chainedJoints": 0,
+          "evaluatedSamples": 4,
+          "rmsStuds": 0.1394007696596231,
+          "voxelRmsStuds": 0.5051470833168733,
+          "jointsInFinalModel": 0,
+          "passed": true
+        },
+        {
+          "id": "slope-region-9",
+          "rotation": 1,
+          "color": 0,
+          "pieces": 2,
+          "chainedJoints": 0,
+          "evaluatedSamples": 12,
+          "rmsStuds": 0.14841998715645993,
+          "voxelRmsStuds": 0.39324993413112624,
+          "jointsInFinalModel": 0,
+          "passed": true
+        },
+        {
+          "id": "slope-region-10",
+          "rotation": 0,
+          "color": 0,
+          "pieces": 1,
+          "chainedJoints": 0,
+          "evaluatedSamples": 4,
+          "rmsStuds": 0.2556633521917329,
+          "voxelRmsStuds": 0.33300967711027646,
+          "jointsInFinalModel": 0,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "wizard-hat",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "d9d43eae5cc61c872bc01d480de4e8954da352743d81f9329345d96e052ee2ac",
+      "meshSha256": "cd27bce9bedb14a0096ab71e7514e9da3a1c35abb52ba805edb0778f00eb2885",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "b4fb7b755636105136f17f796ab757a85fa0978a58587fba8934d364e4bd2716",
+      "baseline": {
+        "bricks": 2755,
+        "supports": 569
+      },
+      "bricks": 2710,
+      "supports": 470,
+      "steps": 831,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 120,
+        "addedColumns": 124,
+        "addedCells": 1465
+      },
+      "emittedApproaches": {
+        "tested": 2710,
+        "upward": 454,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 2710,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2710
+      },
+      "applied": [],
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [],
+      "regions": []
+    },
+    {
+      "id": "costumed-figure",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "6d08caba0671ffee9a683c5b3ca101b272cec71d3eb9e93b6e8d2b65ddd417fc",
+      "meshSha256": "7e0c17d2e11bb21eb29a78b9c96324758e1b8c524d1855c160f5d7571d0f0de9",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "237c2070cb6755858a02df2c6f73b974317a488e6e6e9ccd37fd40fb32ae3524",
+      "baseline": {
+        "bricks": 2862,
+        "supports": 212
+      },
+      "bricks": 3123,
+      "supports": 290,
+      "steps": 597,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 64,
+        "addedColumns": 76,
+        "addedCells": 1347
+      },
+      "emittedApproaches": {
+        "tested": 3123,
+        "upward": 572,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 3123,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3123
+      },
+      "applied": [],
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [
+        {
+          "regionId": "slope-region-1",
+          "part": "3039",
+          "x": 16,
+          "y": 67,
+          "z": 7,
+          "rotation": 3,
+          "color": 7,
+          "rmsStuds": 0.17588711454820602,
+          "voxelRmsStuds": 0.668053871962501,
+          "maxErrorStuds": 0.31596532711945713,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.14917828181853027,
+          "normalSupport": 1,
+          "emittedId": 3040,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            810,
+            2999,
+            2991
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-1",
+          "part": "3039",
+          "x": 14,
+          "y": 69,
+          "z": 7,
+          "rotation": 3,
+          "color": 7,
+          "rmsStuds": 0.20152970011848023,
+          "voxelRmsStuds": 0.37530581761942455,
+          "maxErrorStuds": 0.3140415000029222,
+          "evaluatedSamples": 16,
+          "coveredSamples": 0,
+          "planeResidualStuds": 0.10533965738137238,
+          "normalSupport": 0.859375,
+          "emittedId": 3088,
+          "coveredSamplesInFinalModel": 0,
+          "studs": 2,
+          "gridParents": [
+            3063,
+            3066
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-1",
+          "part": "3040b",
+          "x": 16,
+          "y": 67,
+          "z": 9,
+          "rotation": 3,
+          "color": 7,
+          "rmsStuds": 0.16314128244888806,
+          "voxelRmsStuds": 0.6576816512305074,
+          "maxErrorStuds": 0.25084032157572267,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.13246640470357796,
+          "normalSupport": 1,
+          "emittedId": 3044,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            2999,
+            2926
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-1",
+          "part": "3039",
+          "x": 14,
+          "y": 69,
+          "z": 9,
+          "rotation": 3,
+          "color": 7,
+          "rmsStuds": 0.2574697201868161,
+          "voxelRmsStuds": 0.3485657903114252,
+          "maxErrorStuds": 0.46053063614840895,
+          "evaluatedSamples": 16,
+          "coveredSamples": 0,
+          "planeResidualStuds": 0.11717359468126731,
+          "normalSupport": 0.9375,
+          "emittedId": 3091,
+          "coveredSamplesInFinalModel": 0,
+          "studs": 2,
+          "gridParents": [
+            3063,
+            3070,
+            3066
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "3040b",
+          "x": 8,
+          "y": 66,
+          "z": 7,
+          "rotation": 1,
+          "color": 7,
+          "rmsStuds": 0.15788915639112225,
+          "voxelRmsStuds": 0.7881085430637259,
+          "maxErrorStuds": 0.25002638074831296,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.14370836857107855,
+          "normalSupport": 1,
+          "emittedId": 2995,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            2875,
+            2955
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "3040b",
+          "x": 8,
+          "y": 66,
+          "z": 8,
+          "rotation": 1,
+          "color": 7,
+          "rmsStuds": 0.2524546919236357,
+          "voxelRmsStuds": 0.6818276506385293,
+          "maxErrorStuds": 0.3217110659251219,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.1389791201657236,
+          "normalSupport": 1,
+          "emittedId": 2998,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            2875,
+            2878
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "3040b",
+          "x": 8,
+          "y": 66,
+          "z": 9,
+          "rotation": 1,
+          "color": 7,
+          "rmsStuds": 0.21366555004873372,
+          "voxelRmsStuds": 0.723792477326444,
+          "maxErrorStuds": 0.30175660927667636,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.14428109750643456,
+          "normalSupport": 1,
+          "emittedId": 3002,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            2875,
+            2878
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "4286",
+          "x": 9,
+          "y": 69,
+          "z": 9,
+          "rotation": 1,
+          "color": 7,
+          "rmsStuds": 0.21362448044203475,
+          "voxelRmsStuds": 0.43292522981068327,
+          "maxErrorStuds": 0.30419352479268014,
+          "evaluatedSamples": 12,
+          "coveredSamples": 0,
+          "planeResidualStuds": 0.14475092108970702,
+          "normalSupport": 0.9166666666666666,
+          "emittedId": 3090,
+          "coveredSamplesInFinalModel": 0,
+          "studs": 1,
+          "gridParents": [
+            3002,
+            3067
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "4286",
+          "x": 9,
+          "y": 69,
+          "z": 8,
+          "rotation": 1,
+          "color": 7,
+          "rmsStuds": 0.18329174438402998,
+          "voxelRmsStuds": 0.39937669307898105,
+          "maxErrorStuds": 0.2689904862302406,
+          "evaluatedSamples": 12,
+          "coveredSamples": 0,
+          "planeResidualStuds": 0.14846744311787666,
+          "normalSupport": 0.85,
+          "emittedId": 3089,
+          "coveredSamplesInFinalModel": 0,
+          "studs": 1,
+          "gridParents": [
+            2998,
+            3067
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-3",
+          "part": "3040b",
+          "x": 14,
+          "y": 67,
+          "z": 4,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.15184318669371638,
+          "voxelRmsStuds": 0.6447017431519921,
+          "maxErrorStuds": 0.24853448575617065,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.1426163957707037,
+          "normalSupport": 1,
+          "emittedId": 3031,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            2988,
+            2990
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-3",
+          "part": "3040b",
+          "x": 13,
+          "y": 67,
+          "z": 4,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.07641229612697818,
+          "voxelRmsStuds": 0.5293589234584934,
+          "maxErrorStuds": 0.08762475809048098,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.1372416699310972,
+          "normalSupport": 1,
+          "emittedId": 3030,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            2988,
+            2990
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-3",
+          "part": "3040b",
+          "x": 12,
+          "y": 67,
+          "z": 4,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.0787768605150845,
+          "voxelRmsStuds": 0.5408079413381918,
+          "maxErrorStuds": 0.10561796042074079,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.13800464950271685,
+          "normalSupport": 1,
+          "emittedId": 3029,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            2988,
+            2990
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-4",
+          "part": "3040b",
+          "x": 11,
+          "y": 68,
+          "z": 5,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.14003309876515468,
+          "voxelRmsStuds": 0.4884261571413512,
+          "maxErrorStuds": 0.21228547461825542,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.12128911523288056,
+          "normalSupport": 0.9166666666666666,
+          "emittedId": 3060,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            695,
+            691
+          ],
+          "passed": true
+        }
+      ],
+      "regions": [
+        {
+          "id": "slope-region-1",
+          "rotation": 3,
+          "color": 7,
+          "pieces": 4,
+          "chainedJoints": 0,
+          "evaluatedSamples": 44,
+          "rmsStuds": 0.21660755034665027,
+          "voxelRmsStuds": 0.46461590918160256,
+          "jointsInFinalModel": 0,
+          "passed": true
+        },
+        {
+          "id": "slope-region-2",
+          "rotation": 1,
+          "color": 7,
+          "pieces": 5,
+          "chainedJoints": 2,
+          "evaluatedSamples": 36,
+          "rmsStuds": 0.20330851517068985,
+          "voxelRmsStuds": 0.5426946720664334,
+          "jointsInFinalModel": 2,
+          "passed": true
+        },
+        {
+          "id": "slope-region-3",
+          "rotation": 0,
+          "color": 7,
+          "pieces": 3,
+          "chainedJoints": 0,
+          "evaluatedSamples": 12,
+          "rmsStuds": 0.10816805766539538,
+          "voxelRmsStuds": 0.5739728323660176,
+          "jointsInFinalModel": 0,
+          "passed": true
+        },
+        {
+          "id": "slope-region-4",
+          "rotation": 0,
+          "color": 7,
+          "pieces": 1,
+          "chainedJoints": 0,
+          "evaluatedSamples": 4,
+          "rmsStuds": 0.14003309876515468,
+          "voxelRmsStuds": 0.4884261571413512,
+          "jointsInFinalModel": 0,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "temple-original",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+      "meshSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "2da4de820b12a1258c1e885e253fc1f66d695a2cbcba68366fb52b5491672b55",
+      "bricks": 2953,
+      "supports": 67,
+      "steps": 374,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 16,
+        "addedColumns": 15,
+        "addedCells": 177
+      },
+      "emittedApproaches": {
+        "tested": 2921,
+        "upward": 36,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 2953,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2953
+      },
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-statue-3",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [],
+      "regions": [],
+      "baseline": {
+        "bricks": 2600,
+        "supports": 45
+      }
+    },
+    {
+      "id": "temple-original",
+      "resolution": 36,
+      "passed": true,
+      "inputSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+      "meshSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "afd163d10c31df516c527acd10bd8e97f9a98077ae57f13a7a32be9277592561",
+      "bricks": 4986,
+      "supports": 138,
+      "steps": 602,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 21,
+        "addedColumns": 20,
+        "addedCells": 422
+      },
+      "emittedApproaches": {
+        "tested": 4954,
+        "upward": 26,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 4986,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 4986
+      },
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-statue-3",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [],
+      "regions": [],
+      "baseline": {
+        "bricks": 4606,
+        "supports": 117
+      }
+    },
+    {
+      "id": "temple-original",
+      "resolution": 48,
+      "passed": true,
+      "inputSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+      "meshSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "ff043cccc3dfb9c9e847ba5c3a44dc615b54a34e34db159aefd76e559817c512",
+      "bricks": 9695,
+      "supports": 199,
+      "steps": 1095,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 29,
+        "addedColumns": 29,
+        "addedCells": 531
+      },
+      "emittedApproaches": {
+        "tested": 9663,
+        "upward": 82,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 9695,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 9695
+      },
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-statue-3",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-5",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-8",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [],
+      "regions": [],
+      "baseline": {
+        "bricks": 9120,
+        "supports": 227
+      }
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 28,
+      "passed": true,
+      "inputSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "meshSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "82ae5e322ada558d51a1b60231759482de2e7fe68e11258853bee45f57bb50af",
+      "bricks": 2588,
+      "supports": 27,
+      "steps": 284,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 3,
+        "addedColumns": 3,
+        "addedCells": 50
+      },
+      "emittedApproaches": {
+        "tested": 2556,
+        "upward": 15,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 2588,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2588
+      },
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [
+        {
+          "regionId": "slope-region-1",
+          "part": "3039",
+          "x": 14,
+          "y": 12,
+          "z": 19,
+          "rotation": 2,
+          "color": 7,
+          "rmsStuds": 0.10057119333715205,
+          "voxelRmsStuds": 0.6019013238109343,
+          "maxErrorStuds": 0.14295877771731824,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.042844797760082244,
+          "normalSupport": 0.875,
+          "emittedId": 1133,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1075
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-1",
+          "part": "3040b",
+          "x": 16,
+          "y": 12,
+          "z": 19,
+          "rotation": 2,
+          "color": 7,
+          "rmsStuds": 0.0964389084076254,
+          "voxelRmsStuds": 0.5935895516431308,
+          "maxErrorStuds": 0.13688719408431282,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.04245265239587008,
+          "normalSupport": 0.875,
+          "emittedId": 1134,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            1075
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "3040b",
+          "x": 13,
+          "y": 11,
+          "z": 20,
+          "rotation": 2,
+          "color": 7,
+          "rmsStuds": 0.27933081273110316,
+          "voxelRmsStuds": 0.41357934383495865,
+          "maxErrorStuds": 0.3391103922942742,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.03884449713802848,
+          "normalSupport": 0.875,
+          "emittedId": 1080,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            715,
+            722
+          ],
+          "passed": true
+        }
+      ],
+      "regions": [
+        {
+          "id": "slope-region-1",
+          "rotation": 2,
+          "color": 7,
+          "pieces": 2,
+          "chainedJoints": 0,
+          "evaluatedSamples": 12,
+          "rmsStuds": 0.09921289048198659,
+          "voxelRmsStuds": 0.5991435451349433,
+          "jointsInFinalModel": 0,
+          "passed": true
+        },
+        {
+          "id": "slope-region-2",
+          "rotation": 2,
+          "color": 7,
+          "pieces": 1,
+          "chainedJoints": 0,
+          "evaluatedSamples": 4,
+          "rmsStuds": 0.27933081273110316,
+          "voxelRmsStuds": 0.41357934383495865,
+          "jointsInFinalModel": 0,
+          "passed": true
+        }
+      ],
+      "baseline": {
+        "bricks": 2339,
+        "supports": 15
+      }
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 36,
+      "passed": true,
+      "inputSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "meshSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "059fc907600aa91d4d45a37f50ad95a8dfdecc5381abf3b044ba291d365bcf19",
+      "bricks": 4414,
+      "supports": 54,
+      "steps": 465,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 8,
+        "addedColumns": 8,
+        "addedCells": 123
+      },
+      "emittedApproaches": {
+        "tested": 4382,
+        "upward": 38,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 4414,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 4414
+      },
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [
+        {
+          "regionId": "slope-region-1",
+          "part": "3039",
+          "x": 18,
+          "y": 14,
+          "z": 4,
+          "rotation": 0,
+          "color": 10,
+          "rmsStuds": 0.20428906867053392,
+          "voxelRmsStuds": 0.43090529134963507,
+          "maxErrorStuds": 0.26447482565673397,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.1366477373175166,
+          "normalSupport": 1,
+          "emittedId": 1791,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1727,
+            1238,
+            1239
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-1",
+          "part": "3039",
+          "x": 20,
+          "y": 14,
+          "z": 4,
+          "rotation": 0,
+          "color": 10,
+          "rmsStuds": 0.2019430178081912,
+          "voxelRmsStuds": 0.424801219891241,
+          "maxErrorStuds": 0.26694897176610777,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.13681064492211464,
+          "normalSupport": 1,
+          "emittedId": 1792,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1727,
+            1239,
+            1728,
+            1240
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-1",
+          "part": "3039",
+          "x": 16,
+          "y": 14,
+          "z": 4,
+          "rotation": 0,
+          "color": 10,
+          "rmsStuds": 0.2022357882209863,
+          "voxelRmsStuds": 0.42303118124402844,
+          "maxErrorStuds": 0.26764445182362984,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.1360714549326131,
+          "normalSupport": 1,
+          "emittedId": 1790,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            1230,
+            1727,
+            1238
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-2",
+          "part": "3040b",
+          "x": 18,
+          "y": 21,
+          "z": 21,
+          "rotation": 2,
+          "color": 7,
+          "rmsStuds": 0.2149358217386018,
+          "voxelRmsStuds": 0.34740099998603824,
+          "maxErrorStuds": 0.29910818754487245,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.06567123852944029,
+          "normalSupport": 0.8541666666666666,
+          "emittedId": 2479,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            2419
+          ],
+          "passed": true
+        }
+      ],
+      "regions": [
+        {
+          "id": "slope-region-1",
+          "rotation": 0,
+          "color": 10,
+          "pieces": 3,
+          "chainedJoints": 0,
+          "evaluatedSamples": 24,
+          "rmsStuds": 0.2028253107620095,
+          "voxelRmsStuds": 0.42625924304305646,
+          "jointsInFinalModel": 0,
+          "passed": true
+        },
+        {
+          "id": "slope-region-2",
+          "rotation": 2,
+          "color": 7,
+          "pieces": 1,
+          "chainedJoints": 0,
+          "evaluatedSamples": 4,
+          "rmsStuds": 0.2149358217386018,
+          "voxelRmsStuds": 0.34740099998603824,
+          "jointsInFinalModel": 0,
+          "passed": true
+        }
+      ],
+      "baseline": {
+        "bricks": 4019,
+        "supports": 57
+      }
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 48,
+      "passed": true,
+      "inputSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "meshSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+      "modelSha256": "a3e9cb92e169c6929b636b69bcbf1c1b64172dc044940002ac985a85915208dd",
+      "bricks": 8609,
+      "supports": 49,
+      "steps": 851,
+      "supportDesign": {
+        "method": "connector-groups",
+        "initialGroups": 17,
+        "addedColumns": 17,
+        "addedCells": 96
+      },
+      "emittedApproaches": {
+        "tested": 8577,
+        "upward": 61,
+        "failures": 0,
+        "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+      },
+      "inventoryTotal": 8609,
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 8609
+      },
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "visible": true,
+          "attached": true
+        }
+      ],
+      "platformPassed": true,
+      "geometryPassed": true,
+      "appearance": "Draft; inspect catalog renders. Local sampled error is not photo similarity or physical build verification.",
+      "failures": 0,
+      "replacements": [
+        {
+          "regionId": "slope-region-1",
+          "part": "3039",
+          "x": 24,
+          "y": 22,
+          "z": 7,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.14602785979014415,
+          "voxelRmsStuds": 0.9626359794795688,
+          "maxErrorStuds": 0.16672090265578632,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.12829766970857215,
+          "normalSupport": 0.875,
+          "emittedId": 4123,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            4006
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-1",
+          "part": "3039",
+          "x": 26,
+          "y": 22,
+          "z": 7,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.1435840461679265,
+          "voxelRmsStuds": 0.9492277088088912,
+          "maxErrorStuds": 0.17919571825854774,
+          "evaluatedSamples": 8,
+          "coveredSamples": 8,
+          "planeResidualStuds": 0.127898568879928,
+          "normalSupport": 0.859375,
+          "emittedId": 4124,
+          "coveredSamplesInFinalModel": 8,
+          "studs": 2,
+          "gridParents": [
+            4007
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-1",
+          "part": "3040b",
+          "x": 28,
+          "y": 22,
+          "z": 7,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.15569620806169215,
+          "voxelRmsStuds": 0.9587089193773767,
+          "maxErrorStuds": 0.18295306466217198,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.12790640109629275,
+          "normalSupport": 0.8541666666666666,
+          "emittedId": 4125,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            4008
+          ],
+          "passed": true
+        },
+        {
+          "regionId": "slope-region-1",
+          "part": "3040b",
+          "x": 23,
+          "y": 22,
+          "z": 7,
+          "rotation": 0,
+          "color": 7,
+          "rmsStuds": 0.14400039075943555,
+          "voxelRmsStuds": 0.9511888799159246,
+          "maxErrorStuds": 0.1730744530662598,
+          "evaluatedSamples": 4,
+          "coveredSamples": 4,
+          "planeResidualStuds": 0.12806047157872977,
+          "normalSupport": 0.8541666666666666,
+          "emittedId": 4122,
+          "coveredSamplesInFinalModel": 4,
+          "studs": 1,
+          "gridParents": [
+            4006
+          ],
+          "passed": true
+        }
+      ],
+      "regions": [
+        {
+          "id": "slope-region-1",
+          "rotation": 0,
+          "color": 7,
+          "pieces": 4,
+          "chainedJoints": 0,
+          "evaluatedSamples": 24,
+          "rmsStuds": 0.14654831401358526,
+          "voxelRmsStuds": 0.9556224517461364,
+          "jointsInFinalModel": 0,
+          "passed": true
+        }
+      ],
+      "baseline": {
+        "bricks": 7831,
+        "supports": 85
+      }
+    }
+  ],
+  "limits": "Source-evidenced upright slopes only. Unobserved backs, curved surface design, material inference, kit appearance, procurement, full insertion paths, joint force and human step trials remain incomplete.",
+  "replayedOn": "2026-10-02"
+}

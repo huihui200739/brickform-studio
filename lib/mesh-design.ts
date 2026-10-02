@@ -1,3 +1,8 @@
+import {
+  triangleMaterialAreas,
+  triangleStudArea,
+  type VoxelMaterialDesign,
+} from './voxel-materials.ts';
 import { componentTemplate } from './component-library.ts';
 import { hasVerifiedIdentity } from './scene/detectors/vision-detector.ts';
 import { repeatedGroups } from './scene-elements.ts';
@@ -89,6 +94,7 @@ export type MeshVolume = {
   protectedCells: Set<string>;
   platform?: PlatformDesign;
   surfaceDesign?: SurfaceDesign;
+  voxelMaterialDesign?: VoxelMaterialDesign;
   slopeSamples: ReturnType<typeof slopeSurface>;
 };
 export type PreservedRegion = {
@@ -560,8 +566,23 @@ export function buildMeshVolume(
   );
   const cells = new Map<string, { color: number; support: boolean }>();
   const surface = new Map<string, { color: number; support: boolean }>();
-  const votes = new Map<string, Uint32Array>();
-  let samples = 0;
+  const votes = new Map<string, Float64Array>();
+  const surfaceCells = new Set<string>();
+  let samples = 0,
+    shellSamples = 0;
+  const voxelMaterialDesign: VoxelMaterialDesign = {
+    method: 'clipped-source-surface-area',
+    testedCells: 0,
+    areaCells: 0,
+    paintedCells: 0,
+    defaultedEdgeCells: 0,
+    sourceAreaStudsSquared: 0,
+    capturedAreaStudsSquared: 0,
+    materialAreaStudsSquared: Array(PALETTE.length).fill(0),
+    warnings: [
+      'Paint votes measure source surface area inside each grid cell. This removes tessellation bias, not pose errors, source material errors, hidden paint uncertainty or the loss of sub-stud accents. Edge-only shell contacts retain geometry and use the area-dominant source material as an inference.',
+    ],
+  };
   for (let t = 0; t < n; t++) {
     const v = [0, 1, 2].map((j) =>
       [0, 1, 2].map(
@@ -605,8 +626,9 @@ export function buildMeshVolume(
             });
         }
     }
-    // Paint exposed faces with their own texture colors, including the front,
-    // back and upward surfaces, not only the entry/exit faces of the X rays.
+    // Keep the geometric shell sampling independent of paint. Edge contacts
+    // can still be required by the existing volume/connection construction;
+    // they must not receive a paint vote just because many vertices touch them.
     const edge = Math.max(
       ...[
         [0, 1],
@@ -615,8 +637,8 @@ export function buildMeshVolume(
       ].map(([a, b]) => Math.hypot(...v[a].map((x, i) => x - v[b][i]))),
     );
     const steps = Math.max(1, Math.ceil(edge * 1.5));
-    samples += ((steps + 1) * (steps + 2)) / 2;
-    if (samples > 8000000)
+    shellSamples += ((steps + 1) * (steps + 2)) / 2;
+    if (shellSamples > 8000000)
       throw Error('网格跨度过大，请先简化网格或降低尺寸。');
     for (let a = 0; a <= steps; a++)
       for (let b = 0; b <= steps - a; b++) {
@@ -626,20 +648,51 @@ export function buildMeshVolume(
             (v[1][i] * b) / steps +
             v[2][i] * (1 - (a + b) / steps),
         );
-        const x = Math.min(w - 1, Math.max(0, Math.floor(c[0]))),
-          y = Math.min(h - 1, Math.max(0, Math.floor(c[1]))),
-          z = Math.min(d - 1, Math.max(0, Math.floor(c[2])));
+        const x = Math.min(w - 1, Math.max(0, Math.floor(c[0])));
+        const y = Math.min(h - 1, Math.max(0, Math.floor(c[1])));
+        const z = Math.min(d - 1, Math.max(0, Math.floor(c[2])));
+        surfaceCells.add(`${x + 1},${y + 2},${z + 1}`);
+      }
+    // Vote by the actual triangle area inside each grid cell. Counting a
+    // minimum of three samples per tiny triangle lets dense ornaments erase
+    // the larger surrounding material and makes paint depend on tessellation.
+    voxelMaterialDesign.sourceAreaStudsSquared += triangleStudArea(
+      v[0] as [number, number, number],
+      v[1] as [number, number, number],
+      v[2] as [number, number, number],
+    );
+    samples += triangleMaterialAreas(
+      v as [number, number, number][],
+      [w, h, d],
+      (x, y, z, area) => {
         const key = `${x + 1},${y + 2},${z + 1}`;
         let vote = votes.get(key);
         if (!vote) {
-          vote = new Uint32Array(PALETTE.length);
+          vote = new Float64Array(PALETTE.length);
           votes.set(key, vote);
         }
-        vote[color]++;
-      }
+        vote[color] += area;
+        voxelMaterialDesign.capturedAreaStudsSquared += area;
+        voxelMaterialDesign.materialAreaStudsSquared[color] += area;
+      },
+    );
+    if (samples > 8000000)
+      throw Error('网格跨度过大，请先简化网格或降低尺寸。');
   }
+  voxelMaterialDesign.testedCells = samples;
+  voxelMaterialDesign.areaCells = votes.size;
   const colorCounts = new Uint32Array(PALETTE.length);
-  votes.forEach((vote, key) => {
+  const areaDefault = voxelMaterialDesign.materialAreaStudsSquared.indexOf(
+    Math.max(...voxelMaterialDesign.materialAreaStudsSquared),
+  );
+  surfaceCells.forEach((key) => {
+    const vote = votes.get(key);
+    if (!vote) {
+      voxelMaterialDesign.defaultedEdgeCells++;
+      surface.set(key, { color: areaDefault, support: false });
+      return;
+    }
+    voxelMaterialDesign.paintedCells++;
     let color = 0;
     for (let i = 1; i < vote.length; i++) if (vote[i] > vote[color]) color = i;
     surface.set(key, { color, support: false });
@@ -704,6 +757,7 @@ export function buildMeshVolume(
     protectedCells,
     platform: fitPlatform(surfaces.mesh, resolution, cells, w, h, d),
     surfaceDesign: surfaces.design,
+    voxelMaterialDesign,
     slopeSamples: slopeSurface(surfaces.mesh, resolution),
   };
 }
@@ -1185,6 +1239,8 @@ function assembleVolume(
   ]);
   const model = groupImageAssembly(prepared);
   if (volume.surfaceDesign) model.surfaceDesign = volume.surfaceDesign;
+  if (volume.voxelMaterialDesign)
+    model.voxelMaterialDesign = volume.voxelMaterialDesign;
   model.slopeDesign = slopes.design;
   if (mesh.materialDesign) model.materialDesign = mesh.materialDesign;
   model.clearanceVolumes = openings;

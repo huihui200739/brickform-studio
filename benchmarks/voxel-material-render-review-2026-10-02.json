@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-02",
+  "conversionFingerprint": "0b94c66d5c00764722a95915079a2c1f933b2c257ffbd2a70d6e88f0576f2758",
+  "scope": "Offline actual catalog geometry, six sample renders and September 30 Temple at 48 studs; not browser or physical inspection.",
+  "cases": [
+    {
+      "id": "house",
+      "resolution": 28,
+      "modelSha256": "5958c4729a889b3951068a4bbd221110d9d3324b7afece1a0c6d31b9f56fafc2",
+      "renderSha256": "7ade0e23bdc32f76db9ef50781340e1532b53fc63429ed957a732b8ec13557c9",
+      "renderer": "scripts/render-assembly.py",
+      "view": "hero",
+      "renderPath": "outputs/voxel-material-calibration/house-after.png",
+      "kitAppearancePassed": false,
+      "findings": "Roof/wall correspondence and random ground colors remain incorrect."
+    },
+    {
+      "id": "locomotive",
+      "resolution": 28,
+      "modelSha256": "d07773f837f5d6a0a0fcfda619473498e37e25caefed81c49e9b93e7e0b100f5",
+      "renderSha256": "dfdac80c12ea4d80a1e67bfc6557c97ea441edc24460026384946c54116465cb",
+      "renderer": "scripts/render-assembly.py",
+      "view": "hero",
+      "renderPath": "outputs/voxel-material-calibration/locomotive-after.png",
+      "kitAppearancePassed": false,
+      "findings": "Copper reference remains split into brown, red and pale patches; wheel spaces and curves are coarse."
+    },
+    {
+      "id": "horse",
+      "resolution": 28,
+      "modelSha256": "46440d66bc10784fcec90a326c9e3b635652eeb3dc71a4d74804baa39ef3c214",
+      "renderSha256": "67fea10c099b914460db12f19e8d3c1b14dc3a8f1a461b34252bf85d09ed94c7",
+      "renderer": "scripts/render-assembly.py",
+      "view": "hero",
+      "renderPath": "outputs/voxel-material-calibration/horse-after.png",
+      "kitAppearancePassed": false,
+      "findings": "Heavy columns support the body; curves and decorative paint are coarse."
+    },
+    {
+      "id": "sculpture-head",
+      "resolution": 28,
+      "modelSha256": "e623d8097b672993cab069f0b27cb146429cda32e53f3693045d19cf2063860b",
+      "renderSha256": "efe0ec6dd5283f20ca0417139bd2d8c60ced17ac5629e8e5cd4886d152723212",
+      "renderer": "scripts/render-assembly.py",
+      "view": "hero",
+      "renderPath": "outputs/voxel-material-calibration/sculpture-head-after.png",
+      "kitAppearancePassed": false,
+      "findings": "Hair and facial curves remain stepped, with shadow-color bands."
+    },
+    {
+      "id": "wizard-hat",
+      "resolution": 28,
+      "modelSha256": "b4fb7b755636105136f17f796ab757a85fa0978a58587fba8934d364e4bd2716",
+      "renderSha256": "51094b6e6320f6c6247bf6342789fce9cbe8e2d6ebbf9265d6e2d64d157aabd8",
+      "renderer": "scripts/render-assembly.py",
+      "view": "hero",
+      "renderPath": "outputs/voxel-material-calibration/wizard-hat-after.png",
+      "kitAppearancePassed": false,
+      "findings": "Cone remains stepped with isolated material patches."
+    },
+    {
+      "id": "costumed-figure",
+      "resolution": 28,
+      "modelSha256": "237c2070cb6755858a02df2c6f73b974317a488e6e6e9ccd37fd40fb32ae3524",
+      "renderSha256": "c5248fe7a0664b0fd8c17dcf9970aff48aec0bd214f7ba69b53c1fd9920152c1",
+      "renderer": "scripts/render-assembly.py",
+      "view": "hero",
+      "renderPath": "outputs/voxel-material-calibration/costumed-figure-after.png",
+      "kitAppearancePassed": false,
+      "findings": "Curves and garment details are coarse; large support columns remain."
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 48,
+      "modelSha256": "a3e9cb92e169c6929b636b69bcbf1c1b64172dc044940002ac985a85915208dd",
+      "renderSha256": "361bb08f6a7be9673ae4182041370d7f26a2696678ccad27a58f476cf082e28c",
+      "renderer": "scripts/render-assembly.py",
+      "view": "front",
+      "renderPath": "outputs/voxel-material-calibration/temple-after.png",
+      "kitAppearancePassed": false,
+      "findings": "Statue and two braziers remain; surrounding dark patches and coarse steps remain."
+    }
+  ],
+  "kitAppearancePassed": false
+}
