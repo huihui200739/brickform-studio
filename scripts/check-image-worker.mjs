@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import { createHash } from 'node:crypto';
 import ts from 'typescript';
 import { BoxGeometry } from 'three';
 
@@ -74,7 +75,11 @@ for (const filename of fs.readdirSync(chunkDir)) {
         result = value;
       },
     };
-    vm.runInNewContext(fs.readFileSync(file, 'utf8'), { self });
+    vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
+      self,
+      structuredClone,
+      crypto,
+    });
     const data = new Uint8ClampedArray(16 * 16 * 4);
     for (let y = 0; y < 16; y++)
       for (let x = 0; x < 16; x++)
@@ -144,6 +149,50 @@ for (const filename of fs.readdirSync(chunkDir)) {
       result.mesh.colors.some((c, i) => i % 3 === 2 && c === 191),
       'reference blue reaches the mesh',
     );
+    const reference = result.mesh,
+      header = Buffer.alloc(8);
+    header.writeUInt32LE(16, 0);
+    header.writeUInt32LE(16, 4);
+    await self.onmessage({
+      data: {
+        action: 'color-material',
+        mesh: structuredClone(reference),
+        materialCandidate: {
+          raster: { width: 16, height: 16, data },
+          provenance: {
+            method: 'marigold-iid-lighting',
+            modelRevision: '08c3930bb641abf786ba44ce92547507ebefbc16',
+            sourceSha256: createHash('sha256')
+              .update(header)
+              .update(data)
+              .digest('hex'),
+            engineFingerprint: 'a'.repeat(64),
+            runtimeDtype: 'float32',
+            steps: 4,
+            processingResolution: 512,
+            seed: 735,
+          },
+        },
+      },
+    });
+    assert.equal(
+      result.mesh?.materialHypothesis.method,
+      'learned-albedo-candidate',
+      result.error,
+    );
+    assert.equal(
+      result.mesh.materialHypothesis.materialIdentityVerified,
+      false,
+    );
+    assert.deepEqual(result.mesh.positions, reference.positions);
+    assert.deepEqual(
+      Array.from(result.mesh.sourceObservations.raster.rgba),
+      Array.from(data),
+    );
+    await self.onmessage({
+      data: { action: 'color-material', mesh: reference },
+    });
+    assert.match(result.error, /缺少/);
     // Actual bundled async semantic pipeline: no reference confirmation step.
     await self.onmessage({
       data: {

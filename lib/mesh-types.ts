@@ -12,6 +12,10 @@ export type TriangleMesh = {
   // One flags byte per triangle; unobserved triangles carry no flags.
   features?: Uint8Array;
   materialDesign?: import('./reference-materials.ts').ReferenceMaterialDesign;
+  // Detached original geometry/raster/correspondence observations. This ledger
+  // is separate from materialDesign palette and unseen-material hypotheses.
+  sourceObservations?: import('./scene-surface-graph.ts').SceneSurfaceGraph;
+  materialHypothesis?: import('./material-hypothesis.ts').MaterialHypothesisEvidence;
   // Source-face correspondence; inferred paint is not an observation. Face
   // indices survive the geometry design stage, which does not retessellate.
   materialEvidence?: { regionIds: Int32Array; observed: Uint8Array };

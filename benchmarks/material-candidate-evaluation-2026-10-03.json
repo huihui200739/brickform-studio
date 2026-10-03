@@ -1,0 +1,1406 @@
+{
+  "date": "2026-10-03",
+  "conversionFingerprint": "edb90867f9839817357a79ec6a4eb145a5488aa2ec70a60f75ba11c1a420728f",
+  "materialEngineFingerprint": "4931e60dda9afe89059075405da5bd7545c642366341f8091c248b99c68deb14",
+  "scope": "Optional reviewed single-image material estimates and bounded inclined-plane candidates. Twelve cached baseline replays plus two actual reviewed candidate conversions. No new native shape inference, independent photograph evaluation or physical build.",
+  "tests": {
+    "unit": {
+      "passed": 257,
+      "failed": 0
+    },
+    "typecheck": true,
+    "buildAndBundledWorker": true,
+    "scopedAlgorithmLint": true,
+    "wholeRepositoryLint": false,
+    "browserVisualValidation": false
+  },
+  "verifiedModel": {
+    "repo": "prs-eth/marigold-iid-lighting-v1-1",
+    "revision": "08c3930bb641abf786ba44ce92547507ebefbc16",
+    "verifiedFiles": 14,
+    "readySha256": "f330ed71f8fe4f8447247b797451ce3f7ffb050a06a8eedcad0abf64f4e20561",
+    "runtimeDtype": "float32",
+    "device": "mps",
+    "steps": 4,
+    "processingResolution": 512,
+    "ensembleSize": 1,
+    "seed": 735,
+    "fp16RejectedForNonfinite": true,
+    "imagesSentToExternalInference": false
+  },
+  "service": [
+    {
+      "status": 200,
+      "route": "/api/material-analysis",
+      "fixture": "temple-standard",
+      "runtime": {
+        "configured": true,
+        "model": "Marigold IID lighting v1.1",
+        "busy": false
+      },
+      "sourceSha256": "3b15881cb3e604ae23d1d8823471ffc04282961a22928481444e729ec6da7244",
+      "engineFingerprint": "4931e60dda9afe89059075405da5bd7545c642366341f8091c248b99c68deb14",
+      "dimensions": [
+        320,
+        320
+      ],
+      "byteCount": 409600,
+      "alphaPreserved": true,
+      "sourceBytesUnchanged": true,
+      "finiteMapStats": {
+        "albedo": {
+          "shape": [
+            320,
+            320,
+            3
+          ],
+          "dtype": "float32",
+          "finiteFraction": 1,
+          "minimum": 0,
+          "maximum": 0.8803260922431946,
+          "mean": 0.569790780544281,
+          "std": 0.24646227061748505
+        },
+        "shading": {
+          "shape": [
+            320,
+            320,
+            3
+          ],
+          "dtype": "float32",
+          "finiteFraction": 1,
+          "minimum": 0,
+          "maximum": 1,
+          "mean": 0.5623946189880371,
+          "std": 0.22122307121753693
+        },
+        "residual": {
+          "shape": [
+            320,
+            320,
+            3
+          ],
+          "dtype": "float32",
+          "finiteFraction": 1,
+          "minimum": 0,
+          "maximum": 0.28454554080963135,
+          "mean": 0.017096025869250298,
+          "std": 0.02015276812016964
+        }
+      },
+      "firstRequestMilliseconds": 85.77012500000001,
+      "modelElapsedSeconds": 10.716,
+      "cacheMilliseconds": 39.54162500000001,
+      "concurrencyProbe": false,
+      "boundaries": [
+        [
+          "origin",
+          403,
+          403
+        ],
+        [
+          "host",
+          403,
+          403
+        ],
+        [
+          "shape",
+          400,
+          400
+        ],
+        [
+          "bytes",
+          400,
+          400
+        ]
+      ],
+      "job": "work/intrinsic-engine/jobs/e15c70e018642f6762f30cca10c77cefd6a8890390480ad0565850249dd78c36"
+    },
+    {
+      "status": 200,
+      "route": "/api/material-analysis",
+      "fixture": "house",
+      "source": "outputs/identity-calibration/house.rgba",
+      "runtime": {
+        "configured": true,
+        "model": "Marigold IID lighting v1.1",
+        "busy": false
+      },
+      "sourceSha256": "7db1435cb4531df28da3719eea61516c7149636014c64ea8ee4b2429ae106225",
+      "engineFingerprint": "4931e60dda9afe89059075405da5bd7545c642366341f8091c248b99c68deb14",
+      "dimensions": [
+        320,
+        320
+      ],
+      "byteCount": 409600,
+      "alphaPreserved": true,
+      "sourceBytesUnchanged": true,
+      "finiteMapStats": {
+        "albedo": {
+          "shape": [
+            320,
+            320,
+            3
+          ],
+          "dtype": "float32",
+          "finiteFraction": 1,
+          "minimum": 0,
+          "maximum": 0.999793529510498,
+          "mean": 0.7130872011184692,
+          "std": 0.36020445823669434
+        },
+        "shading": {
+          "shape": [
+            320,
+            320,
+            3
+          ],
+          "dtype": "float32",
+          "finiteFraction": 1,
+          "minimum": 0,
+          "maximum": 1,
+          "mean": 0.7002227306365967,
+          "std": 0.28526872396469116
+        },
+        "residual": {
+          "shape": [
+            320,
+            320,
+            3
+          ],
+          "dtype": "float32",
+          "finiteFraction": 1,
+          "minimum": 0,
+          "maximum": 0.03792305290699005,
+          "mean": 0.001979907276108861,
+          "std": 0.0029164357110857964
+        }
+      },
+      "requestMilliseconds": 11730.1905,
+      "modelElapsedSeconds": 11.223,
+      "cachedBeforeRequest": false,
+      "job": "work/intrinsic-engine/jobs/104400262b9bba895d4f85f6d14edca9f1eff057909b700d674257ffaf3529fd"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "temple-standard",
+      "resolution": 48,
+      "inputSha256": "3b15881cb3e604ae23d1d8823471ffc04282961a22928481444e729ec6da7244",
+      "meshSha256": "432bff9f81a91d9e02f9e8ba3b09344b107fe2a6d08a1266ddce172215ed051f",
+      "modelSha256": "33f20475f3b308635e9dd4d91a27b3a0edc35cbb85a622815b83f3460b7d6a96",
+      "conversionFingerprint": "edb90867f9839817357a79ec6a4eb145a5488aa2ec70a60f75ba11c1a420728f",
+      "materialHypothesis": {
+        "method": "learned-albedo-candidate",
+        "provenance": {
+          "method": "marigold-iid-lighting",
+          "modelRepo": "prs-eth/marigold-iid-lighting-v1-1",
+          "modelRevision": "08c3930bb641abf786ba44ce92547507ebefbc16",
+          "modelLicense": "OpenRAIL++",
+          "sourceSha256": "3b15881cb3e604ae23d1d8823471ffc04282961a22928481444e729ec6da7244",
+          "engineFingerprint": "4931e60dda9afe89059075405da5bd7545c642366341f8091c248b99c68deb14",
+          "runtimeDtype": "float32",
+          "device": "mps",
+          "steps": 4,
+          "processingResolution": 512,
+          "ensembleSize": 1,
+          "seed": 735,
+          "inferenceHypothesis": true,
+          "originalAlphaPreserved": true,
+          "elapsedSeconds": 10.716,
+          "limits": [
+            "Single-image paint and illumination can be ambiguous; this is an inferred candidate, not material ground truth.",
+            "The model can brighten real dark paint, shift hue and smooth fine texture. Equal-radiance controls with opposite paint explanations produce identical predictions.",
+            "Observed reference pixels remain the source evidence. A finite or stable prediction does not validate paint preservation, geometry or physical buildability."
+          ],
+          "mapStats": {
+            "albedo": {
+              "shape": [
+                320,
+                320,
+                3
+              ],
+              "dtype": "float32",
+              "finiteFraction": 1,
+              "minimum": 0,
+              "maximum": 0.8803260922431946,
+              "mean": 0.569790780544281,
+              "std": 0.24646227061748505
+            },
+            "shading": {
+              "shape": [
+                320,
+                320,
+                3
+              ],
+              "dtype": "float32",
+              "finiteFraction": 1,
+              "minimum": 0,
+              "maximum": 1,
+              "mean": 0.5623946189880371,
+              "std": 0.22122307121753693
+            },
+            "residual": {
+              "shape": [
+                320,
+                320,
+                3
+              ],
+              "dtype": "float32",
+              "finiteFraction": 1,
+              "minimum": 0,
+              "maximum": 0.28454554080963135,
+              "mean": 0.017096025869250298,
+              "std": 0.02015276812016964
+            }
+          }
+        },
+        "changedFaces": 52312,
+        "totalFaces": 165196,
+        "sourceObservationsPreserved": true,
+        "materialIdentityVerified": false,
+        "warnings": [
+          "Learned albedo is a material hypothesis, not verified paint. Identical radiance can represent different materials and illumination. Genuine dark paint and fine texture may change; compare with source colors before converting."
+        ]
+      },
+      "sourceGeometryCameraFeaturesRGBAAndCoveragePreserved": true,
+      "bricks": 7985,
+      "supports": 99,
+      "steps": 853,
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "attached": true,
+          "visible": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "attached": true,
+          "visible": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "attached": true,
+          "visible": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "attached": true,
+          "visible": true
+        }
+      ],
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 7985
+      },
+      "order": {
+        "checked": 7953,
+        "failures": 0,
+        "scope": "Final one-plate grid approach; full paths, hands and stability unverified."
+      },
+      "inventoryTotal": 7985,
+      "procurement": {
+        "requiresReview": true,
+        "sourceBrickCount": 7985,
+        "purchaseQuantity": 7979,
+        "catalogConfirmed": 54,
+        "unverified": 21,
+        "unsupportedColors": 0,
+        "assemblyStepsRequireReview": true,
+        "stockChecked": false
+      },
+      "surfaceDesign": {
+        "method": "connected-mesh-planes",
+        "patches": [
+          {
+            "axis": 1,
+            "direction": -1,
+            "coordinateStuds": 0.02807620185946896,
+            "faces": 31561,
+            "areaStudsSquared": 2256.397955293847,
+            "normalConsensus": 0.9996624732246372,
+            "residualBeforeStuds": 0.006705305852703194,
+            "residualAfterStuds": 0.006327330631126461,
+            "adjustedVertices": 15443,
+            "maxDisplacementStuds": 0.023588297882404432,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 2,
+            "direction": -1,
+            "coordinateStuds": 0.1599328231433179,
+            "faces": 3214,
+            "areaStudsSquared": 210.53026196345402,
+            "normalConsensus": 0.9980078912580345,
+            "residualBeforeStuds": 0.05784178477588172,
+            "residualAfterStuds": 0.050809014438612035,
+            "adjustedVertices": 1342,
+            "maxDisplacementStuds": 0.0707606097986966,
+            "displacementFraction": 0.5
+          },
+          {
+            "axis": 2,
+            "direction": 1,
+            "coordinateStuds": 47.922026511345656,
+            "faces": 2994,
+            "areaStudsSquared": 214.1002885925317,
+            "normalConsensus": 0.9994313022894179,
+            "residualBeforeStuds": 0.014380259747750566,
+            "residualAfterStuds": 0.010436055582372818,
+            "adjustedVertices": 1360,
+            "maxDisplacementStuds": 0.03649553346319344,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 1,
+            "direction": 1,
+            "coordinateStuds": 5.41858117695686,
+            "faces": 9174,
+            "areaStudsSquared": 656.9843522442094,
+            "normalConsensus": 0.9977526947379546,
+            "residualBeforeStuds": 0.03016137739334901,
+            "residualAfterStuds": 0.019995652689376267,
+            "adjustedVertices": 4107,
+            "maxDisplacementStuds": 0.2390258956857897,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 0,
+            "direction": -1,
+            "coordinateStuds": 2.7515587941554247,
+            "faces": 711,
+            "areaStudsSquared": 50.004241167922736,
+            "normalConsensus": 0.9975226868869548,
+            "residualBeforeStuds": 0.025436569066244013,
+            "residualAfterStuds": 0.025187067839218393,
+            "adjustedVertices": 294,
+            "maxDisplacementStuds": 0.0052634218775072785,
+            "displacementFraction": 0.0625
+          },
+          {
+            "axis": 2,
+            "direction": 1,
+            "coordinateStuds": 23.783071174934484,
+            "faces": 657,
+            "areaStudsSquared": 47.09391789254711,
+            "normalConsensus": 0.9970541629491981,
+            "residualBeforeStuds": 0.020168227218048725,
+            "residualAfterStuds": 0.018507002975208943,
+            "adjustedVertices": 273,
+            "maxDisplacementStuds": 0.038733576572632024,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 1,
+            "direction": 1,
+            "coordinateStuds": 5.421232237344915,
+            "faces": 967,
+            "areaStudsSquared": 69.21701605350997,
+            "normalConsensus": 0.9984626412284097,
+            "residualBeforeStuds": 0.01940926785945821,
+            "residualAfterStuds": 0.017109993219279314,
+            "adjustedVertices": 424,
+            "maxDisplacementStuds": 0.1121797131570732,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 0,
+            "direction": -1,
+            "coordinateStuds": 5.420763737337049,
+            "faces": 1627,
+            "areaStudsSquared": 109.05533936682534,
+            "normalConsensus": 0.997044180083797,
+            "residualBeforeStuds": 0.05568468415216189,
+            "residualAfterStuds": 0.055202879148720754,
+            "adjustedVertices": 657,
+            "maxDisplacementStuds": 0.0028858859507439527,
+            "displacementFraction": 0.015625
+          },
+          {
+            "axis": 2,
+            "direction": -1,
+            "coordinateStuds": 11.801727816700113,
+            "faces": 390,
+            "areaStudsSquared": 27.888608156888665,
+            "normalConsensus": 0.9941187442218821,
+            "residualBeforeStuds": 0.04089999769532915,
+            "residualAfterStuds": 0.03773930924724164,
+            "adjustedVertices": 114,
+            "maxDisplacementStuds": 0.1343743323220476,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 1,
+            "direction": 1,
+            "coordinateStuds": 36.30389211202394,
+            "faces": 792,
+            "areaStudsSquared": 41.5581291306772,
+            "normalConsensus": 0.997171628275297,
+            "residualBeforeStuds": 0.023803507949489083,
+            "residualAfterStuds": 0.018992994748959893,
+            "adjustedVertices": 304,
+            "maxDisplacementStuds": 0.017940757587900556,
+            "displacementFraction": 0.5
+          },
+          {
+            "axis": 2,
+            "direction": 1,
+            "coordinateStuds": 21.25790774828797,
+            "faces": 1413,
+            "areaStudsSquared": 93.18875062677455,
+            "normalConsensus": 0.9977436206244946,
+            "residualBeforeStuds": 0.04516032612366536,
+            "residualAfterStuds": 0.03966022704673511,
+            "adjustedVertices": 568,
+            "maxDisplacementStuds": 0.031216225647436768,
+            "displacementFraction": 0.25
+          },
+          {
+            "axis": 2,
+            "direction": -1,
+            "coordinateStuds": 11.850302794815505,
+            "faces": 1350,
+            "areaStudsSquared": 82.35304741261508,
+            "normalConsensus": 0.9969787666121824,
+            "residualBeforeStuds": 0.03926078335333404,
+            "residualAfterStuds": 0.03249751629853512,
+            "adjustedVertices": 545,
+            "maxDisplacementStuds": 0.04557158052055542,
+            "displacementFraction": 0.5
+          },
+          {
+            "axis": 1,
+            "direction": 1,
+            "coordinateStuds": 35.01511242814861,
+            "faces": 463,
+            "areaStudsSquared": 33.11757466503347,
+            "normalConsensus": 0.9991729865340788,
+            "residualBeforeStuds": 0.011650295705169523,
+            "residualAfterStuds": 0.009980432663505828,
+            "adjustedVertices": 194,
+            "maxDisplacementStuds": 0.018017866861200986,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 0,
+            "direction": -1,
+            "coordinateStuds": 15.879043461221125,
+            "faces": 458,
+            "areaStudsSquared": 32.7781426150861,
+            "normalConsensus": 0.99861828255019,
+            "residualBeforeStuds": 0.014783607985278908,
+            "residualAfterStuds": 0.013280896157885866,
+            "adjustedVertices": 192,
+            "maxDisplacementStuds": 0.055116708990495034,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 0,
+            "direction": -1,
+            "coordinateStuds": 15.88217840780572,
+            "faces": 792,
+            "areaStudsSquared": 56.72573655978347,
+            "normalConsensus": 0.9978454628083906,
+            "residualBeforeStuds": 0.017110581424157223,
+            "residualAfterStuds": 0.016639558959612884,
+            "adjustedVertices": 335,
+            "maxDisplacementStuds": 0.03460921216634398,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 2,
+            "direction": -1,
+            "coordinateStuds": 11.826853086356042,
+            "faces": 445,
+            "areaStudsSquared": 26.80301996476331,
+            "normalConsensus": 0.9905407541744267,
+            "residualBeforeStuds": 0.05727852288730635,
+            "residualAfterStuds": 0.05513688978122625,
+            "adjustedVertices": 125,
+            "maxDisplacementStuds": 0.005940269943144405,
+            "displacementFraction": 0.0625
+          },
+          {
+            "axis": 1,
+            "direction": 1,
+            "coordinateStuds": 31.178659119575553,
+            "faces": 1008,
+            "areaStudsSquared": 72.05015280431566,
+            "normalConsensus": 0.9998708588006099,
+            "residualBeforeStuds": 0.005523355585215904,
+            "residualAfterStuds": 0.0043758630921969825,
+            "adjustedVertices": 455,
+            "maxDisplacementStuds": 0.010771023120465925,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 1,
+            "direction": 1,
+            "coordinateStuds": 13.448724735474777,
+            "faces": 965,
+            "areaStudsSquared": 68.26081577057992,
+            "normalConsensus": 0.9956521636102593,
+            "residualBeforeStuds": 0.04478887342873929,
+            "residualAfterStuds": 0.04460361679415364,
+            "adjustedVertices": 396,
+            "maxDisplacementStuds": 0.0024425076292664675,
+            "displacementFraction": 0.015625
+          },
+          {
+            "axis": 2,
+            "direction": -1,
+            "coordinateStuds": 12.850229939225386,
+            "faces": 1780,
+            "areaStudsSquared": 127.71577651771028,
+            "normalConsensus": 0.9960788083383783,
+            "residualBeforeStuds": 0.037712456663485196,
+            "residualAfterStuds": 0.030458042735231994,
+            "adjustedVertices": 759,
+            "maxDisplacementStuds": 0.1039040317975796,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 2,
+            "direction": 1,
+            "coordinateStuds": 14.01002762387297,
+            "faces": 1570,
+            "areaStudsSquared": 112.5756016721095,
+            "normalConsensus": 0.996721202325368,
+            "residualBeforeStuds": 0.024679231118975083,
+            "residualAfterStuds": 0.018400869782976257,
+            "adjustedVertices": 726,
+            "maxDisplacementStuds": 0.0586251809256647,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 0,
+            "direction": 1,
+            "coordinateStuds": 32.13587986372807,
+            "faces": 463,
+            "areaStudsSquared": 33.13203503878169,
+            "normalConsensus": 0.9987373079491153,
+            "residualBeforeStuds": 0.012304151978265565,
+            "residualAfterStuds": 0.010938947296530353,
+            "adjustedVertices": 195,
+            "maxDisplacementStuds": 0.026740496415935986,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 0,
+            "direction": 1,
+            "coordinateStuds": 32.138470128604524,
+            "faces": 791,
+            "areaStudsSquared": 56.6287143847999,
+            "normalConsensus": 0.9982930097410457,
+            "residualBeforeStuds": 0.013757038401271418,
+            "residualAfterStuds": 0.013523953358566735,
+            "adjustedVertices": 334,
+            "maxDisplacementStuds": 0.018522647011417707,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 1,
+            "direction": 1,
+            "coordinateStuds": 5.424592861548642,
+            "faces": 967,
+            "areaStudsSquared": 69.23805906552069,
+            "normalConsensus": 0.9981591975467704,
+            "residualBeforeStuds": 0.023279122622320323,
+            "residualAfterStuds": 0.019409819217582655,
+            "adjustedVertices": 423,
+            "maxDisplacementStuds": 0.043562455566227495,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 2,
+            "direction": -1,
+            "coordinateStuds": 10.413639069274959,
+            "faces": 718,
+            "areaStudsSquared": 47.817198307318,
+            "normalConsensus": 0.9960754801315563,
+            "residualBeforeStuds": 0.03213407414861692,
+            "residualAfterStuds": 0.018355967238923188,
+            "adjustedVertices": 296,
+            "maxDisplacementStuds": 0.11590094956857183,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 2,
+            "direction": 1,
+            "coordinateStuds": 23.782849960962263,
+            "faces": 657,
+            "areaStudsSquared": 47.07696335664018,
+            "normalConsensus": 0.9974131668085983,
+            "residualBeforeStuds": 0.019217636257446134,
+            "residualAfterStuds": 0.017234564333126912,
+            "adjustedVertices": 273,
+            "maxDisplacementStuds": 0.043358593462597274,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 1,
+            "direction": 1,
+            "coordinateStuds": 36.304868357565404,
+            "faces": 728,
+            "areaStudsSquared": 40.74272087945218,
+            "normalConsensus": 0.9981086173005799,
+            "residualBeforeStuds": 0.0230552280391022,
+            "residualAfterStuds": 0.016560454879459525,
+            "adjustedVertices": 271,
+            "maxDisplacementStuds": 0.03624992614823651,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 2,
+            "direction": -1,
+            "coordinateStuds": 11.83780232779387,
+            "faces": 1743,
+            "areaStudsSquared": 109.01489152615238,
+            "normalConsensus": 0.9971726077379147,
+            "residualBeforeStuds": 0.03883087716269904,
+            "residualAfterStuds": 0.03175079460651382,
+            "adjustedVertices": 694,
+            "maxDisplacementStuds": 0.0502238400096815,
+            "displacementFraction": 0.5
+          },
+          {
+            "axis": 2,
+            "direction": 1,
+            "coordinateStuds": 21.257605959449116,
+            "faces": 1439,
+            "areaStudsSquared": 93.76826632308133,
+            "normalConsensus": 0.9974856803812293,
+            "residualBeforeStuds": 0.045299627036177764,
+            "residualAfterStuds": 0.03991206037626612,
+            "adjustedVertices": 582,
+            "maxDisplacementStuds": 0.033089873892424355,
+            "displacementFraction": 0.25
+          },
+          {
+            "axis": 1,
+            "direction": 1,
+            "coordinateStuds": 35.01774644868247,
+            "faces": 466,
+            "areaStudsSquared": 33.32821795748972,
+            "normalConsensus": 0.9992913318939025,
+            "residualBeforeStuds": 0.010289570813443094,
+            "residualAfterStuds": 0.008305886447183431,
+            "adjustedVertices": 198,
+            "maxDisplacementStuds": 0.020641010102921246,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 0,
+            "direction": 1,
+            "coordinateStuds": 42.58889613284254,
+            "faces": 1740,
+            "areaStudsSquared": 111.86385914643604,
+            "normalConsensus": 0.9969136272877072,
+            "residualBeforeStuds": 0.06547816577080577,
+            "residualAfterStuds": 0.04941882828156092,
+            "adjustedVertices": 703,
+            "maxDisplacementStuds": 0.08701638697003215,
+            "displacementFraction": 0.5
+          },
+          {
+            "axis": 0,
+            "direction": 1,
+            "coordinateStuds": 45.304668150210766,
+            "faces": 722,
+            "areaStudsSquared": 51.41549210973806,
+            "normalConsensus": 0.997578050087672,
+            "residualBeforeStuds": 0.02044961480731908,
+            "residualAfterStuds": 0.017589996741262312,
+            "adjustedVertices": 300,
+            "maxDisplacementStuds": 0.06464327411686231,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 0,
+            "direction": 1,
+            "coordinateStuds": 47.973481744787684,
+            "faces": 2776,
+            "areaStudsSquared": 198.45184463815926,
+            "normalConsensus": 0.9989387391109427,
+            "residualBeforeStuds": 0.01857015583853397,
+            "residualAfterStuds": 0.012921822183384906,
+            "adjustedVertices": 1250,
+            "maxDisplacementStuds": 0.08424616492923885,
+            "displacementFraction": 1
+          }
+        ],
+        "adjustedVertices": 34132,
+        "warnings": [
+          "Nearly planar patches are a bounded mesh design inference. Unseen topology, intrinsic material, curved-part selection and load strength are not established."
+        ]
+      },
+      "appearance": "Actual catalog render reviewed separately; no kit-quality or physical-build pass."
+    },
+    {
+      "id": "house",
+      "resolution": 28,
+      "inputSha256": "7db1435cb4531df28da3719eea61516c7149636014c64ea8ee4b2429ae106225",
+      "meshSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+      "modelSha256": "026e3766d1c874e54c2ae799f08dcb4ee08a93aa7b7af4ed5193b150e6a2e23f",
+      "conversionFingerprint": "edb90867f9839817357a79ec6a4eb145a5488aa2ec70a60f75ba11c1a420728f",
+      "materialHypothesis": {
+        "method": "learned-albedo-candidate",
+        "provenance": {
+          "method": "marigold-iid-lighting",
+          "modelRepo": "prs-eth/marigold-iid-lighting-v1-1",
+          "modelRevision": "08c3930bb641abf786ba44ce92547507ebefbc16",
+          "modelLicense": "OpenRAIL++",
+          "sourceSha256": "7db1435cb4531df28da3719eea61516c7149636014c64ea8ee4b2429ae106225",
+          "engineFingerprint": "4931e60dda9afe89059075405da5bd7545c642366341f8091c248b99c68deb14",
+          "runtimeDtype": "float32",
+          "device": "mps",
+          "steps": 4,
+          "processingResolution": 512,
+          "ensembleSize": 1,
+          "seed": 735,
+          "inferenceHypothesis": true,
+          "originalAlphaPreserved": true,
+          "elapsedSeconds": 11.223,
+          "limits": [
+            "Single-image paint and illumination can be ambiguous; this is an inferred candidate, not material ground truth.",
+            "The model can brighten real dark paint, shift hue and smooth fine texture. Equal-radiance controls with opposite paint explanations produce identical predictions.",
+            "Observed reference pixels remain the source evidence. A finite or stable prediction does not validate paint preservation, geometry or physical buildability."
+          ],
+          "mapStats": {
+            "albedo": {
+              "shape": [
+                320,
+                320,
+                3
+              ],
+              "dtype": "float32",
+              "finiteFraction": 1,
+              "minimum": 0,
+              "maximum": 0.999793529510498,
+              "mean": 0.7130872011184692,
+              "std": 0.36020445823669434
+            },
+            "shading": {
+              "shape": [
+                320,
+                320,
+                3
+              ],
+              "dtype": "float32",
+              "finiteFraction": 1,
+              "minimum": 0,
+              "maximum": 1,
+              "mean": 0.7002227306365967,
+              "std": 0.28526872396469116
+            },
+            "residual": {
+              "shape": [
+                320,
+                320,
+                3
+              ],
+              "dtype": "float32",
+              "finiteFraction": 1,
+              "minimum": 0,
+              "maximum": 0.03792305290699005,
+              "mean": 0.001979907276108861,
+              "std": 0.0029164357110857964
+            }
+          }
+        },
+        "changedFaces": 97117,
+        "totalFaces": 154720,
+        "sourceObservationsPreserved": true,
+        "materialIdentityVerified": false,
+        "warnings": [
+          "Learned albedo is a material hypothesis, not verified paint. Identical radiance can represent different materials and illumination. Genuine dark paint and fine texture may change; compare with source colors before converting."
+        ]
+      },
+      "sourceGeometryCameraFeaturesRGBAAndCoveragePreserved": true,
+      "bricks": 3084,
+      "supports": 159,
+      "steps": 575,
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "attached": true,
+          "visible": false
+        },
+        {
+          "id": "image-tree-1",
+          "kind": "tree",
+          "attached": true,
+          "visible": true
+        }
+      ],
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3084
+      },
+      "order": {
+        "checked": 3071,
+        "failures": 0,
+        "scope": "Final one-plate grid approach; full paths, hands and stability unverified."
+      },
+      "inventoryTotal": 3084,
+      "procurement": {
+        "requiresReview": true,
+        "sourceBrickCount": 3084,
+        "purchaseQuantity": 3084,
+        "catalogConfirmed": 72,
+        "unverified": 29,
+        "unsupportedColors": 0,
+        "assemblyStepsRequireReview": false,
+        "stockChecked": false
+      },
+      "surfaceDesign": {
+        "method": "connected-mesh-planes",
+        "patches": [
+          {
+            "axis": 1,
+            "direction": -1,
+            "coordinateStuds": 0.0170696504287258,
+            "faces": 23070,
+            "areaStudsSquared": 566.0299378184881,
+            "normalConsensus": 0.9997526120079476,
+            "residualBeforeStuds": 0.006520151517776225,
+            "residualAfterStuds": 0.004038070841001511,
+            "adjustedVertices": 11348,
+            "maxDisplacementStuds": 0.024300327070145598,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 1,
+            "direction": 1,
+            "coordinateStuds": 1.360890592586425,
+            "faces": 8849,
+            "areaStudsSquared": 208.09176518930363,
+            "normalConsensus": 0.9964768529570933,
+            "residualBeforeStuds": 0.05770011539600979,
+            "residualAfterStuds": 0.0549527375298064,
+            "adjustedVertices": 3875,
+            "maxDisplacementStuds": 0.009228904166822026,
+            "displacementFraction": 0.0625
+          },
+          {
+            "axis": 0,
+            "direction": -1,
+            "coordinateStuds": 7.02770334914648,
+            "faces": 2140,
+            "areaStudsSquared": 52.71292833580969,
+            "normalConsensus": 0.9938845165026895,
+            "residualBeforeStuds": 0.0267953531481455,
+            "residualAfterStuds": 0.012681900486105874,
+            "adjustedVertices": 952,
+            "maxDisplacementStuds": 0.09974778981464749,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 2,
+            "direction": -1,
+            "coordinateStuds": 5.639861128962718,
+            "faces": 5600,
+            "areaStudsSquared": 99.69916406740789,
+            "normalConsensus": 0.9929714777411861,
+            "residualBeforeStuds": 0.03165605709925962,
+            "residualAfterStuds": 0.016109450118014134,
+            "adjustedVertices": 2465,
+            "maxDisplacementStuds": 0.13329626187792376,
+            "displacementFraction": 1
+          },
+          {
+            "axis": 2,
+            "direction": 1,
+            "coordinateStuds": 17.979181734616475,
+            "faces": 999,
+            "areaStudsSquared": 23.228830764406403,
+            "normalConsensus": 0.9926053956423456,
+            "residualBeforeStuds": 0.03806418493967298,
+            "residualAfterStuds": 0.037714973246019926,
+            "adjustedVertices": 399,
+            "maxDisplacementStuds": 0.001632960563237545,
+            "displacementFraction": 0.015625
+          },
+          {
+            "axis": 1,
+            "direction": 1,
+            "coordinateStuds": 1.3961059774288422,
+            "faces": 772,
+            "areaStudsSquared": 17.190708751805882,
+            "normalConsensus": 0.9961117637020193,
+            "residualBeforeStuds": 0.022691300557452592,
+            "residualAfterStuds": 0.020756146504884897,
+            "adjustedVertices": 298,
+            "maxDisplacementStuds": 0.007582558680934994,
+            "displacementFraction": 0.125
+          },
+          {
+            "axis": 0,
+            "direction": 1,
+            "coordinateStuds": 20.529697938234808,
+            "faces": 1978,
+            "areaStudsSquared": 45.00799026321796,
+            "normalConsensus": 0.9921427320589838,
+            "residualBeforeStuds": 0.04820619523701793,
+            "residualAfterStuds": 0.04383275720775553,
+            "adjustedVertices": 782,
+            "maxDisplacementStuds": 0.016462618301204737,
+            "displacementFraction": 0.125
+          }
+        ],
+        "adjustedVertices": 20119,
+        "warnings": [
+          "Nearly planar patches are a bounded mesh design inference. Unseen topology, intrinsic material, curved-part selection and load strength are not established."
+        ]
+      },
+      "appearance": "Actual catalog render reviewed separately; no kit-quality or physical-build pass."
+    }
+  ],
+  "sourceConservation": "Production applyMaterialHypothesis replay asserted exact source geometry/camera/features/observation object preservation, RGBA equality and observed coverage equality. New material palette evidence is separate from the original ledger.",
+  "controls": {
+    "scope": "No production integration. Six diagnostic synthetic controls; same official pinned model, MPS float32, 4 steps, 512 processing resolution, ensemble1, seed735.",
+    "rows": [
+      {
+        "id": "uniform-dark-paint",
+        "inputRGBA_SHA256": "21ab2105954026df04e3658a1778fac4449741c2e114dacdc2de4a1292189687",
+        "predictionSHA256": "c50517add1cc2fa1fd42ef428544630a71293d5e95a358c682c76469b3eef2fb",
+        "inputRightMeanLinearLuminance": 0.018445969057696496,
+        "albedoRightMeanLinearLuminance": 0.06564862052737364,
+        "rightLuminanceGain": 3.5589683752603958,
+        "inputRightToLeftLuminance": 0.03584641725401098,
+        "albedoRightToLeftLuminance": 0.1235168085558294,
+        "inputRightLuminanceStd": 3.469446951953614e-18,
+        "albedoRightLuminanceStd": 0.0004474937737413628,
+        "finite": true,
+        "linearAlbedoDtype": "float32",
+        "sourcePixelsUnmodified": true
+      },
+      {
+        "id": "textured-dark-wood",
+        "inputRGBA_SHA256": "e918846cfc28bbc057b3fc0911e8ba8151580627f1d3de92a90c7acbe8a1653b",
+        "predictionSHA256": "d313dd415631f55670696552801a8197075c47fdc7ecddbc17db0526d641c831",
+        "inputRightMeanLinearLuminance": 0.04641112856632203,
+        "albedoRightMeanLinearLuminance": 0.18217336180022647,
+        "rightLuminanceGain": 3.925208617581852,
+        "inputRightToLeftLuminance": 0.09019166597396885,
+        "albedoRightToLeftLuminance": 0.34394404024752756,
+        "inputRightLuminanceStd": 0.012342335197080105,
+        "albedoRightLuminanceStd": 0.002316460913357928,
+        "finite": true,
+        "linearAlbedoDtype": "float32",
+        "sourcePixelsUnmodified": true
+      },
+      {
+        "id": "blue-painted-wall",
+        "inputRGBA_SHA256": "bbed2dd52b9fda5c4c6b4d3fea22827e5e28c3e3f2c91365c1caacb69f27511c",
+        "predictionSHA256": "c02ad9b664a7db8125bdd9e0c4005ec2689662221b44992b5ba8ebdfdef1f792",
+        "inputRightMeanLinearLuminance": 0.03589750022186752,
+        "albedoRightMeanLinearLuminance": 0.09521313729837078,
+        "rightLuminanceGain": 2.652361214844988,
+        "inputRightToLeftLuminance": 0.06976032364057906,
+        "albedoRightToLeftLuminance": 0.21071040715943934,
+        "inputRightLuminanceStd": 0.0096522168346116,
+        "albedoRightLuminanceStd": 0.0006469342157583483,
+        "finite": true,
+        "linearAlbedoDtype": "float32",
+        "sourcePixelsUnmodified": true
+      },
+      {
+        "id": "neutral-dark-painted-wall",
+        "inputRGBA_SHA256": "8462d47a6ca79e215f683daa2743c9c3368fa41d9849045fdb1473e299ce6ae9",
+        "predictionSHA256": "6afe01b76c7daf7728cf8a9049ea398f683c93db6e9e4f2cc6b3e3f267222b71",
+        "inputRightMeanLinearLuminance": 0.038267184704672386,
+        "albedoRightMeanLinearLuminance": 0.07742099757747022,
+        "rightLuminanceGain": 2.0231694119901427,
+        "inputRightToLeftLuminance": 0.07436537846124382,
+        "albedoRightToLeftLuminance": 0.1614459569521933,
+        "inputRightLuminanceStd": 0.010102817430666136,
+        "albedoRightLuminanceStd": 0.0010862115362419533,
+        "finite": true,
+        "linearAlbedoDtype": "float32",
+        "sourcePixelsUnmodified": true
+      },
+      {
+        "id": "scalar-cast-shadow-on-sand",
+        "inputRGBA_SHA256": "051bd8d26e5fb36928b99cd576212d192ae848e8f48201e66d72fa03faea625e",
+        "predictionSHA256": "157d112345cc62e8ee98ba852feec64b342f01898d3fbf775c5c2717c65e9527",
+        "inputRightMeanLinearLuminance": 0.06686884623809605,
+        "albedoRightMeanLinearLuminance": 0.1863548411979692,
+        "rightLuminanceGain": 2.7868708925293286,
+        "inputRightToLeftLuminance": 0.1299475541809473,
+        "albedoRightToLeftLuminance": 0.3628176581632579,
+        "inputRightLuminanceStd": 0.017826927080426352,
+        "albedoRightLuminanceStd": 0.0013811258148614734,
+        "finite": true,
+        "linearAlbedoDtype": "float32",
+        "sourcePixelsUnmodified": true
+      },
+      {
+        "id": "dark-tan-paint-ambiguous-gradient",
+        "inputRGBA_SHA256": "051bd8d26e5fb36928b99cd576212d192ae848e8f48201e66d72fa03faea625e",
+        "predictionSHA256": "157d112345cc62e8ee98ba852feec64b342f01898d3fbf775c5c2717c65e9527",
+        "inputRightMeanLinearLuminance": 0.06686884623809605,
+        "albedoRightMeanLinearLuminance": 0.1863548411979692,
+        "rightLuminanceGain": 2.7868708925293286,
+        "inputRightToLeftLuminance": 0.1299475541809473,
+        "albedoRightToLeftLuminance": 0.3628176581632579,
+        "inputRightLuminanceStd": 0.017826927080426352,
+        "albedoRightLuminanceStd": 0.0013811258148614734,
+        "finite": true,
+        "linearAlbedoDtype": "float32",
+        "sourcePixelsUnmodified": true
+      }
+    ],
+    "ambiguousPair": {
+      "inputPixelsIdentical": true,
+      "outputsExactlyIdentical": true,
+      "maxAbsDifference": 0,
+      "reason": "Same radiance and seed cannot identify opposite paint-versus-lighting ground truth. This is ambiguity, not proof of correct paint."
+    },
+    "productionRunnerReplayed": false,
+    "automaticAdoptionPassed": false,
+    "reason": "Diagnostic controls are finite but genuine dark paint is brightened and texture weakened; opposite material explanations with equal pixels remain ambiguous."
+  },
+  "baselineReplay": {
+    "replayedAt": "2026-10-03T01:30:40.777Z",
+    "conversionFingerprint": "edb90867f9839817357a79ec6a4eb145a5488aa2ec70a60f75ba11c1a420728f",
+    "newNativeInference": false,
+    "newSemanticInference": false,
+    "downloads": false,
+    "models": [
+      {
+        "id": "house",
+        "resolution": 28,
+        "bricks": 3146,
+        "supports": 184,
+        "steps": 575,
+        "inventoryTotal": 3146,
+        "approaches": 3133,
+        "upward": 156,
+        "approachFailures": 0,
+        "slopeReplacements": 14,
+        "modelSha256": "99f680547af910f990baaf375775cf90a0a480052d3b7f9858f607c26ecbc1e3"
+      },
+      {
+        "id": "locomotive",
+        "resolution": 28,
+        "bricks": 3028,
+        "supports": 161,
+        "steps": 608,
+        "inventoryTotal": 3028,
+        "approaches": 3028,
+        "upward": 525,
+        "approachFailures": 0,
+        "slopeReplacements": 0,
+        "modelSha256": "d5d66a42a8ff50d4f7763575760e28ea2139cd7f743bddfab8097c77f2e32c1f"
+      },
+      {
+        "id": "horse",
+        "resolution": 28,
+        "bricks": 1793,
+        "supports": 259,
+        "steps": 473,
+        "inventoryTotal": 1793,
+        "approaches": 1793,
+        "upward": 371,
+        "approachFailures": 0,
+        "slopeReplacements": 0,
+        "modelSha256": "743d3c5344abfcd200370e54a1c93c54c1df4e3a21f6a513119495974157f47c"
+      },
+      {
+        "id": "sculpture-head",
+        "resolution": 28,
+        "bricks": 4965,
+        "supports": 685,
+        "steps": 971,
+        "inventoryTotal": 4965,
+        "approaches": 4965,
+        "upward": 2032,
+        "approachFailures": 0,
+        "slopeReplacements": 13,
+        "modelSha256": "2e636da9f7ed685d83027348370e368763a8c8473e3c836d85642a70ec4d577d"
+      },
+      {
+        "id": "wizard-hat",
+        "resolution": 28,
+        "bricks": 2797,
+        "supports": 578,
+        "steps": 840,
+        "inventoryTotal": 2797,
+        "approaches": 2797,
+        "upward": 414,
+        "approachFailures": 0,
+        "slopeReplacements": 0,
+        "modelSha256": "fdbf523a1723698e3500833f0503ad36819064d87fdee6f14c5e58b324e673d2"
+      },
+      {
+        "id": "costumed-figure",
+        "resolution": 28,
+        "bricks": 3123,
+        "supports": 290,
+        "steps": 597,
+        "inventoryTotal": 3123,
+        "approaches": 3123,
+        "upward": 572,
+        "approachFailures": 0,
+        "slopeReplacements": 13,
+        "modelSha256": "f3505acead04d4ed908bc79b3fbe93c6ba4ecab4615fea6e72d8dba8eb2aa1ed"
+      },
+      {
+        "id": "temple-original",
+        "resolution": 28,
+        "bricks": 2953,
+        "supports": 67,
+        "steps": 374,
+        "inventoryTotal": 2953,
+        "approaches": 2921,
+        "upward": 36,
+        "approachFailures": 0,
+        "slopeReplacements": 0,
+        "modelSha256": "a7e36c603db6a44a6290f54a7c7b42ef2058ea6a17994b9a49c578574a757f42"
+      },
+      {
+        "id": "temple-original",
+        "resolution": 36,
+        "bricks": 4986,
+        "supports": 138,
+        "steps": 602,
+        "inventoryTotal": 4986,
+        "approaches": 4954,
+        "upward": 26,
+        "approachFailures": 0,
+        "slopeReplacements": 0,
+        "modelSha256": "1e262db5f8b0297bf131d43f95cf4dedb890cec0a68326d124011ed377398189"
+      },
+      {
+        "id": "temple-original",
+        "resolution": 48,
+        "bricks": 9695,
+        "supports": 199,
+        "steps": 1095,
+        "inventoryTotal": 9695,
+        "approaches": 9663,
+        "upward": 82,
+        "approachFailures": 0,
+        "slopeReplacements": 0,
+        "modelSha256": "9a7a8756bd5e0ca0298d84a48939badf485d5aea1685587e90b63a331283e655"
+      },
+      {
+        "id": "temple-standard",
+        "resolution": 28,
+        "bricks": 2588,
+        "supports": 27,
+        "steps": 284,
+        "inventoryTotal": 2588,
+        "approaches": 2556,
+        "upward": 15,
+        "approachFailures": 0,
+        "slopeReplacements": 3,
+        "modelSha256": "f2caaa764ad87a90f8a92b7857befbaf315db3aaa938e4a0c6744c2dcbaae563"
+      },
+      {
+        "id": "temple-standard",
+        "resolution": 36,
+        "bricks": 4414,
+        "supports": 54,
+        "steps": 465,
+        "inventoryTotal": 4414,
+        "approaches": 4382,
+        "upward": 38,
+        "approachFailures": 0,
+        "slopeReplacements": 4,
+        "modelSha256": "37f9142bf4d1be8193c2dbe570dd7a97ed3015cd22197e1350f24013e20a122a"
+      },
+      {
+        "id": "temple-standard",
+        "resolution": 48,
+        "bricks": 8609,
+        "supports": 49,
+        "steps": 851,
+        "inventoryTotal": 8609,
+        "approaches": 8577,
+        "upward": 61,
+        "approachFailures": 0,
+        "slopeReplacements": 4,
+        "modelSha256": "a84c6ecb5976c5285d7d6c3fe38dcb74295e6689d39858506dbc2945888001fd"
+      }
+    ],
+    "totals": {
+      "models": 12,
+      "bricks": 52097,
+      "supports": 2691,
+      "approaches": 51892,
+      "upward": 4328,
+      "slopes": 51,
+      "catalogConfirmedLines": 632,
+      "unverifiedCatalogLines": 245,
+      "unsupportedColors": 0,
+      "assembledQuantity": 12,
+      "changedSourceBricks": 18,
+      "tracedColorChoices": 18
+    },
+    "gates": {
+      "images": {
+        "passed": true,
+        "cases": 6
+      },
+      "geometry": {
+        "passed": true,
+        "cases": 6
+      },
+      "support": {
+        "passed": true,
+        "cases": 12
+      },
+      "procurement": {
+        "passed": true,
+        "cases": 12,
+        "compatibilityControls": 11,
+        "procurementReady": false
+      },
+      "slopes": {
+        "passed": true,
+        "cases": 12
+      }
+    },
+    "failures": {
+      "images": [],
+      "geometry": [],
+      "support": [],
+      "procurement": [],
+      "procurementControls": [],
+      "slopes": []
+    },
+    "limits": {
+      "images": "Bilinear offline downsample approximates canvas; no browser UI, load stability, or physical build was tested. Connection checks are not visual quality scores.",
+      "geometry": "Recess walls use mesh-and-reference evidence; lower display platforms use reconstructed mesh normals and area consensus. Only declared patches are redesigned. Source material patterns, inferred back geometry, procurement, load strength and insertion paths remain unverified.",
+      "support": "Fewer support parts is not a strength result. Negative spaces, material regions, curve design, procurement, full paths, force/stability and human instructions trials remain incomplete. Public engine examples are not independent held-out photographs.",
+      "procurement": "Catalog records establish previously observed part/color combinations. They do not verify current stock, authenticity of seller listings, legal assembly poses, forces, stability, physical build or human instructions. Assembly grouping is a procurement count only; existing split steps require review.",
+      "slopes": "Source-evidenced upright slopes only. Unobserved backs, curved surface design, material inference, kit appearance, procurement, full insertion paths, joint force and human step trials remain incomplete."
+    }
+  },
+  "renderReview": {
+    "renderer": "scripts/render-assembly.py / actual vendored part geometry; no edited mockup",
+    "rendererSha256": "d522580fc476fed98518507fb7070e4b58ffc977fe0777a970c574b7eb6aa03e",
+    "views": [
+      {
+        "id": "temple-standard",
+        "view": "front",
+        "file": "outputs/material-candidate-calibration/temple-candidate-front.png",
+        "sha256": "8fbd15d184e9cb3320f34c6d98b376d3c1c6f59d6fe77f75b812e1f2326be4e8",
+        "modelSha256": "33f20475f3b308635e9dd4d91a27b3a0edc35cbb85a622815b83f3460b7d6a96"
+      },
+      {
+        "id": "temple-standard",
+        "view": "side",
+        "file": "outputs/material-candidate-calibration/temple-candidate-side.png",
+        "sha256": "dd3b881038843c56e06b5d64e87b661a54de9492654179f79ebc9355d5efe5b6",
+        "modelSha256": "33f20475f3b308635e9dd4d91a27b3a0edc35cbb85a622815b83f3460b7d6a96"
+      },
+      {
+        "id": "temple-standard",
+        "view": "back",
+        "file": "outputs/material-candidate-calibration/temple-candidate-back.png",
+        "sha256": "bb1ee6a4279c97b20067c23bdef4f8c87a135b0c48cd3d5d092152d3b78e1c8d",
+        "modelSha256": "33f20475f3b308635e9dd4d91a27b3a0edc35cbb85a622815b83f3460b7d6a96"
+      },
+      {
+        "id": "temple-standard",
+        "view": "top",
+        "file": "outputs/material-candidate-calibration/temple-candidate-top.png",
+        "sha256": "f123d2c85b7b8fe370ba021f085eac02cdfa54f792157ac6de5cb9f765611ecf",
+        "modelSha256": "33f20475f3b308635e9dd4d91a27b3a0edc35cbb85a622815b83f3460b7d6a96"
+      },
+      {
+        "id": "house",
+        "view": "hero",
+        "file": "outputs/material-candidate-calibration/house-candidate-hero.png",
+        "sha256": "cad62b0468abde4815fb42e522447f5b4689ea54bab3cc1749f701da0162a4bc",
+        "modelSha256": "026e3766d1c874e54c2ae799f08dcb4ee08a93aa7b7af4ed5193b150e6a2e23f"
+      },
+      {
+        "id": "house",
+        "view": "front",
+        "file": "outputs/material-candidate-calibration/house-candidate-front.png",
+        "sha256": "3968cf2d64b3b2cd2ffb2f9680b178e9b0e44f0e22402248ec5eb18e0339e5dc",
+        "modelSha256": "026e3766d1c874e54c2ae799f08dcb4ee08a93aa7b7af4ed5193b150e6a2e23f"
+      },
+      {
+        "id": "house",
+        "view": "back",
+        "file": "outputs/material-candidate-calibration/house-candidate-back.png",
+        "sha256": "6353858f2c3b586038582d9619b6a5d9cc24c8f158f67f40dc387ea16872f51b",
+        "modelSha256": "026e3766d1c874e54c2ae799f08dcb4ee08a93aa7b7af4ed5193b150e6a2e23f"
+      },
+      {
+        "id": "house",
+        "view": "top",
+        "file": "outputs/material-candidate-calibration/house-candidate-top.png",
+        "sha256": "d68c4b4fd9aa447bba82ff80035e4e539bafdcdb414e3958b40cbbc5aeb0c0ed",
+        "modelSha256": "026e3766d1c874e54c2ae799f08dcb4ee08a93aa7b7af4ed5193b150e6a2e23f"
+      }
+    ],
+    "findings": [
+      {
+        "id": "temple-standard",
+        "improved": "Front brown jamb/fascia/stair shadow bands visibly reduced. Statue and both connected visible braziers retained.",
+        "remaining": "Back retains brown areas, staircase-like inferred structure and uneven layout. Top/ground still has inconsistent surface pattern.",
+        "kitAppearancePassed": false
+      },
+      {
+        "id": "house",
+        "improved": "Some scattered white roof fragments reduced; blue roof and gray masonry remain represented.",
+        "remaining": "Roof remains stepped rather than curved. Gray wall/blue roof correspondence, yellow ground and inferred back remain incorrect. Whole-region objective failed.",
+        "kitAppearancePassed": false
+      }
+    ],
+    "physicalBuildVerified": false,
+    "browserGPUVerified": false
+  },
+  "surfaceGeometry": {
+    "method": "connected inclined-plane candidate with fixed original camera and final-intersection veto",
+    "scope": "Existing axis design retained; conservative new candidates. No claim that two real failing meshes now have a complete regional design.",
+    "controls": "Inclined noise, curved wave preservation, boundary/crease preservation, thin sheet collision, orientation, bounds, fixed-camera projection and rejected repaint controls covered by focused tests.",
+    "limits": "Endpoint intersections only; not continuous motion or a minimum-gap guarantee. Existing source intersections and incident contacts are excluded. Ledger is detached by ownership, not runtime-writable typed-array protection."
+  },
+  "status": {
+    "sourceLedgerSingleViewImplemented": true,
+    "sourceLedgerMultiViewImplemented": false,
+    "reviewedMaterialCandidateImplemented": true,
+    "automaticMaterialTruth": false,
+    "wholeRegionDesignComplete": false,
+    "procurementReady": false,
+    "officialKitQuality": false,
+    "physicalBuildVerified": false
+  },
+  "limitations": [
+    "Public engine samples are not independent held-out photos.",
+    "Silhouette camera and original pixel mapping are recorded, not proven correct internally.",
+    "Changing paint can change packing; fewer parts or connected output is not a force/stability result.",
+    "Remaining 245 baseline procurement lines unverified; catalog snapshot is not stock.",
+    "Full insertion paths, subassembly instructions, step visibility and human trials remain incomplete."
+  ],
+  "reproduction": [
+    "npm test",
+    "npm run typecheck",
+    "npm run build",
+    "npm run local",
+    "BRICKFORM_BENCH_PYTHON=work/semantic-engine/.venv/bin/python npm run benchmark:images -- --scene-dir=outputs/identity-calibration",
+    "node --experimental-strip-types scripts/benchmark-geometry.ts outputs/material-candidate-calibration",
+    "node --experimental-strip-types scripts/benchmark-supports.ts outputs/material-candidate-calibration",
+    "node --experimental-strip-types scripts/benchmark-procurement.ts outputs/material-candidate-calibration",
+    "node --experimental-strip-types scripts/benchmark-slopes.ts outputs/material-candidate-calibration",
+    "node --experimental-strip-types scripts/benchmark-material-candidates.ts outputs/material-candidate-calibration"
+  ]
+}

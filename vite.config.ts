@@ -5,6 +5,7 @@ import { defineConfig } from 'vite';
 import hostingConfig from './.openai/hosting.json';
 import { localReconstruction } from './scripts/local-reconstruction';
 import { localSemantics } from './scripts/local-semantics';
+import { localMaterials } from './scripts/local-materials';
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   '00000000-0000-4000-8000-000000000000';
@@ -53,7 +54,7 @@ export default defineConfig(async () => {
       : undefined,
     plugins: [
       ...(process.env.BRICKFORM_LOCAL_3D === '1'
-        ? [localReconstruction(), localSemantics()]
+        ? [localReconstruction(), localSemantics(), localMaterials()]
         : []),
       vinext(),
       sites(),

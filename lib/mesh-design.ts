@@ -1243,6 +1243,8 @@ function assembleVolume(
     model.voxelMaterialDesign = volume.voxelMaterialDesign;
   model.slopeDesign = slopes.design;
   if (mesh.materialDesign) model.materialDesign = mesh.materialDesign;
+  if (mesh.materialHypothesis)
+    model.materialHypothesis = mesh.materialHypothesis;
   model.clearanceVolumes = openings;
   if (platform) model.platformDesign = platform;
   if (designGeometry.planes.length) model.designGeometry = designGeometry;
@@ -1256,9 +1258,15 @@ function assembleVolume(
     openRowFraction: openRows / Math.max(1, intersected),
   };
   model.assembly!.reference = `按三维网格体积生成；保留网格中的前后布局和孔洞。新增辅助支撑 ${model.supportCount} 块，已计入清单。网格可能含 AI 推测，连接检查不代表外观还原或实物稳定性已验证。`;
-  if (volume.surfaceDesign?.patches.length)
+  if (
+    volume.surfaceDesign?.patches.length ||
+    volume.surfaceDesign?.regionPlanes?.patches.length
+  )
     model.assembly!.reference +=
       ' 连续近似平面在排砖前整理；孔洞、折角和外轮廓边界保留，隐藏形状与材质仍需复核。';
+  if (mesh.materialHypothesis)
+    model.assembly!.reference +=
+      ' 配色采用本机生成的阴影减弱候选；真实深色涂装与纹理可能改变，原图和观测对应已保留。';
 
   if (model.designGeometry)
     model.assembly!.reference +=

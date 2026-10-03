@@ -14,6 +14,8 @@ import { VIEW_LABELS, type ViewAxis } from '@/lib/multiview';
 import { estimatePitch } from '@/lib/brick-reader';
 import { outline, type MultiViewReconstruction } from '@/lib/multiview';
 import { referenceMask } from '@/lib/reference-colors';
+import { decodeMaterialCandidate } from '@/lib/local-material-request';
+import { rasterSha256 } from '@/lib/material-hypothesis';
 import MeshDraftViewer from './mesh-draft-viewer';
 // oxlint-disable-next-line import/default -- Vite exports the public worker asset URL.
 import workerUrl from '@/lib/image-design.worker.ts?worker&url';
@@ -136,6 +138,23 @@ export default function ReconstructionPanel({
     [glbUrl, setGlbUrl] = useState(''),
     [job, setJob] = useState<Job | null>(null),
     [draft, setDraft] = useState<TriangleMesh | null>(null);
+  const [materialConfigured, setMaterialConfigured] = useState(false),
+    [materialPair, setMaterialPair] = useState<{
+      source: TriangleMesh;
+      candidate: TriangleMesh;
+    } | null>(null);
+  const materialGeneration = useRef(0),
+    materialController = useRef<AbortController | null>(null);
+  useEffect(() => {
+    materialGeneration.current++;
+    materialController.current?.abort();
+  }, [image, resolution, inputMode, draft?.positions]);
+  // A color pair is independent of stud resolution and input-tab selection.
+  // Discard it only for a new source image/geometry, never promote a displayed
+  // hypothesis to the reference colors when the user changes precision.
+  useEffect(() => {
+    setMaterialPair(null);
+  }, [image, draft?.positions]);
   const autoGeneration = useRef(0);
   const alive = useRef(true),
     controller = useRef<AbortController | null>(null),
@@ -173,10 +192,20 @@ export default function ReconstructionPanel({
         if (alive.current && e.name !== 'AbortError')
           setError('无法查询三维服务状态，请刷新页面。');
       });
+    void fetch('/api/material-analysis', { signal: c.signal })
+      .then(async (r) => {
+        if (!r.ok) return;
+        const status = (await r.json()) as { configured?: boolean };
+        if (alive.current) setMaterialConfigured(!!status.configured);
+      })
+      .catch(() => {
+        // Hosted and unconfigured worktables keep the reference color route.
+      });
     return () => {
       alive.current = false;
       c.abort();
       controller.current?.abort();
+      materialController.current?.abort();
       worker.current?.terminate();
     };
   }, []);
@@ -469,6 +498,7 @@ export default function ReconstructionPanel({
         referenceUrl.current || image,
       );
       if (alive.current) {
+        setMaterialPair(null);
         setDraft(colored);
         setPhase('参考图配色已应用，请检查颜色与形状后再转换');
       }
@@ -476,6 +506,77 @@ export default function ReconstructionPanel({
       if (alive.current)
         setError(e instanceof Error ? e.message : '参考图配色失败。');
     } finally {
+      if (alive.current) setBusy(false);
+    }
+  }
+  async function generateMaterialCandidate() {
+    const source = materialPair?.source || draft;
+    if (!source?.sourceObservations || !source.coloring || busy) return;
+    const generation = materialGeneration.current,
+      raw = source.sourceObservations.raster,
+      raster = { width: raw.width, height: raw.height, data: raw.rgba },
+      abort = new AbortController();
+    materialController.current = abort;
+    const timeout = setTimeout(() => abort.abort(), 195000);
+    setBusy(true);
+    setError('');
+    setPhase('正在本机生成阴影减弱配色候选');
+    try {
+      const sourceSha256 = await rasterSha256(raster);
+      const response = await fetch('/api/material-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          width: raw.width,
+          height: raw.height,
+          data: Array.from(raw.rgba),
+        }),
+        signal: abort.signal,
+      });
+      const body = (await response.json()) as {
+        error?: string;
+        candidate?: unknown;
+      };
+      if (!response.ok) throw Error(body.error || '配色候选生成失败。');
+      if (!alive.current || generation !== materialGeneration.current) return;
+      const candidate = decodeMaterialCandidate(body.candidate, raster, {
+        sourceSha256,
+      });
+      const colored = await runWorker<TriangleMesh>(
+        {
+          action: 'color-material',
+          mesh: source,
+          materialCandidate: candidate,
+        },
+        'mesh',
+      );
+      if (!alive.current || generation !== materialGeneration.current) return;
+      // The worker changes material data only. Reuse immutable source objects
+      // so comparing colors does not restart placement or semantic detection.
+      const preview = {
+        ...colored,
+        positions: source.positions,
+        features: source.features,
+        coloring: source.coloring,
+        sourceObservations: source.sourceObservations,
+      };
+      setMaterialPair({ source, candidate: preview });
+      setDraft(preview);
+      onInputsChangeRef.current?.();
+      setPhase('配色候选已显示。请对照参考配色，再点击“生成积木成品”。');
+    } catch (e) {
+      if (alive.current && generation === materialGeneration.current)
+        setError(
+          e instanceof Error && e.name === 'AbortError'
+            ? '配色候选生成超时，已保留原配色。'
+            : e instanceof Error
+              ? e.message
+              : '配色候选生成失败。',
+        );
+    } finally {
+      clearTimeout(timeout);
+      if (materialController.current === abort)
+        materialController.current = null;
       if (alive.current) setBusy(false);
     }
   }
@@ -491,10 +592,9 @@ export default function ReconstructionPanel({
     }
     const key = `${autoComponents ? 1 : 0}:${resolution}`;
     if (autoDone.current.mesh === draft && autoDone.current.key === key) return;
-    // A manual single-colour override keeps the same geometry: the components
-    // were found from the reference picture, so they stay where they are.
+    // Color comparison and manual overrides keep the same source geometry:
+    // components found from the reference picture stay where they are.
     const recoloured =
-      !draft.coloring &&
       !!autoDone.current.mesh &&
       autoDone.current.mesh.positions === draft.positions;
     const sameOptions = autoDone.current.key === key;
@@ -860,7 +960,9 @@ export default function ReconstructionPanel({
       colors,
       coloring: undefined,
       materialDesign: undefined,
+      materialHypothesis: undefined,
     });
+    setMaterialPair(null);
   }
   if (!active) return null;
   const modeSwitch = (
@@ -1451,7 +1553,11 @@ export default function ReconstructionPanel({
             <summary>
               调整配色{' '}
               <span>
-                {draft.coloring ? '已应用参考图颜色' : '原始模型颜色'}
+                {draft.materialHypothesis
+                  ? '阴影减弱候选'
+                  : draft.coloring
+                    ? '已应用参考图颜色'
+                    : '原始模型颜色'}
               </span>
             </summary>
             <div className="reconstruction-actions">
@@ -1464,6 +1570,7 @@ export default function ReconstructionPanel({
               <button
                 disabled={busy || !original.current}
                 onClick={() => {
+                  setMaterialPair(null);
                   if (original.current) setDraft(original.current);
                 }}
               >
@@ -1475,6 +1582,47 @@ export default function ReconstructionPanel({
                   : '可为无纹理模型恢复参考图配色'}
               </span>
             </div>
+            {materialConfigured &&
+              draft.sourceObservations &&
+              draft.coloring && (
+                <>
+                  <div className="reconstruction-actions">
+                    <button
+                      disabled={busy || autoBusy}
+                      onClick={() => void generateMaterialCandidate()}
+                    >
+                      生成阴影减弱配色候选
+                    </button>
+                    {materialPair && (
+                      <>
+                        <button
+                          disabled={busy}
+                          aria-pressed={!draft.materialHypothesis}
+                          onClick={() => {
+                            setDraft(materialPair.source);
+                            onInputsChangeRef.current?.();
+                          }}
+                        >
+                          对照参考配色
+                        </button>
+                        <button
+                          disabled={busy}
+                          aria-pressed={!!draft.materialHypothesis}
+                          onClick={() => {
+                            setDraft(materialPair.candidate);
+                            onInputsChangeRef.current?.();
+                          }}
+                        >
+                          查看候选配色
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  <p className="field-hint">
+                    图片留在本机。候选可减少墙面阴影杂色，也可能改变真实深色涂装或纹理；对照确认后再生成积木。
+                  </p>
+                </>
+              )}
             {draft.coloring?.alignment?.ambiguous && (
               <p className="field-hint">
                 图片轮廓对应多个可能视角，部分表面可能取错颜色。请旋转检查草稿；补充同一模型的侧面或俯视图可减少不确定性。

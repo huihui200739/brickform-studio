@@ -86,6 +86,7 @@ export type Model = {
   designGeometry?: import('./design-geometry.ts').DesignGeometry;
   platformDesign?: import('./platform-design.ts').PlatformDesign;
   materialDesign?: import('./reference-materials.ts').ReferenceMaterialDesign;
+  materialHypothesis?: import('./material-hypothesis.ts').MaterialHypothesisEvidence;
   surfaceDesign?: import('./surface-design.ts').SurfaceDesign;
   voxelMaterialDesign?: import('./voxel-materials.ts').VoxelMaterialDesign;
   slopeDesign?: import('./slope-design.ts').SlopeDesign;

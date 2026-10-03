@@ -1,4 +1,12 @@
 import type { TriangleMesh } from './mesh-types.ts';
+import {
+  designRegionPlanes,
+  type RegionPlanePatch,
+} from './surface-region-design.ts';
+import {
+  validateSurfaceProjection,
+  type SurfaceProjectionValidation,
+} from './surface-projection-validation.ts';
 
 export type SurfaceDesign = {
   method: 'connected-mesh-planes';
@@ -16,6 +24,11 @@ export type SurfaceDesign = {
     displacementFraction: number;
   }>;
   adjustedVertices: number;
+  regionPlanes?: {
+    method: 'connected-inclined-planes';
+    patches: RegionPlanePatch[];
+    projection: SurfaceProjectionValidation;
+  };
   warnings: string[];
 };
 
@@ -268,8 +281,33 @@ export function designMeshSurfaces(mesh: TriangleMesh, resolution: number) {
       displacementFraction,
     });
   }
-  return {
-    mesh: design.patches.length ? { ...mesh, positions: out } : mesh,
-    design,
-  };
+  const axisMesh = design.patches.length ? { ...mesh, positions: out } : mesh;
+  // Photograph-derived candidates use the unchanged input camera and paint.
+  // Imports without source observations retain their existing geometry design.
+  if (mesh.sourceObservations) {
+    const inclined = designRegionPlanes(axisMesh, resolution);
+    if (inclined.patches.length) {
+      const projection = validateSurfaceProjection(
+        axisMesh,
+        inclined.mesh,
+        mesh.sourceObservations,
+      );
+      if (projection.passed) {
+        design.regionPlanes = {
+          method: 'connected-inclined-planes',
+          patches: inclined.patches,
+          projection,
+        };
+        const moved = new Set<string>();
+        for (let i = 0; i < p.length; i += 3)
+          if (
+            [0, 1, 2].some((a) => p[i + a] !== inclined.mesh.positions[i + a])
+          )
+            moved.add(`${p[i]},${p[i + 1]},${p[i + 2]}`);
+        design.adjustedVertices = moved.size;
+        return { mesh: inclined.mesh, design };
+      }
+    }
+  }
+  return { mesh: axisMesh, design };
 }

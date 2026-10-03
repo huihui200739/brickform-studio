@@ -4,6 +4,7 @@ import { rgb } from './material-color-space.ts';
 import { referenceMaterials } from './reference-materials.ts';
 import { surfaceMaterials } from './surface-materials.ts';
 import { referenceVisibility } from './reference-visibility.ts';
+import { createSceneSurfaceGraph } from './scene-surface-graph.ts';
 
 const SIZE = 96;
 // Olive foliage is warm and desaturated: its green channel barely beats red but
@@ -332,8 +333,18 @@ export function colorFromReference(
   override?: ReferenceCamera,
   softenShadows = true,
 ): TriangleMesh {
-  const { camera, view, mask, left, right, top, bottom, extent, evidence } =
-    referenceAlignment(mesh, image, override);
+  const {
+    camera,
+    view,
+    mask,
+    left,
+    right,
+    top,
+    bottom,
+    extent,
+    evidence,
+    center,
+  } = referenceAlignment(mesh, image, override);
   const materials = referenceMaterials(image, mask, softenShadows);
   const p = mesh.positions;
   const N = 192,
@@ -345,6 +356,21 @@ export function colorFromReference(
     coords[i + 2] = v[2];
   }
   const visibility = referenceVisibility(coords, extent, camera.perspective, N);
+  const observations = createSceneSurfaceGraph({
+    positions: p,
+    image,
+    mask,
+    rawRegionIds: materials.labels,
+    camera,
+    alignment: evidence,
+    projectionSize: N,
+    pixelFaces: visibility.pixelFace,
+    imageBounds: [left, right, top, bottom],
+    viewBounds: [view.minX, view.maxX, view.minY, view.maxY],
+    meshCenter: center as [number, number, number],
+    extent,
+    depthTolerance: visibility.tolerance,
+  });
   const faces = p.length / 9;
   const faceColors = new Int16Array(faces).fill(-1),
     features = new Uint8Array(faces),
@@ -377,6 +403,7 @@ export function colorFromReference(
       if (face < 0) continue;
       const k = imagePixel(x + 0.5, y + 0.5);
       if (k < 0) continue;
+      observations?.recordPixel(y * N + x, k);
       const color = materials.palette[k];
       sample(face, k);
       counts[color]++;
@@ -404,6 +431,7 @@ export function colorFromReference(
       }
       const k = imagePixel(x, y);
       if (k < 0) continue;
+      observations?.recordCentroid(t, x, y, k, z, nearest);
       sample(t, k);
       centroidObservedFaces++;
     }
@@ -428,6 +456,8 @@ export function colorFromReference(
     ...mesh,
     colors: out,
     features,
+    sourceObservations: observations?.finish(),
+    materialHypothesis: undefined,
     materialEvidence: {
       regionIds: surfaces.regionIds,
       observed: Uint8Array.from(faceColors, (color) => (color >= 0 ? 1 : 0)),

@@ -17,6 +17,10 @@ import {
 } from './multiview.ts';
 import { blueprintToModel, readFront } from './brick-reader.ts';
 import { colorFromReference } from './reference-colors.ts';
+import {
+  applyMaterialHypothesis,
+  type MaterialHypothesisCandidate,
+} from './material-hypothesis.ts';
 import type { TriangleMesh } from './mesh-types.ts';
 import type { Raster } from './brick-engine.ts';
 self.onmessage = async (
@@ -28,7 +32,14 @@ self.onmessage = async (
     raster: Raster;
     options: ImageDesignOptions;
     name: string;
-    action?: 'color' | 'components' | 'views' | 'views-draft' | 'blueprint';
+    action?:
+      | 'color'
+      | 'color-material'
+      | 'components'
+      | 'views'
+      | 'views-draft'
+      | 'blueprint';
+    materialCandidate?: MaterialHypothesisCandidate;
     pitch?: number;
     depth?: number;
     softenShadows?: boolean;
@@ -38,6 +49,14 @@ self.onmessage = async (
 ) => {
   try {
     const { raster, options, name, mesh, regions = [] } = event.data;
+    if (event.data.action === 'color-material') {
+      if (!mesh || !event.data.materialCandidate)
+        throw Error('缺少模型或配色候选，已保留原配色。');
+      self.postMessage({
+        mesh: await applyMaterialHypothesis(mesh, event.data.materialCandidate),
+      });
+      return;
+    }
     if (event.data.action === 'color' && mesh) {
       self.postMessage({
         mesh: colorFromReference(
@@ -105,14 +124,22 @@ self.onmessage = async (
         );
         refined = mergeRefinementRegions(regions, found);
       } catch (error) {
-        semanticWarning = error instanceof Error ? error.message : '对象识别失败，已保留原网格。';
+        semanticWarning =
+          error instanceof Error
+            ? error.message
+            : '对象识别失败，已保留原网格。';
         // Semantic alignment is optional. A detector failure must never remove
         // geometry or prevent ordinary mesh-to-brick conversion.
         refined = regions.filter((r) => !r.autoRefinement);
       }
     }
     if (event.data.action === 'components') {
-      self.postMessage({ regions: refined, reports: [], dropped: [], semanticWarning });
+      self.postMessage({
+        regions: refined,
+        reports: [],
+        dropped: [],
+        semanticWarning,
+      });
       return;
     }
     // Component placement never blocks the finished product: anything that
