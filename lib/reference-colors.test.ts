@@ -136,9 +136,8 @@ void test('muted olive foliage is read from the picture, not from the brick colo
   const positions = new Float32Array(g.attributes.position.array),
     data = new Uint8ClampedArray(40 * 40 * 4);
   // Olive leaves on the left, sunlit sand on the right. Both are warm and
-  // desaturated, and the palette has no olive green, so the leaves quantise to
-  // the same brick as the ground they stand on. Only the picture can tell them
-  // apart, which is exactly what the foliage flag has to record.
+  // desaturated. Features must still come from the raw picture, independent
+  // of a material hypothesis or any later palette expansion.
   for (let y = 2; y < 38; y++)
     for (let x = 2; x < 38; x++)
       data.set(

@@ -4,9 +4,9 @@ from PIL import Image
 from render_transparency import composite_fragments
 model=json.load(open(sys.argv[1]))
 parts=json.load(open('public/parts/geometry.json'))
-palette=['#F4F4F4','#242424','#C91A09','#F2CD37','#0055BF','#237841','#FE8A18','#D7BA8C','#897D62','#5F3109','#352100','#969696','#646464','#708E7C','#F08F1C']
+palette=['#F4F4F4','#242424','#C91A09','#F2CD37','#0055BF','#237841','#FE8A18','#D7BA8C','#897D62','#5F3109','#352100','#969696','#646464','#708E7C','#F08F1C','#A5CA18','#77774E']
 # Official LDraw display alpha, not a measured refraction/absorption model.
-opacity=[1.0]*14+[128/255]
+opacity=[1.0]*14+[128/255]+[1.0]*2
 view=sys.argv[3] if len(sys.argv)>3 else 'hero'
 views={'hero':[-1.3,.8,1.5],'front':[.0001,.05,1],'side':[-1,.04,0],'back':[.0001,.08,-1],'top':[.0001,1,.01]}
 if view not in views:raise ValueError('Unknown inspection view: '+view)

@@ -1,0 +1,291 @@
+{
+  "date": "2026-10-04",
+  "status": "rejected-not-in-production",
+  "conversionFingerprint": "9050b8aef2c6c00d1839e3b435859a859e999401689315e590eeecf1b41e5801",
+  "materialEngineFingerprint": "4931e60dda9afe89059075405da5bd7545c642366341f8091c248b99c68deb14",
+  "experimentPatch": "benchmarks/experiments/surface-direction-rejected-2026-10-04.patch",
+  "patchSha256": "c73595f580492beecff45b9fa4d85bb20438e10d5a4b1a3359d65548f5de025b",
+  "hypothesis": "Restrict donors using signed normal dot, with direct exact shared-edge corner exception. No observed paint is modified.",
+  "noNewInferenceOrDownload": true,
+  "structuralReplayPassed": true,
+  "appearanceAccepted": false,
+  "cases": [
+    {
+      "id": "temple-standard",
+      "resolution": 48,
+      "inputSha256": "3b15881cb3e604ae23d1d8823471ffc04282961a22928481444e729ec6da7244",
+      "meshSha256": "432bff9f81a91d9e02f9e8ba3b09344b107fe2a6d08a1266ddce172215ed051f",
+      "modelSha256": "2978f973252ad7b7d4b86fc5c90cbd9cd184908e24dbe3b81aaefd1f5e9af785",
+      "bricks": 7537,
+      "supports": 89,
+      "steps": 800,
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "attached": true,
+          "visible": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "attached": true,
+          "visible": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "attached": true,
+          "visible": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "attached": true,
+          "visible": true
+        }
+      ],
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 7537
+      },
+      "order": {
+        "checked": 7505,
+        "failures": 0,
+        "scope": "Final one-plate grid approach; full paths, hands and stability unverified."
+      },
+      "procurement": {
+        "requiresReview": true,
+        "sourceBrickCount": 7537,
+        "purchaseQuantity": 7531,
+        "catalogConfirmed": 41,
+        "unverified": 22,
+        "unsupportedColors": 0,
+        "assemblyStepsRequireReview": true,
+        "stockChecked": false
+      },
+      "renders": [
+        {
+          "image": "outputs/material-direction-calibration/temple-front.png",
+          "view": "front",
+          "sha256": "a10d494244f762fdf681af0862e153e55472a3177f1e0ec57983e5cd9dc9490e"
+        },
+        {
+          "image": "outputs/material-direction-calibration/temple-side.png",
+          "view": "side",
+          "sha256": "a61b1ccd6cf5bf6c491f64450d4ca52a09608e497cdda999aec5986f89de1a96"
+        },
+        {
+          "image": "outputs/material-direction-calibration/temple-back.png",
+          "view": "back",
+          "sha256": "59674c64ff831b28cc6472581ab0e5845705c8a8beb85c6de5ffb52374dad11f"
+        },
+        {
+          "image": "outputs/material-direction-calibration/temple-top.png",
+          "view": "top",
+          "sha256": "b6b75bb51f2dfe19db9581bd0ac76f8033a42180531c55b4509cbe1828d5278d"
+        }
+      ]
+    },
+    {
+      "id": "house",
+      "resolution": 28,
+      "inputSha256": "7db1435cb4531df28da3719eea61516c7149636014c64ea8ee4b2429ae106225",
+      "meshSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+      "modelSha256": "8b64dc1352951811cf45da3cd5b4d2af6e3319f921e9a2a7ec083d4739e84f61",
+      "bricks": 2966,
+      "supports": 182,
+      "steps": 548,
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "attached": true,
+          "visible": false
+        },
+        {
+          "id": "image-tree-1",
+          "kind": "tree",
+          "attached": true,
+          "visible": true
+        }
+      ],
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 2966
+      },
+      "order": {
+        "checked": 2953,
+        "failures": 0,
+        "scope": "Final one-plate grid approach; full paths, hands and stability unverified."
+      },
+      "procurement": {
+        "requiresReview": true,
+        "sourceBrickCount": 2966,
+        "purchaseQuantity": 2966,
+        "catalogConfirmed": 63,
+        "unverified": 35,
+        "unsupportedColors": 0,
+        "assemblyStepsRequireReview": false,
+        "stockChecked": false
+      },
+      "renders": [
+        {
+          "image": "outputs/material-direction-calibration/house-hero.png",
+          "view": "hero",
+          "sha256": "f086d6a468f797c2c259953968c2f750ac188805dcaf1c6e07f86d4cac7607ef"
+        },
+        {
+          "image": "outputs/material-direction-calibration/house-front.png",
+          "view": "front",
+          "sha256": "80f14a342e4e89ca9570ac32e77df3d09e0d002993c2c18e3d7036fd1b9a71e7"
+        },
+        {
+          "image": "outputs/material-direction-calibration/house-back.png",
+          "view": "back",
+          "sha256": "ae94bd3428fea748c7895c627fc4c14679f9193e179fcf8d427eca6cc3c4252e"
+        },
+        {
+          "image": "outputs/material-direction-calibration/house-top.png",
+          "view": "top",
+          "sha256": "6a5b19d2ed053eb730a266920fe17d57699a60d8d919f1a99ce32392c6e18f9d"
+        }
+      ]
+    }
+  ],
+  "samePaletteCounterexample": {
+    "comparison": "Same palette and exact region geometry/observations; only rejected direction gate differs.",
+    "paletteOnlyDefaultFaces": 1694,
+    "rejectedDefaultFaces": 54698,
+    "grayToBlueDefaultRegions": 763,
+    "grayToBlueInferredFaces": 25167,
+    "regions": [
+      {
+        "id": 150,
+        "inferredFaces": 3391,
+        "area": 0.29293536000401965,
+        "normal": [
+          -0.6878675340456205,
+          -0.7256820278367124,
+          0.014961620259652614
+        ],
+        "center": [
+          0.4198994632966391,
+          -0.3034251497824559,
+          -0.2132079544242357
+        ],
+        "oldDonorRegionIds": [
+          592,
+          630
+        ]
+      },
+      {
+        "id": 1895,
+        "inferredFaces": 1150,
+        "area": 0.10124864071337612,
+        "normal": [
+          0.016593736034816176,
+          0.07289911418646079,
+          -0.9972012670846523
+        ],
+        "center": [
+          0.032155852421091556,
+          -0.2805224243456761,
+          -0.5994139859073245
+        ],
+        "oldDonorRegionIds": [
+          2576,
+          2579,
+          2278,
+          2888
+        ]
+      },
+      {
+        "id": 2114,
+        "inferredFaces": 760,
+        "area": 0.08546014778706938,
+        "normal": [
+          -0.9972083749065794,
+          0.06554915259761045,
+          0.03575983235299098
+        ],
+        "center": [
+          -0.49377083277422595,
+          -0.7453351407845504,
+          -0.40413588796967814
+        ],
+        "oldDonorRegionIds": [
+          2316,
+          1968,
+          1943,
+          2743
+        ]
+      },
+      {
+        "id": 2496,
+        "inferredFaces": 715,
+        "area": 0.05933620309872352,
+        "normal": [
+          0.009538731078759043,
+          0.013450278865242067,
+          -0.9998640420616466
+        ],
+        "center": [
+          -0.14360402348255064,
+          -0.4417316804165114,
+          -0.5998050698721129
+        ],
+        "oldDonorRegionIds": [
+          2278,
+          2888,
+          1979,
+          2576
+        ]
+      },
+      {
+        "id": 1902,
+        "inferredFaces": 660,
+        "area": 0.06269605073317334,
+        "normal": [
+          0.010231610240318625,
+          0.07755869543314446,
+          -0.996935285218955
+        ],
+        "center": [
+          -0.11835328095183278,
+          -0.637451830684142,
+          -0.5992148844066859
+        ],
+        "oldDonorRegionIds": [
+          2278,
+          2888,
+          1979,
+          2294
+        ]
+      }
+    ]
+  },
+  "review": [
+    {
+      "case": "temple-standard",
+      "result": "Rear brown stripes visibly reduced, but extra rear stairs and coarse geometry remain. This does not establish correct hidden material."
+    },
+    {
+      "case": "house",
+      "result": "Signed-normal restriction creates widespread blue defaults where gray was inferred before. The shared-edge exception does not prevent the regression. Reject."
+    }
+  ],
+  "decision": "Restore the baseline donor implementation. Ship only independently verified palette additions and purchasing color-ID mapping. Hidden surface material and interior correspondence remain unresolved.",
+  "limitations": [
+    "The restored gray wall is also an inference, not observed material truth.",
+    "A rejected donor does not justify a global roof color, a wall-class color, or a uniform wash.",
+    "Structure/BOM/final one-plate approach checks do not constitute appearance, procurement availability or physical build acceptance.",
+    "Actual CAD renders reviewed locally; no browser or physical build acceptance."
+  ]
+}

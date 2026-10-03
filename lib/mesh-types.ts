@@ -1,7 +1,7 @@
 // Per-triangle flags read from the reference picture *before* its colours are
 // quantised to the brick palette. Foliage is the reason they exist: an olive
-// canopy is warm and desaturated, the palette has no olive green, so leaves and
-// the sand floor around them can land on the very same brick colour. The
+// canopy can be warm, desaturated or shadowed, so leaves and the sand floor
+// around them can land on the very same brick colour. The
 // photograph still tells them apart, and that reading survives the palette.
 export const MESH_FEATURE = { foliage: 1 } as const;
 export type TriangleMesh = {

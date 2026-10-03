@@ -38,6 +38,11 @@ export const PALETTE: PaletteColor[] = [
     lego: 182,
     opacity: 128 / 255,
   },
+  // Append only: saved models and catalog flames use the existing indices.
+  // LDraw LDConfig.ldr UPDATE 2026-05-29, checked 2026-10-04.
+  // https://library.ldraw.org/library/official/LDConfig.ldr
+  { name: '黄绿色', hex: '#A5CA18', ldraw: 27, lego: 119 },
+  { name: '橄榄绿', hex: '#77774E', ldraw: 330, lego: 330 },
 ];
 /** Photograph radiance cannot establish that an ordinary surface is translucent. */
 export function isOpaquePaletteColor(index: number) {

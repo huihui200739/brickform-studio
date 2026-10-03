@@ -241,7 +241,10 @@ writeFileSync(
   join(output, 'candidate-results.json'),
   JSON.stringify(
     {
-      date: '2026-10-03',
+      date: new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Shanghai',
+      }).format(new Date()),
+      completedAt: new Date().toISOString(),
       conversionFingerprint: fingerprint,
       engineFingerprint,
       cases,

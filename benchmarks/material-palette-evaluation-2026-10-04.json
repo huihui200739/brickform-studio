@@ -1,0 +1,1056 @@
+{
+  "date": "2026-10-04",
+  "candidateReplayCompletedAt": "2026-10-03T17:09:51.399Z",
+  "status": "verified-palette-improvement-models-remain-drafts",
+  "conversionFingerprint": "ea8b01354e21a4b16e6fbdf4eb7624e7fbe7681db7360eab502ccee8e046d0b4",
+  "baselineRevision": "dcb6e2872355859f657131cfeb278e28a0251718",
+  "materialEngineFingerprint": "4931e60dda9afe89059075405da5bd7545c642366341f8091c248b99c68deb14",
+  "scope": "Append two official color definitions; preserve palette indices and explicit unverified part-color availability. Reject signed-normal donor experiment. Cached native meshes and learned observations; no new inference/download.",
+  "checks": {
+    "unitTests": {
+      "tests": 259,
+      "pass": 259,
+      "fail": 0,
+      "durationMs": 129580.965125
+    },
+    "typecheckPassed": true,
+    "buildAndPackagedWorkerPassed": true,
+    "scopedLintPassed": true,
+    "wholeRepositoryLintPassed": false,
+    "wholeLintNote": "Existing unrelated lint errors remain; no whole-repository lint claim.",
+    "ordinaryApproaches": 51882,
+    "upwardApproaches": 4304,
+    "ordinaryApproachFailures": 0,
+    "fullInsertionPathsOrPhysicalBuildVerified": false
+  },
+  "colorDefinitions": [
+    {
+      "name": "Lime",
+      "index": 15,
+      "hex": "#A5CA18",
+      "ldraw": 27,
+      "lego": 119,
+      "bricklink": 34
+    },
+    {
+      "name": "Olive_Green",
+      "index": 16,
+      "hex": "#77774E",
+      "ldraw": 330,
+      "lego": 330,
+      "bricklink": 155
+    }
+  ],
+  "colorAuthority": {
+    "url": "https://library.ldraw.org/library/official/LDConfig.ldr",
+    "checkedAt": "2026-10-04",
+    "update": "2026-05-29",
+    "sha256": "0178cd14fba46acb9df049c835e60e223b134d178f7e928ace0be1dfbe78895d",
+    "purchaseColorMappingURL": "https://v2.bricklink.com/en-us/catalog/color-guide",
+    "newPartColorCombinationsConfirmed": false
+  },
+  "fixedInputGrassControl": {
+    "frozenOldFingerprint": "edb90867f9839817357a79ec6a4eb145a5488aa2ec70a60f75ba11c1a420728f",
+    "originalRasterSha256": "7db1435cb4531df28da3719eea61516c7149636014c64ea8ee4b2429ae106225",
+    "candidateRasterSha256": "2938cc73052fe27ce6b5305a0a967fb4586c3464a3417012a757270f07433a53",
+    "stats": {
+      "pixels": 4198,
+      "oldRawCounts": {
+        "1": 144,
+        "3": 1483,
+        "5": 2451,
+        "7": 11,
+        "8": 14,
+        "10": 30,
+        "12": 6,
+        "13": 59
+      },
+      "oldCandidateCounts": {
+        "0": 15,
+        "3": 3514,
+        "5": 497,
+        "6": 2,
+        "7": 129,
+        "8": 2,
+        "9": 10,
+        "11": 9,
+        "13": 20
+      },
+      "extendedCandidateCounts": {
+        "0": 15,
+        "3": 1,
+        "5": 110,
+        "6": 2,
+        "7": 107,
+        "8": 2,
+        "9": 10,
+        "11": 9,
+        "13": 19,
+        "LDraw27-Lime": 3896,
+        "LDraw330-Olive_Green": 27
+      },
+      "oldYellowControls": {
+        "3": 1,
+        "LDraw27-Lime": 3513
+      },
+      "meanHueChange": 7.735960613111924
+    },
+    "exactNegativeControls": [
+      {
+        "rgb": [36, 36, 36],
+        "oldIndex": 1,
+        "newIndex": 1
+      },
+      {
+        "rgb": [53, 33, 0],
+        "oldIndex": 10,
+        "newIndex": 10
+      },
+      {
+        "rgb": [0, 85, 191],
+        "oldIndex": 4,
+        "newIndex": 4
+      },
+      {
+        "rgb": [150, 150, 150],
+        "oldIndex": 11,
+        "newIndex": 11
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "temple-standard",
+      "resolution": 48,
+      "inputSha256": "3b15881cb3e604ae23d1d8823471ffc04282961a22928481444e729ec6da7244",
+      "meshSha256": "432bff9f81a91d9e02f9e8ba3b09344b107fe2a6d08a1266ddce172215ed051f",
+      "modelSha256": "b953902905baa65092dfb98c7de8b9a02f8e61f975b5cb808550f18211c7e9e1",
+      "sourceGeometryCameraFeaturesRGBAAndCoveragePreserved": true,
+      "bricks": 7953,
+      "supports": 99,
+      "steps": 848,
+      "applied": [
+        {
+          "id": "image-statue-6",
+          "kind": "statue",
+          "attached": true,
+          "visible": true
+        },
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "attached": true,
+          "visible": true
+        },
+        {
+          "id": "image-brazier-7",
+          "kind": "brazier",
+          "attached": true,
+          "visible": true
+        },
+        {
+          "id": "image-brazier-10",
+          "kind": "brazier",
+          "attached": true,
+          "visible": true
+        }
+      ],
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 7953
+      },
+      "order": {
+        "checked": 7921,
+        "failures": 0,
+        "scope": "Final one-plate grid approach; full paths, hands and stability unverified."
+      },
+      "inventoryTotal": 7953,
+      "procurement": {
+        "requiresReview": true,
+        "sourceBrickCount": 7953,
+        "purchaseQuantity": 7947,
+        "catalogConfirmed": 54,
+        "unverified": 22,
+        "unsupportedColors": 0,
+        "assemblyStepsRequireReview": true,
+        "stockChecked": false
+      }
+    },
+    {
+      "id": "house",
+      "resolution": 28,
+      "inputSha256": "7db1435cb4531df28da3719eea61516c7149636014c64ea8ee4b2429ae106225",
+      "meshSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+      "modelSha256": "887447eecce59ac52e511899c9ceb666cd6e77b59cc7d18e654f2619d7d8444d",
+      "sourceGeometryCameraFeaturesRGBAAndCoveragePreserved": true,
+      "bricks": 3096,
+      "supports": 172,
+      "steps": 577,
+      "applied": [
+        {
+          "id": "image-tree-0",
+          "kind": "tree",
+          "attached": true,
+          "visible": false
+        },
+        {
+          "id": "image-tree-1",
+          "kind": "tree",
+          "attached": true,
+          "visible": true
+        }
+      ],
+      "validation": {
+        "collisions": 0,
+        "unsupported": 0,
+        "invalidParts": 0,
+        "connected": true,
+        "brickCount": 3096
+      },
+      "order": {
+        "checked": 3083,
+        "failures": 0,
+        "scope": "Final one-plate grid approach; full paths, hands and stability unverified."
+      },
+      "inventoryTotal": 3096,
+      "procurement": {
+        "requiresReview": true,
+        "sourceBrickCount": 3096,
+        "purchaseQuantity": 3096,
+        "catalogConfirmed": 60,
+        "unverified": 37,
+        "unsupportedColors": 0,
+        "assemblyStepsRequireReview": false,
+        "stockChecked": false
+      }
+    }
+  ],
+  "baselineReplay": {
+    "cases": [
+      {
+        "id": "house",
+        "resolution": 28,
+        "passed": true,
+        "inputSha256": "63dfa62dc5a19a1a3bd2df1d1589644f98dea501a4b31cb02a71679d0c74a0e7",
+        "meshSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+        "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+        "modelSha256": "d54c2b3680dede7799d023bdabfb1f75a1661660cfc3f490024366b2e2312fa3",
+        "bricks": 3146,
+        "supports": 181,
+        "steps": 569,
+        "emittedApproaches": {
+          "tested": 3133,
+          "upward": 149,
+          "failures": 0,
+          "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+        },
+        "inventoryTotal": 3146,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 3146
+        },
+        "applied": [
+          {
+            "id": "image-tree-0",
+            "kind": "tree"
+          },
+          {
+            "id": "image-tree-1",
+            "kind": "tree"
+          }
+        ],
+        "platformPassed": true,
+        "procurement": {
+          "passed": true,
+          "catalogConfirmed": 91,
+          "unverified": 44,
+          "unsupportedColors": 0,
+          "sourceModelUnchanged": true,
+          "everySourceBrickTracedExactlyOnce": true,
+          "procurementReady": false,
+          "stockChecked": false,
+          "physicalBuildVerified": false
+        },
+        "slopeAuditPassed": true
+      },
+      {
+        "id": "locomotive",
+        "resolution": 28,
+        "passed": true,
+        "inputSha256": "df4284dabd513c4826d1cda8ad2dc6687ee4c30229d41c3d631749329175c90c",
+        "meshSha256": "5b8be986de0fe82f66561518736b09237145beabe2891705710314ca88a9703a",
+        "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+        "modelSha256": "490b9f3d72e81e0faf7f767bd75c4087ef4369ff3f0e187e440e042608cba737",
+        "bricks": 3028,
+        "supports": 161,
+        "steps": 608,
+        "emittedApproaches": {
+          "tested": 3028,
+          "upward": 525,
+          "failures": 0,
+          "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+        },
+        "inventoryTotal": 3028,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 3028
+        },
+        "applied": [],
+        "procurement": {
+          "passed": true,
+          "catalogConfirmed": 50,
+          "unverified": 14,
+          "unsupportedColors": 0,
+          "sourceModelUnchanged": true,
+          "everySourceBrickTracedExactlyOnce": true,
+          "procurementReady": false,
+          "stockChecked": false,
+          "physicalBuildVerified": false
+        },
+        "slopeAuditPassed": true
+      },
+      {
+        "id": "horse",
+        "resolution": 28,
+        "passed": true,
+        "inputSha256": "66305f50ddd7d90e521d718952c702b9fb71c30efe6970d39d918f6dbf5b6ec3",
+        "meshSha256": "718a8090e059a2aba32700f69a6b41f3771ed94df031b8b22bbcb7abe43adedb",
+        "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+        "modelSha256": "82ba484fec02ddee965d3522291de637007211122233179efec30547b04ea349",
+        "bricks": 1793,
+        "supports": 259,
+        "steps": 473,
+        "emittedApproaches": {
+          "tested": 1793,
+          "upward": 371,
+          "failures": 0,
+          "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+        },
+        "inventoryTotal": 1793,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 1793
+        },
+        "applied": [],
+        "procurement": {
+          "passed": true,
+          "catalogConfirmed": 39,
+          "unverified": 8,
+          "unsupportedColors": 0,
+          "sourceModelUnchanged": true,
+          "everySourceBrickTracedExactlyOnce": true,
+          "procurementReady": false,
+          "stockChecked": false,
+          "physicalBuildVerified": false
+        },
+        "slopeAuditPassed": true
+      },
+      {
+        "id": "sculpture-head",
+        "resolution": 28,
+        "passed": true,
+        "inputSha256": "58b926e26c0026df16378e214fb046e63dd0edceacb0f8db8005d9ed3f86949a",
+        "meshSha256": "1e845d750e10e0ba03667991c962ed7db8dc93af2cb7b83dd4bcbf208c848be8",
+        "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+        "modelSha256": "0f7bf83a65e43088a3456dbf5731cdda0661281ab09da8241b34bad421bda98d",
+        "bricks": 4965,
+        "supports": 685,
+        "steps": 971,
+        "emittedApproaches": {
+          "tested": 4965,
+          "upward": 2032,
+          "failures": 0,
+          "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+        },
+        "inventoryTotal": 4965,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 4965
+        },
+        "applied": [],
+        "procurement": {
+          "passed": true,
+          "catalogConfirmed": 33,
+          "unverified": 13,
+          "unsupportedColors": 0,
+          "sourceModelUnchanged": true,
+          "everySourceBrickTracedExactlyOnce": true,
+          "procurementReady": false,
+          "stockChecked": false,
+          "physicalBuildVerified": false
+        },
+        "slopeAuditPassed": true
+      },
+      {
+        "id": "wizard-hat",
+        "resolution": 28,
+        "passed": true,
+        "inputSha256": "d9d43eae5cc61c872bc01d480de4e8954da352743d81f9329345d96e052ee2ac",
+        "meshSha256": "cd27bce9bedb14a0096ab71e7514e9da3a1c35abb52ba805edb0778f00eb2885",
+        "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+        "modelSha256": "2a64efa44d8b976ca0298acf674b7e455e58ef2937b8a18d39bf1b03246476f8",
+        "bricks": 2784,
+        "supports": 569,
+        "steps": 839,
+        "emittedApproaches": {
+          "tested": 2784,
+          "upward": 397,
+          "failures": 0,
+          "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+        },
+        "inventoryTotal": 2784,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 2784
+        },
+        "applied": [],
+        "procurement": {
+          "passed": true,
+          "catalogConfirmed": 37,
+          "unverified": 21,
+          "unsupportedColors": 0,
+          "sourceModelUnchanged": true,
+          "everySourceBrickTracedExactlyOnce": true,
+          "procurementReady": false,
+          "stockChecked": false,
+          "physicalBuildVerified": false
+        },
+        "slopeAuditPassed": true
+      },
+      {
+        "id": "costumed-figure",
+        "resolution": 28,
+        "passed": true,
+        "inputSha256": "6d08caba0671ffee9a683c5b3ca101b272cec71d3eb9e93b6e8d2b65ddd417fc",
+        "meshSha256": "7e0c17d2e11bb21eb29a78b9c96324758e1b8c524d1855c160f5d7571d0f0de9",
+        "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+        "modelSha256": "e89972ea6c0c309488e23afd73229080c5273f7c52e947fa3343133231d34006",
+        "bricks": 3123,
+        "supports": 290,
+        "steps": 597,
+        "emittedApproaches": {
+          "tested": 3123,
+          "upward": 572,
+          "failures": 0,
+          "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+        },
+        "inventoryTotal": 3123,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 3123
+        },
+        "applied": [],
+        "procurement": {
+          "passed": true,
+          "catalogConfirmed": 46,
+          "unverified": 16,
+          "unsupportedColors": 0,
+          "sourceModelUnchanged": true,
+          "everySourceBrickTracedExactlyOnce": true,
+          "procurementReady": false,
+          "stockChecked": false,
+          "physicalBuildVerified": false
+        },
+        "slopeAuditPassed": true
+      },
+      {
+        "id": "temple-original",
+        "resolution": 28,
+        "passed": true,
+        "inputSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+        "meshSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+        "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+        "modelSha256": "f0518c84214d0515c50c67580faef939021835f4493e676a7340ac9b5c74f483",
+        "bricks": 2954,
+        "supports": 67,
+        "steps": 375,
+        "emittedApproaches": {
+          "tested": 2922,
+          "upward": 36,
+          "failures": 0,
+          "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+        },
+        "inventoryTotal": 2954,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 2954
+        },
+        "applied": [
+          {
+            "id": "image-tree-0",
+            "kind": "tree",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-statue-3",
+            "kind": "statue",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-brazier-5",
+            "kind": "brazier",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-brazier-8",
+            "kind": "brazier",
+            "visible": true,
+            "attached": true
+          }
+        ],
+        "platformPassed": true,
+        "procurement": {
+          "passed": true,
+          "catalogConfirmed": 53,
+          "unverified": 30,
+          "unsupportedColors": 0,
+          "sourceModelUnchanged": true,
+          "everySourceBrickTracedExactlyOnce": true,
+          "procurementReady": false,
+          "stockChecked": false,
+          "physicalBuildVerified": false
+        },
+        "slopeAuditPassed": true
+      },
+      {
+        "id": "temple-original",
+        "resolution": 36,
+        "passed": true,
+        "inputSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+        "meshSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+        "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+        "modelSha256": "7788482464a06c8e407632c61626ae5cde9cfed9bdcc929419aa57494278d5c4",
+        "bricks": 4983,
+        "supports": 138,
+        "steps": 602,
+        "emittedApproaches": {
+          "tested": 4951,
+          "upward": 26,
+          "failures": 0,
+          "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+        },
+        "inventoryTotal": 4983,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 4983
+        },
+        "applied": [
+          {
+            "id": "image-tree-0",
+            "kind": "tree",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-statue-3",
+            "kind": "statue",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-brazier-5",
+            "kind": "brazier",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-brazier-8",
+            "kind": "brazier",
+            "visible": true,
+            "attached": true
+          }
+        ],
+        "platformPassed": true,
+        "procurement": {
+          "passed": true,
+          "catalogConfirmed": 55,
+          "unverified": 28,
+          "unsupportedColors": 0,
+          "sourceModelUnchanged": true,
+          "everySourceBrickTracedExactlyOnce": true,
+          "procurementReady": false,
+          "stockChecked": false,
+          "physicalBuildVerified": false
+        },
+        "slopeAuditPassed": true
+      },
+      {
+        "id": "temple-original",
+        "resolution": 48,
+        "passed": true,
+        "inputSha256": "0fffe2c2b5543da4cb25d7d1db2129c32d735ee17058f3f68fecbc3042c3bca2",
+        "meshSha256": "8b8aecf958c6d0d74411b1ebff17899173695ca85e85da43f66534f1c3d7aaf8",
+        "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+        "modelSha256": "4e48a197d5134a6af088d1fb19e0525adfcb882289e1b28a1266be04334627c8",
+        "bricks": 9694,
+        "supports": 199,
+        "steps": 1094,
+        "emittedApproaches": {
+          "tested": 9662,
+          "upward": 82,
+          "failures": 0,
+          "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+        },
+        "inventoryTotal": 9694,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 9694
+        },
+        "applied": [
+          {
+            "id": "image-tree-0",
+            "kind": "tree",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-statue-3",
+            "kind": "statue",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-brazier-5",
+            "kind": "brazier",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-brazier-8",
+            "kind": "brazier",
+            "visible": true,
+            "attached": true
+          }
+        ],
+        "platformPassed": true,
+        "procurement": {
+          "passed": true,
+          "catalogConfirmed": 58,
+          "unverified": 33,
+          "unsupportedColors": 0,
+          "sourceModelUnchanged": true,
+          "everySourceBrickTracedExactlyOnce": true,
+          "procurementReady": false,
+          "stockChecked": false,
+          "physicalBuildVerified": false
+        },
+        "slopeAuditPassed": true
+      },
+      {
+        "id": "temple-standard",
+        "resolution": 28,
+        "passed": true,
+        "inputSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+        "meshSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+        "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+        "modelSha256": "c9eada3027fe171ab1f95d0d28aee73c135cf823af6376d0f6237ac60b03576f",
+        "bricks": 2587,
+        "supports": 27,
+        "steps": 283,
+        "emittedApproaches": {
+          "tested": 2555,
+          "upward": 15,
+          "failures": 0,
+          "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+        },
+        "inventoryTotal": 2587,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 2587
+        },
+        "applied": [
+          {
+            "id": "image-statue-6",
+            "kind": "statue",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-tree-0",
+            "kind": "tree",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-brazier-7",
+            "kind": "brazier",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-brazier-10",
+            "kind": "brazier",
+            "visible": true,
+            "attached": true
+          }
+        ],
+        "platformPassed": true,
+        "procurement": {
+          "passed": true,
+          "catalogConfirmed": 46,
+          "unverified": 27,
+          "unsupportedColors": 0,
+          "sourceModelUnchanged": true,
+          "everySourceBrickTracedExactlyOnce": true,
+          "procurementReady": false,
+          "stockChecked": false,
+          "physicalBuildVerified": false
+        },
+        "slopeAuditPassed": true
+      },
+      {
+        "id": "temple-standard",
+        "resolution": 36,
+        "passed": true,
+        "inputSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+        "meshSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+        "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+        "modelSha256": "817320f2d647a49a3965301d2a8d02c9ebdaeba6f6c3f5ca6ae5d24f838c5980",
+        "bricks": 4417,
+        "supports": 54,
+        "steps": 465,
+        "emittedApproaches": {
+          "tested": 4385,
+          "upward": 38,
+          "failures": 0,
+          "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+        },
+        "inventoryTotal": 4417,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 4417
+        },
+        "applied": [
+          {
+            "id": "image-statue-6",
+            "kind": "statue",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-tree-0",
+            "kind": "tree",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-brazier-7",
+            "kind": "brazier",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-brazier-10",
+            "kind": "brazier",
+            "visible": true,
+            "attached": true
+          }
+        ],
+        "platformPassed": true,
+        "procurement": {
+          "passed": true,
+          "catalogConfirmed": 51,
+          "unverified": 28,
+          "unsupportedColors": 0,
+          "sourceModelUnchanged": true,
+          "everySourceBrickTracedExactlyOnce": true,
+          "procurementReady": false,
+          "stockChecked": false,
+          "physicalBuildVerified": false
+        },
+        "slopeAuditPassed": true
+      },
+      {
+        "id": "temple-standard",
+        "resolution": 48,
+        "passed": true,
+        "inputSha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+        "meshSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+        "sceneEngineFingerprint": "32f44e3365b171832ef551ae3b2c3212c75c6e2c76dba04d28352e001272af75",
+        "modelSha256": "bacbaa92bcb9a705639e196dd7671713e090ce23e7eda38af3171923ad584312",
+        "bricks": 8613,
+        "supports": 49,
+        "steps": 852,
+        "emittedApproaches": {
+          "tested": 8581,
+          "upward": 61,
+          "failures": 0,
+          "scope": "One-plate final grid approach; full insertion path, hands, forces and stability unverified."
+        },
+        "inventoryTotal": 8613,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 8613
+        },
+        "applied": [
+          {
+            "id": "image-statue-6",
+            "kind": "statue",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-tree-0",
+            "kind": "tree",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-brazier-7",
+            "kind": "brazier",
+            "visible": true,
+            "attached": true
+          },
+          {
+            "id": "image-brazier-10",
+            "kind": "brazier",
+            "visible": true,
+            "attached": true
+          }
+        ],
+        "platformPassed": true,
+        "procurement": {
+          "passed": true,
+          "catalogConfirmed": 57,
+          "unverified": 30,
+          "unsupportedColors": 0,
+          "sourceModelUnchanged": true,
+          "everySourceBrickTracedExactlyOnce": true,
+          "procurementReady": false,
+          "stockChecked": false,
+          "physicalBuildVerified": false
+        },
+        "slopeAuditPassed": true
+      }
+    ],
+    "sourceReportDeclaredDates": {
+      "support": "2026-10-01",
+      "procurement": "2026-10-02",
+      "slopes": "2026-10-01"
+    },
+    "actualReplayDate": "2026-10-04",
+    "procurementReady": false,
+    "unverifiedLines": 292,
+    "compatibilityControlCount": 11,
+    "independentPhotographs": false,
+    "source": "Six public engine example renders plus two user Temple fixtures at 28/36/48. Same cached inputs; not a new held-out-photo study."
+  },
+  "renderReview": {
+    "renderer": "scripts/render-assembly.py; vendored actual CAD geometry. Root reviewed all 14 views and six original inputs. No image editing.",
+    "candidateViews": [
+      {
+        "case": "house",
+        "view": "hero",
+        "model": "outputs/material-palette-calibration/house-candidate.json",
+        "modelSha256": "887447eecce59ac52e511899c9ceb666cd6e77b59cc7d18e654f2619d7d8444d",
+        "image": "outputs/material-palette-calibration/house-hero.png",
+        "imageSha256": "449410b10dac240ea39d1d930db175c187136cd2b7294fcd38e164c0314cac4f"
+      },
+      {
+        "case": "house",
+        "view": "front",
+        "model": "outputs/material-palette-calibration/house-candidate.json",
+        "modelSha256": "887447eecce59ac52e511899c9ceb666cd6e77b59cc7d18e654f2619d7d8444d",
+        "image": "outputs/material-palette-calibration/house-front.png",
+        "imageSha256": "4a7804038e13d1adb4d672ea9e3639070a7f97de6abb179318e0fee1989fbbf2"
+      },
+      {
+        "case": "house",
+        "view": "back",
+        "model": "outputs/material-palette-calibration/house-candidate.json",
+        "modelSha256": "887447eecce59ac52e511899c9ceb666cd6e77b59cc7d18e654f2619d7d8444d",
+        "image": "outputs/material-palette-calibration/house-back.png",
+        "imageSha256": "547438154a3dfdc7069488b494bd8164d205b93ebbf0f0489c523d5f8a3c8613"
+      },
+      {
+        "case": "house",
+        "view": "top",
+        "model": "outputs/material-palette-calibration/house-candidate.json",
+        "modelSha256": "887447eecce59ac52e511899c9ceb666cd6e77b59cc7d18e654f2619d7d8444d",
+        "image": "outputs/material-palette-calibration/house-top.png",
+        "imageSha256": "a3e2b4511cf42cab9594fc19e51d237f4b2fd0b164f934db5affcdfccd61535b"
+      },
+      {
+        "case": "temple-standard",
+        "view": "front",
+        "model": "outputs/material-palette-calibration/temple-standard-candidate.json",
+        "modelSha256": "b953902905baa65092dfb98c7de8b9a02f8e61f975b5cb808550f18211c7e9e1",
+        "image": "outputs/material-palette-calibration/temple-front.png",
+        "imageSha256": "27d7dc2c4f32f371ac43a90ce5ee799438497aa66b31d73158b0b9a31cc58baa"
+      },
+      {
+        "case": "temple-standard",
+        "view": "side",
+        "model": "outputs/material-palette-calibration/temple-standard-candidate.json",
+        "modelSha256": "b953902905baa65092dfb98c7de8b9a02f8e61f975b5cb808550f18211c7e9e1",
+        "image": "outputs/material-palette-calibration/temple-side.png",
+        "imageSha256": "d5d847c8c83f6a9200b5ff76833f3a9c11938eeffc25bd096b47fe4a5dbdefd5"
+      },
+      {
+        "case": "temple-standard",
+        "view": "back",
+        "model": "outputs/material-palette-calibration/temple-standard-candidate.json",
+        "modelSha256": "b953902905baa65092dfb98c7de8b9a02f8e61f975b5cb808550f18211c7e9e1",
+        "image": "outputs/material-palette-calibration/temple-back.png",
+        "imageSha256": "3b7cea5c0cbf0b566de5106f2a1f7675441cf73c4e1a4af516ad27e941097dba"
+      },
+      {
+        "case": "temple-standard",
+        "view": "top",
+        "model": "outputs/material-palette-calibration/temple-standard-candidate.json",
+        "modelSha256": "b953902905baa65092dfb98c7de8b9a02f8e61f975b5cb808550f18211c7e9e1",
+        "image": "outputs/material-palette-calibration/temple-top.png",
+        "imageSha256": "b95bb4abfd0d43d100d8812b141b0cedbca81e08b3635a38dc858080a95d1710"
+      }
+    ],
+    "baselineViews": [
+      {
+        "case": "house",
+        "view": "hero",
+        "model": "outputs/image-benchmark/house/bricks-28.json",
+        "modelSha256": "d54c2b3680dede7799d023bdabfb1f75a1661660cfc3f490024366b2e2312fa3",
+        "image": "outputs/material-palette-calibration/house-baseline-hero.png",
+        "imageSha256": "0155d996ff4fbf41b25425bfb98a2ae83625a706ac85029315c27169a75ab4bd"
+      },
+      {
+        "case": "locomotive",
+        "view": "hero",
+        "model": "outputs/image-benchmark/locomotive/bricks-28.json",
+        "modelSha256": "490b9f3d72e81e0faf7f767bd75c4087ef4369ff3f0e187e440e042608cba737",
+        "image": "outputs/material-palette-calibration/locomotive-baseline-hero.png",
+        "imageSha256": "dfdac80c12ea4d80a1e67bfc6557c97ea441edc24460026384946c54116465cb"
+      },
+      {
+        "case": "horse",
+        "view": "hero",
+        "model": "outputs/image-benchmark/horse/bricks-28.json",
+        "modelSha256": "82ba484fec02ddee965d3522291de637007211122233179efec30547b04ea349",
+        "image": "outputs/material-palette-calibration/horse-baseline-hero.png",
+        "imageSha256": "67fea10c099b914460db12f19e8d3c1b14dc3a8f1a461b34252bf85d09ed94c7"
+      },
+      {
+        "case": "sculpture-head",
+        "view": "hero",
+        "model": "outputs/image-benchmark/sculpture-head/bricks-28.json",
+        "modelSha256": "0f7bf83a65e43088a3456dbf5731cdda0661281ab09da8241b34bad421bda98d",
+        "image": "outputs/material-palette-calibration/sculpture-head-baseline-hero.png",
+        "imageSha256": "efe0ec6dd5283f20ca0417139bd2d8c60ced17ac5629e8e5cd4886d152723212"
+      },
+      {
+        "case": "wizard-hat",
+        "view": "hero",
+        "model": "outputs/image-benchmark/wizard-hat/bricks-28.json",
+        "modelSha256": "2a64efa44d8b976ca0298acf674b7e455e58ef2937b8a18d39bf1b03246476f8",
+        "image": "outputs/material-palette-calibration/wizard-hat-baseline-hero.png",
+        "imageSha256": "22690ec24f1637aa9a2e6d7b4f53c090401f3d4e60e93ce0cb5a524669bc7ec8"
+      },
+      {
+        "case": "costumed-figure",
+        "view": "hero",
+        "model": "outputs/image-benchmark/costumed-figure/bricks-28.json",
+        "modelSha256": "e89972ea6c0c309488e23afd73229080c5273f7c52e947fa3343133231d34006",
+        "image": "outputs/material-palette-calibration/costumed-figure-baseline-hero.png",
+        "imageSha256": "c5248fe7a0664b0fd8c17dcf9970aff48aec0bd214f7ba69b53c1fd9920152c1"
+      }
+    ],
+    "appearanceAccepted": false,
+    "physicalBuildAccepted": false,
+    "observations": [
+      {
+        "case": "house",
+        "review": "Coarse stair-shaped roof; roof/wall correspondence and blue base remain problematic in original-color conversion. Candidate restores green ground and retains gray walls, but still has roof color leakage and coarse geometry.",
+        "kitAppearancePassed": false
+      },
+      {
+        "case": "locomotive",
+        "review": "Round wheels and boiler become block volumes; supports and fragmented colors alter the shape.",
+        "kitAppearancePassed": false
+      },
+      {
+        "case": "horse",
+        "review": "Leg and body curves are crude; supports and color blocks obscure limb separation and ornament.",
+        "kitAppearancePassed": false
+      },
+      {
+        "case": "sculpture-head",
+        "review": "Stepped ridges and prominent long supports remain; face/hair detail is not kit-quality.",
+        "kitAppearancePassed": false
+      },
+      {
+        "case": "wizard-hat",
+        "review": "Bent curved crown and brim become stair/block volumes; exposed supports and scattered colors remain.",
+        "kitAppearancePassed": false
+      },
+      {
+        "case": "costumed-figure",
+        "review": "Rounded body and limbs are coarse; surrounding supports obscure the intended shape.",
+        "kitAppearancePassed": false
+      },
+      {
+        "case": "temple-standard",
+        "review": "Statue and two attached braziers remain visible. Front brown shadow bands reduced; rear brown stripes and extra rear stairs persist.",
+        "kitAppearancePassed": false
+      }
+    ]
+  },
+  "rejectedExperiment": "benchmarks/material-direction-evaluation-2026-10-04.json",
+  "limitations": [
+    "Official color IDs do not establish part-color availability or stock.",
+    "Original radiance and learned albedo do not establish true material.",
+    "Restored baseline donor behavior still admits unsupported opposite/orthogonal borrowing.",
+    "Global defaults and inferred geometry still create incorrect hidden surfaces and base colors.",
+    "Silhouette matching does not prove interior correspondence.",
+    "Six cached engine renders are not independent real photos; arbitrary-image success rate is unknown.",
+    "No complete insertion paths, hand clearance, strength or human full-build trial."
+  ],
+  "reproduction": [
+    "node --experimental-strip-types scripts/benchmark-material-candidates.ts outputs/material-palette-calibration",
+    "BRICKFORM_BENCH_PYTHON=work/semantic-engine/.venv/bin/python node --experimental-strip-types scripts/benchmark-images.ts outputs/image-benchmark --resolution=28 --scene-dir=outputs/identity-calibration",
+    "node --experimental-strip-types scripts/benchmark-geometry.ts outputs/material-palette-calibration",
+    "node --experimental-strip-types scripts/benchmark-supports.ts outputs/material-palette-calibration",
+    "node --experimental-strip-types scripts/benchmark-procurement.ts outputs/material-palette-calibration",
+    "node --experimental-strip-types scripts/benchmark-slopes.ts outputs/material-palette-calibration"
+  ]
+}

@@ -1,0 +1,128 @@
+diff --git a/lib/surface-materials.test.ts b/lib/surface-materials.test.ts
+index 94ea2db..4c67a97 100644
+--- a/lib/surface-materials.test.ts
++++ b/lib/surface-materials.test.ts
+@@ -92,3 +92,50 @@ void test('a tiny observed orange ornament retains paint without coloring other
+   const region = result.design.regions[result.regionIds[4]];
+   assert.ok(!region.donorRegionIds.includes(result.regionIds[2]));
+ });
++
++void test('a vertical brown wall cannot paint an orthogonal or opposite unseen wall', () => {
++  const result = surfaceMaterials(
++    Float32Array.from([
++      // Observed +Z wall.
++      0, 0, 0, 1, 0, 0, 1, 1, 0,
++      // Orthogonal +X wall: same inclination, different direction.
++      1.1, 0, 0, 1.1, 1, 0, 1.1, 1, 1,
++      // Opposite -Z wall.
++      0, 0, -0.1, 0, 1, -0.1, 1, 1, -0.1,
++      // Similarly oriented disconnected continuation remains an inference.
++      1.05, 0, 0, 2.05, 0, 0, 2.05, 1, 0,
++    ]),
++    Int16Array.from([9, -1, -1, -1]),
++    Array(20).fill({ face: 0, color: 9 }),
++    7,
++  );
++  assert.equal(result.colors[0], 9);
++  assert.equal(result.colors[1], 7);
++  assert.equal(result.colors[2], 7);
++  assert.equal(result.colors[3], 9);
++  for (const face of [1, 2]) {
++    const region = result.design.regions[result.regionIds[face]];
++    assert.equal(region.source, 'reference-default');
++    assert.deepEqual(region.donorRegionIds, []);
++  }
++  assert.equal(
++    result.design.regions[result.regionIds[3]].source,
++    'compatible-surface',
++  );
++});
++
++void test('directional donor checks preserve real dark paint on a connected coplanar surface', () => {
++  const p: number[] = [];
++  for (let x = 0; x < 3; x++)
++    p.push(x, 0, 0, x + 1, 0, 0, x + 1, 1, 0, x, 0, 0, x + 1, 1, 0, x, 1, 0);
++  const observed = Int16Array.from([7, 7, 9, 9, 7, 7]);
++  const result = surfaceMaterials(
++    Float32Array.from(p),
++    observed,
++    Array.from(observed, (color, face) => ({ face, color })),
++    7,
++  );
++  assert.deepEqual(result.colors, observed);
++  assert.notEqual(result.regionIds[1], result.regionIds[2]);
++  assert.notEqual(result.regionIds[3], result.regionIds[4]);
++});
+diff --git a/lib/surface-materials.ts b/lib/surface-materials.ts
+index add1ec0..b0bdcd5 100644
+--- a/lib/surface-materials.ts
++++ b/lib/surface-materials.ts
+@@ -17,11 +17,20 @@ export type SurfaceMaterialRegion = {
+ };
+ export type SurfaceMaterialDesign = {
+   method: 'connected-surface-materials';
++  /** Eligibility limits, not proof that separate surfaces share a material. */
++  donorDirectionPolicy?: {
++    unconnectedMinimumDot: number;
++    sharedEdgeMinimumDot: number;
++    maximumInclinationDifference: number;
++  };
+   regions: SurfaceMaterialRegion[];
+   inferredFaces: number;
+   defaultFaces: number;
+ };
+
++const DONOR_ORIENTATION_MINIMUM_DOT = 0.9;
++const SHARED_EDGE_MINIMUM_DOT = -1e-6;
++
+ /** Infer missing paint from connected, similarly oriented surface regions.
+  * Never alter an observed face. Neither geometric proximity nor a shared
+  * normal proves material identity on an unseen side; record every inference. */
+@@ -165,6 +174,13 @@ export function surfaceMaterials(
+       r.area >= extent * extent * 0.001 &&
+       choose(r.materialPixels) >= 0,
+   );
++  // A wall may turn a corner at a real shared edge. This permits a direct
++  // continuation only; no proximity welding or multi-region detour is used.
++  const adjacentRegions: Set<number>[] = regions.map(() => new Set());
++  for (let face = 0; face < n; face++)
++    for (const other of neighbours[face])
++      if (labels[face] !== labels[other])
++        adjacentRegions[labels[face]].add(labels[other]);
+   for (const r of regions) {
+     const local = choose(r.materialPixels);
+     if (local >= 0 && r.observedPixels >= 8) {
+@@ -180,10 +196,18 @@ export function surfaceMaterials(
+         const distance = Math.hypot(
+           ...r.center.map((v, k) => (v - d.center[k]) / extent),
+         );
+-        // Same-height roofs and walls have different inclinations. Top and
+-        // underside do not imply the same material even when they are parallel.
++        const orientation = r.normal.reduce(
++          (sum, v, k) => sum + v * d.normal[k],
++          0,
++        );
++        // Equal inclination does not make separate walls compatible:
++        // orthogonal/opposite vertical faces both have normalY=0. At a real
++        // shared edge allow a non-opposed corner, still marked as inference.
+         const compatible =
+-          inclination <= 0.12 && !(d.normal[1] * r.normal[1] < -0.1);
++          inclination <= 0.12 &&
++          (orientation >= DONOR_ORIENTATION_MINIMUM_DOT ||
++            (orientation >= SHARED_EDGE_MINIMUM_DOT &&
++              adjacentRegions[r.id].has(d.id)));
+         return { d, distance, inclination, compatible };
+       })
+       .filter((c) => c.compatible && c.distance < 0.8)
+@@ -212,6 +236,11 @@ export function surfaceMaterials(
+     regionIds: labels,
+     design: {
+       method: 'connected-surface-materials' as const,
++      donorDirectionPolicy: {
++        unconnectedMinimumDot: DONOR_ORIENTATION_MINIMUM_DOT,
++        sharedEdgeMinimumDot: SHARED_EDGE_MINIMUM_DOT,
++        maximumInclinationDifference: 0.12,
++      },
+       regions,
+       inferredFaces: regions.reduce((s, r) => s + r.inferredFaces, 0),
+       defaultFaces: regions

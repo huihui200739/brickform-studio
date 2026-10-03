@@ -155,10 +155,12 @@ const COLOR_IDS: Record<number, { bricklink: number; ldraw: number }> = {
   199: { bricklink: 85, ldraw: 72 },
   151: { bricklink: 48, ldraw: 378 },
   182: { bricklink: 98, ldraw: 57 },
+  119: { bricklink: 34, ldraw: 27 },
+  330: { bricklink: 155, ldraw: 330 },
 };
 export const PURCHASE_COLOR_SOURCE = {
   url: 'https://v2.bricklink.com/en-us/catalog/color-guide',
-  checkedAt: PURCHASE_CATALOG_CHECKED_AT,
+  checkedAt: '2026-10-04',
   kind: 'bricklink-catalog',
 } satisfies PurchaseSource;
 

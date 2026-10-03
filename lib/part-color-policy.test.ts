@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { choosePartColor } from './part-color-policy.ts';
 import {
-  PALETTE,
   nearestColor,
   isOpaquePaletteColor,
   toLDraw,
@@ -29,7 +28,6 @@ void test('unknown or unverified part-color combinations retain their semantic g
 });
 
 void test('catalog transparent color cannot enter ordinary RGB, Lab or reference-region matching', () => {
-  assert.equal(PALETTE.length, 15);
   assert.equal(isOpaquePaletteColor(14), false);
   assert.equal(isOpaquePaletteColor(999), false);
   for (let r = 200; r <= 255; r += 5)
