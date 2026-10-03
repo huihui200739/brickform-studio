@@ -1,0 +1,2127 @@
+{
+  "version": 1,
+  "date": "2026-10-04",
+  "completedAt": "2026-10-03T18:23:34.361Z",
+  "productionFingerprint": "ea8b01354e21a4b16e6fbdf4eb7624e7fbe7681db7360eab502ccee8e046d0b4",
+  "experimentFingerprint": "54d92032b0b3131027c12643843286c36dbe3be804b858c1a413e65a7a4350fa",
+  "cases": [
+    {
+      "id": "house",
+      "sourceSha256": "7db1435cb4531df28da3719eea61516c7149636014c64ea8ee4b2429ae106225",
+      "sourceMeshSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+      "meshPositionsSha256": "9c0cbbcd70b271b19d77d8d10fc4195e7d653f2df64b8f88b153e44e8b46a4c2",
+      "baseline": {
+        "method": "filled-triangle-silhouette",
+        "camera": {
+          "yaw": 35,
+          "pitch": 10,
+          "perspective": 0
+        },
+        "source": "estimated-camera",
+        "silhouetteIoU": 0.9171082513247539,
+        "aspectPenalty": 0.001626644180253235,
+        "alternative": {
+          "camera": {
+            "yaw": 135,
+            "pitch": 10,
+            "perspective": 0
+          },
+          "score": 0.8044221568151698,
+          "scoreGap": 0.11105945032933084
+        },
+        "ambiguous": false,
+        "limitations": "Silhouette fit does not verify interior pixel correspondence, material identity or hidden geometry. Competing poses can share the same outline."
+      },
+      "imageContours": {
+        "inputSize": [
+          320,
+          320
+        ],
+        "analysisSize": [
+          320,
+          320
+        ],
+        "scale": [
+          1,
+          1
+        ],
+        "persistentEdgePixels": 6074,
+        "retainedChains": 53,
+        "persistentComponents": 327,
+        "rejectedShortChains": 1288,
+        "rejectedIncoherentChains": 0,
+        "sampleCount": 958,
+        "contrastSpan": 0.7862509803921569,
+        "minChainLength": 16,
+        "semanticBoundaryTruth": false
+      },
+      "geometryContours": [
+        {
+          "id": "pose-0",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 154720,
+          "validFaces": 154720,
+          "invalidFaces": 0,
+          "exactEdges": 232089,
+          "nonManifoldEdges": 0,
+          "stablePatches": 32,
+          "creaseCandidates": 8360,
+          "unsupportedCreases": 8360,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 0,
+          "internalSamples": 0,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-1",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 154720,
+          "validFaces": 154720,
+          "invalidFaces": 0,
+          "exactEdges": 232089,
+          "nonManifoldEdges": 0,
+          "stablePatches": 33,
+          "creaseCandidates": 8360,
+          "unsupportedCreases": 8360,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 0,
+          "internalSamples": 0,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-2",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 154720,
+          "validFaces": 154720,
+          "invalidFaces": 0,
+          "exactEdges": 232089,
+          "nonManifoldEdges": 0,
+          "stablePatches": 32,
+          "creaseCandidates": 8360,
+          "unsupportedCreases": 8360,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 0,
+          "internalSamples": 0,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-3",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 154720,
+          "validFaces": 154720,
+          "invalidFaces": 0,
+          "exactEdges": 232089,
+          "nonManifoldEdges": 0,
+          "stablePatches": 31,
+          "creaseCandidates": 8360,
+          "unsupportedCreases": 8360,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 0,
+          "internalSamples": 0,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-4",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 154720,
+          "validFaces": 154720,
+          "invalidFaces": 0,
+          "exactEdges": 232089,
+          "nonManifoldEdges": 0,
+          "stablePatches": 32,
+          "creaseCandidates": 8360,
+          "unsupportedCreases": 8360,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 0,
+          "internalSamples": 0,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-5",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 154720,
+          "validFaces": 154720,
+          "invalidFaces": 0,
+          "exactEdges": 232089,
+          "nonManifoldEdges": 0,
+          "stablePatches": 32,
+          "creaseCandidates": 8360,
+          "unsupportedCreases": 8360,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 0,
+          "internalSamples": 0,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-6",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 154720,
+          "validFaces": 154720,
+          "invalidFaces": 0,
+          "exactEdges": 232089,
+          "nonManifoldEdges": 0,
+          "stablePatches": 32,
+          "creaseCandidates": 8360,
+          "unsupportedCreases": 8360,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 0,
+          "internalSamples": 0,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-7",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 154720,
+          "validFaces": 154720,
+          "invalidFaces": 0,
+          "exactEdges": 232089,
+          "nonManifoldEdges": 0,
+          "stablePatches": 32,
+          "creaseCandidates": 8360,
+          "unsupportedCreases": 8360,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 0,
+          "internalSamples": 0,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-8",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 154720,
+          "validFaces": 154720,
+          "invalidFaces": 0,
+          "exactEdges": 232089,
+          "nonManifoldEdges": 0,
+          "stablePatches": 33,
+          "creaseCandidates": 8360,
+          "unsupportedCreases": 8360,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 0,
+          "internalSamples": 0,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-9",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 154720,
+          "validFaces": 154720,
+          "invalidFaces": 0,
+          "exactEdges": 232089,
+          "nonManifoldEdges": 0,
+          "stablePatches": 29,
+          "creaseCandidates": 8360,
+          "unsupportedCreases": 8360,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 0,
+          "internalSamples": 0,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        }
+      ],
+      "decision": {
+        "version": 1,
+        "status": "unresolved",
+        "proposedCamera": {
+          "yaw": 35,
+          "pitch": 10,
+          "perspective": 0
+        },
+        "proposedId": "pose-0",
+        "baselineId": "pose-0",
+        "correction": false,
+        "productionCameraChanged": false,
+        "interiorCorrespondenceVerified": false,
+        "materialIdentityVerified": false,
+        "reasons": [
+          "persistent-interior-residual",
+          "insufficient-directional-coverage",
+          "insufficient-independent-contours",
+          "parallel-or-degenerate-contours",
+          "spatially-concentrated-contours",
+          "competing-camera-ambiguity",
+          "single-contour-sensitive"
+        ],
+        "directionDeterminant": 0,
+        "independentImageContours": 0,
+        "candidateGap": 0,
+        "leaveOneOut": [],
+        "candidates": [
+          {
+            "id": "pose-0",
+            "camera": {
+              "yaw": 35,
+              "pitch": 10,
+              "perspective": 0
+            },
+            "silhouetteIoU": 0.9171082513247539,
+            "geometrySamples": 0,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "persistent-interior-residual",
+              "insufficient-directional-coverage",
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 1,
+              "coverage": 0,
+              "matchedWeight": 0,
+              "groups": [],
+              "fullMatchesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "fullMatchCount": 0,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-1",
+            "camera": {
+              "yaw": 30,
+              "pitch": 5,
+              "perspective": 0
+            },
+            "silhouetteIoU": 0.8898160439977243,
+            "geometrySamples": 0,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "persistent-interior-residual",
+              "insufficient-directional-coverage",
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 1,
+              "coverage": 0,
+              "matchedWeight": 0,
+              "groups": [],
+              "fullMatchesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "fullMatchCount": 0,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-2",
+            "camera": {
+              "yaw": 30,
+              "pitch": 10,
+              "perspective": 0
+            },
+            "silhouetteIoU": 0.9055671670150105,
+            "geometrySamples": 0,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "persistent-interior-residual",
+              "insufficient-directional-coverage",
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 1,
+              "coverage": 0,
+              "matchedWeight": 0,
+              "groups": [],
+              "fullMatchesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "fullMatchCount": 0,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-3",
+            "camera": {
+              "yaw": 30,
+              "pitch": 15,
+              "perspective": 0
+            },
+            "silhouetteIoU": 0.8632920746351377,
+            "geometrySamples": 0,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "persistent-interior-residual",
+              "insufficient-directional-coverage",
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 1,
+              "coverage": 0,
+              "matchedWeight": 0,
+              "groups": [],
+              "fullMatchesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "fullMatchCount": 0,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-4",
+            "camera": {
+              "yaw": 35,
+              "pitch": 5,
+              "perspective": 0
+            },
+            "silhouetteIoU": 0.9070427868231731,
+            "geometrySamples": 0,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "persistent-interior-residual",
+              "insufficient-directional-coverage",
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 1,
+              "coverage": 0,
+              "matchedWeight": 0,
+              "groups": [],
+              "fullMatchesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "fullMatchCount": 0,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-5",
+            "camera": {
+              "yaw": 35,
+              "pitch": 15,
+              "perspective": 0
+            },
+            "silhouetteIoU": 0.8733247659261979,
+            "geometrySamples": 0,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "persistent-interior-residual",
+              "insufficient-directional-coverage",
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 1,
+              "coverage": 0,
+              "matchedWeight": 0,
+              "groups": [],
+              "fullMatchesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "fullMatchCount": 0,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-6",
+            "camera": {
+              "yaw": 40,
+              "pitch": 5,
+              "perspective": 0
+            },
+            "silhouetteIoU": 0.902247191011236,
+            "geometrySamples": 0,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "persistent-interior-residual",
+              "insufficient-directional-coverage",
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 1,
+              "coverage": 0,
+              "matchedWeight": 0,
+              "groups": [],
+              "fullMatchesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "fullMatchCount": 0,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-7",
+            "camera": {
+              "yaw": 40,
+              "pitch": 10,
+              "perspective": 0
+            },
+            "silhouetteIoU": 0.9086322869955157,
+            "geometrySamples": 0,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "persistent-interior-residual",
+              "insufficient-directional-coverage",
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 1,
+              "coverage": 0,
+              "matchedWeight": 0,
+              "groups": [],
+              "fullMatchesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "fullMatchCount": 0,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-8",
+            "camera": {
+              "yaw": 40,
+              "pitch": 15,
+              "perspective": 0
+            },
+            "silhouetteIoU": 0.8682297346419484,
+            "geometrySamples": 0,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "persistent-interior-residual",
+              "insufficient-directional-coverage",
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 1,
+              "coverage": 0,
+              "matchedWeight": 0,
+              "groups": [],
+              "fullMatchesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "fullMatchCount": 0,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-9",
+            "camera": {
+              "yaw": 135,
+              "pitch": 10,
+              "perspective": 0
+            },
+            "silhouetteIoU": 0.8051693404634581,
+            "geometrySamples": 0,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "persistent-interior-residual",
+              "insufficient-directional-coverage",
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 1,
+              "coverage": 0,
+              "matchedWeight": 0,
+              "groups": [],
+              "fullMatchesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "fullMatchCount": 0,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          }
+        ],
+        "limitations": "Persistent image edges may be paint, mortar, shadow or geometry. Nearby pose search is bounded and cannot recover missing source geometry. Matching stability does not establish camera truth or hidden material identity. No automatic production changes."
+      },
+      "elapsedMs": 5627.42025,
+      "sourceRasterUnchanged": true,
+      "sourceMeshUnchanged": true,
+      "productionCameraChanged": false,
+      "modelAppearanceImproved": false,
+      "detailedEvidenceSha256": "005b22a3098705d431c8ea49a5d63e3b47d55c356cfd23791ccc1a18eb8b1dd1"
+    },
+    {
+      "id": "temple-standard",
+      "sourceSha256": "3b15881cb3e604ae23d1d8823471ffc04282961a22928481444e729ec6da7244",
+      "sourceMeshSha256": "432bff9f81a91d9e02f9e8ba3b09344b107fe2a6d08a1266ddce172215ed051f",
+      "meshPositionsSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "baseline": {
+        "method": "filled-triangle-silhouette",
+        "camera": {
+          "yaw": 0,
+          "pitch": 20,
+          "perspective": 0.5
+        },
+        "source": "estimated-camera",
+        "silhouetteIoU": 0.8853989813242784,
+        "aspectPenalty": 0.00010631459048639552,
+        "alternative": {
+          "camera": {
+            "yaw": -180,
+            "pitch": 20,
+            "perspective": 0.5
+          },
+          "score": 0.8309960791345596,
+          "scoreGap": 0.05429658759923239
+        },
+        "ambiguous": false,
+        "limitations": "Silhouette fit does not verify interior pixel correspondence, material identity or hidden geometry. Competing poses can share the same outline."
+      },
+      "imageContours": {
+        "inputSize": [
+          320,
+          320
+        ],
+        "analysisSize": [
+          320,
+          320
+        ],
+        "scale": [
+          1,
+          1
+        ],
+        "persistentEdgePixels": 9153,
+        "retainedChains": 92,
+        "persistentComponents": 349,
+        "rejectedShortChains": 1516,
+        "rejectedIncoherentChains": 0,
+        "sampleCount": 2615,
+        "contrastSpan": 0.7692478431372548,
+        "minChainLength": 16,
+        "semanticBoundaryTruth": false
+      },
+      "geometryContours": [
+        {
+          "id": "pose-0",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 165196,
+          "validFaces": 165196,
+          "invalidFaces": 0,
+          "exactEdges": 247797,
+          "nonManifoldEdges": 0,
+          "stablePatches": 69,
+          "creaseCandidates": 13347,
+          "unsupportedCreases": 13334,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 13,
+          "internalSamples": 39,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-1",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 165196,
+          "validFaces": 165196,
+          "invalidFaces": 0,
+          "exactEdges": 247797,
+          "nonManifoldEdges": 0,
+          "stablePatches": 66,
+          "creaseCandidates": 13347,
+          "unsupportedCreases": 13334,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 13,
+          "internalSamples": 39,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-2",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 165196,
+          "validFaces": 165196,
+          "invalidFaces": 0,
+          "exactEdges": 247797,
+          "nonManifoldEdges": 0,
+          "stablePatches": 68,
+          "creaseCandidates": 13347,
+          "unsupportedCreases": 13334,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 13,
+          "internalSamples": 39,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-3",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 165196,
+          "validFaces": 165196,
+          "invalidFaces": 0,
+          "exactEdges": 247797,
+          "nonManifoldEdges": 0,
+          "stablePatches": 67,
+          "creaseCandidates": 13347,
+          "unsupportedCreases": 13334,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 13,
+          "internalSamples": 39,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-4",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 165196,
+          "validFaces": 165196,
+          "invalidFaces": 0,
+          "exactEdges": 247797,
+          "nonManifoldEdges": 0,
+          "stablePatches": 67,
+          "creaseCandidates": 13347,
+          "unsupportedCreases": 13334,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 13,
+          "internalSamples": 39,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-5",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 165196,
+          "validFaces": 165196,
+          "invalidFaces": 0,
+          "exactEdges": 247797,
+          "nonManifoldEdges": 0,
+          "stablePatches": 69,
+          "creaseCandidates": 13347,
+          "unsupportedCreases": 13334,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 13,
+          "internalSamples": 39,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-6",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 165196,
+          "validFaces": 165196,
+          "invalidFaces": 0,
+          "exactEdges": 247797,
+          "nonManifoldEdges": 0,
+          "stablePatches": 66,
+          "creaseCandidates": 13347,
+          "unsupportedCreases": 13334,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 13,
+          "internalSamples": 39,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-7",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 165196,
+          "validFaces": 165196,
+          "invalidFaces": 0,
+          "exactEdges": 247797,
+          "nonManifoldEdges": 0,
+          "stablePatches": 66,
+          "creaseCandidates": 13347,
+          "unsupportedCreases": 13334,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 13,
+          "internalSamples": 39,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-8",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 165196,
+          "validFaces": 165196,
+          "invalidFaces": 0,
+          "exactEdges": 247797,
+          "nonManifoldEdges": 0,
+          "stablePatches": 67,
+          "creaseCandidates": 13347,
+          "unsupportedCreases": 13334,
+          "occludedSamples": 0,
+          "exteriorSamples": 0,
+          "visibleSegments": 13,
+          "internalSamples": 39,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        },
+        {
+          "id": "pose-9",
+          "method": "visible-geometric-contours",
+          "status": "ok",
+          "reasons": [],
+          "rasterSize": [
+            320,
+            320
+          ],
+          "sourceFaces": 165196,
+          "validFaces": 165196,
+          "invalidFaces": 0,
+          "exactEdges": 247797,
+          "nonManifoldEdges": 0,
+          "stablePatches": 78,
+          "creaseCandidates": 13347,
+          "unsupportedCreases": 13335,
+          "occludedSamples": 36,
+          "exteriorSamples": 0,
+          "visibleSegments": 0,
+          "internalSamples": 0,
+          "limits": {
+            "faces": 250000,
+            "rasterPixels": 1048576,
+            "visibilityBinEntries": 2000000,
+            "visibilityPixelVisits": 16000000,
+            "queryFaceVisits": 25000000,
+            "samples": 80000,
+            "segments": 20000
+          }
+        }
+      ],
+      "decision": {
+        "version": 1,
+        "status": "unresolved",
+        "proposedCamera": {
+          "yaw": 0,
+          "pitch": 20,
+          "perspective": 0.5
+        },
+        "proposedId": "pose-0",
+        "baselineId": "pose-0",
+        "correction": false,
+        "productionCameraChanged": false,
+        "interiorCorrespondenceVerified": false,
+        "materialIdentityVerified": false,
+        "reasons": [
+          "insufficient-independent-contours",
+          "parallel-or-degenerate-contours",
+          "spatially-concentrated-contours",
+          "competing-camera-ambiguity",
+          "single-contour-sensitive"
+        ],
+        "directionDeterminant": 0.00033487728266963886,
+        "independentImageContours": 2,
+        "candidateGap": 0,
+        "leaveOneOut": [
+          {
+            "omittedGroup": 191776,
+            "winner": "pose-5",
+            "stable": false
+          },
+          {
+            "omittedGroup": 191731,
+            "winner": "pose-0",
+            "stable": true
+          },
+          {
+            "omittedGroup": 64384,
+            "winner": "pose-0",
+            "stable": true
+          }
+        ],
+        "candidates": [
+          {
+            "id": "pose-0",
+            "camera": {
+              "yaw": 0,
+              "pitch": 20,
+              "perspective": 0.5
+            },
+            "silhouetteIoU": 0.8853989813242784,
+            "geometrySamples": 39,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 0.16883775797038494,
+              "coverage": 1,
+              "matchedWeight": 24.818478005140516,
+              "groups": [
+                {
+                  "group": 64384,
+                  "totalWeight": 1.9188207084208408,
+                  "matchedWeight": 1.9188207084208408,
+                  "coverage": 1,
+                  "residual": 0.8116869693707731,
+                  "matchedImageGroups": [
+                    21
+                  ],
+                  "matchedImageComponents": [
+                    9
+                  ]
+                },
+                {
+                  "group": 191731,
+                  "totalWeight": 7.545125190192147,
+                  "matchedWeight": 7.545125190192147,
+                  "coverage": 1,
+                  "residual": 0.15835659039809907,
+                  "matchedImageGroups": [
+                    22
+                  ],
+                  "matchedImageComponents": [
+                    41
+                  ]
+                },
+                {
+                  "group": 191776,
+                  "totalWeight": 15.354532106527527,
+                  "matchedWeight": 15.354532106527527,
+                  "coverage": 1,
+                  "residual": 0.09365274746368125,
+                  "matchedImageGroups": [
+                    22
+                  ],
+                  "matchedImageComponents": [
+                    41
+                  ]
+                }
+              ],
+              "fullMatchesSha256": "d3036c30e199e36d27cc54ad0fae3457a15a6c8d0f46a94630ba1f2f1e8f255b",
+              "fullMatchCount": 39,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-1",
+            "camera": {
+              "yaw": -5,
+              "pitch": 15,
+              "perspective": 0.5
+            },
+            "silhouetteIoU": 0.8175882189497082,
+            "geometrySamples": 39,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 0.17651283957359554,
+              "coverage": 1,
+              "matchedWeight": 25.157999577778543,
+              "groups": [
+                {
+                  "group": 64384,
+                  "totalWeight": 1.9840900042770784,
+                  "matchedWeight": 1.9840900042770784,
+                  "coverage": 1,
+                  "residual": 0.27183380623283754,
+                  "matchedImageGroups": [
+                    27
+                  ],
+                  "matchedImageComponents": [
+                    45
+                  ]
+                },
+                {
+                  "group": 191731,
+                  "totalWeight": 7.658101713715327,
+                  "matchedWeight": 7.658101713715327,
+                  "coverage": 1,
+                  "residual": 0.1957190890141567,
+                  "matchedImageGroups": [
+                    6,
+                    9
+                  ],
+                  "matchedImageComponents": [
+                    9
+                  ]
+                },
+                {
+                  "group": 191776,
+                  "totalWeight": 15.515807859786149,
+                  "matchedWeight": 15.515807859786149,
+                  "coverage": 1,
+                  "residual": 0.15484404914130204,
+                  "matchedImageGroups": [
+                    6
+                  ],
+                  "matchedImageComponents": [
+                    9
+                  ]
+                }
+              ],
+              "fullMatchesSha256": "4211b980265187780ec1fc90cbf0dd83ec32019d962bbe7c817ddbfdf856e86f",
+              "fullMatchCount": 39,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-2",
+            "camera": {
+              "yaw": -5,
+              "pitch": 20,
+              "perspective": 0.5
+            },
+            "silhouetteIoU": 0.8153209109730849,
+            "geometrySamples": 39,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 0.11070038322600392,
+              "coverage": 1,
+              "matchedWeight": 23.818025074169963,
+              "groups": [
+                {
+                  "group": 64384,
+                  "totalWeight": 1.8743844546099524,
+                  "matchedWeight": 1.8743844546099524,
+                  "coverage": 1,
+                  "residual": 0.26443063201029543,
+                  "matchedImageGroups": [
+                    31
+                  ],
+                  "matchedImageComponents": [
+                    45
+                  ]
+                },
+                {
+                  "group": 191731,
+                  "totalWeight": 7.230912132754566,
+                  "matchedWeight": 7.230912132754566,
+                  "coverage": 1,
+                  "residual": 0.06709319613581355,
+                  "matchedImageGroups": [
+                    6
+                  ],
+                  "matchedImageComponents": [
+                    9
+                  ]
+                },
+                {
+                  "group": 191776,
+                  "totalWeight": 14.712728486805446,
+                  "matchedWeight": 14.712728486805446,
+                  "coverage": 1,
+                  "residual": 0.11254709369208271,
+                  "matchedImageGroups": [
+                    6
+                  ],
+                  "matchedImageComponents": [
+                    9
+                  ]
+                }
+              ],
+              "fullMatchesSha256": "faaa307b3da5d95a8a4bcc96ab4ae0ab1c10344fa242de8cfc4d8ef951328bb0",
+              "fullMatchCount": 39,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-3",
+            "camera": {
+              "yaw": -5,
+              "pitch": 25,
+              "perspective": 0.5
+            },
+            "silhouetteIoU": 0.8132530120481928,
+            "geometrySamples": 39,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 0.2836666325394742,
+              "coverage": 1,
+              "matchedWeight": 22.615660580967788,
+              "groups": [
+                {
+                  "group": 64384,
+                  "totalWeight": 1.776567649313023,
+                  "matchedWeight": 1.776567649313023,
+                  "coverage": 1,
+                  "residual": 0.06950535623559369,
+                  "matchedImageGroups": [
+                    31
+                  ],
+                  "matchedImageComponents": [
+                    45
+                  ]
+                },
+                {
+                  "group": 191731,
+                  "totalWeight": 6.847795619986803,
+                  "matchedWeight": 6.847795619986803,
+                  "coverage": 1,
+                  "residual": 0.24089927577605733,
+                  "matchedImageGroups": [
+                    6
+                  ],
+                  "matchedImageComponents": [
+                    9
+                  ]
+                },
+                {
+                  "group": 191776,
+                  "totalWeight": 13.991297311667974,
+                  "matchedWeight": 13.991297311667974,
+                  "coverage": 1,
+                  "residual": 0.3317918419850967,
+                  "matchedImageGroups": [
+                    6
+                  ],
+                  "matchedImageComponents": [
+                    9
+                  ]
+                }
+              ],
+              "fullMatchesSha256": "1a201c91c17f0553b0eb0844082a3514727d20a0cb79f0c7be797f70b9269279",
+              "fullMatchCount": 39,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-4",
+            "camera": {
+              "yaw": 0,
+              "pitch": 15,
+              "perspective": 0.5
+            },
+            "silhouetteIoU": 0.8745387453874539,
+            "geometrySamples": 39,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "persistent-interior-residual",
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 0.38983908592557454,
+              "coverage": 1,
+              "matchedWeight": 26.119029004358218,
+              "groups": [
+                {
+                  "group": 64384,
+                  "totalWeight": 2.0213302450121833,
+                  "matchedWeight": 2.0213302450121833,
+                  "coverage": 1,
+                  "residual": 0.9761063524929992,
+                  "matchedImageGroups": [
+                    21
+                  ],
+                  "matchedImageComponents": [
+                    9
+                  ]
+                },
+                {
+                  "group": 191731,
+                  "totalWeight": 7.962703006132541,
+                  "matchedWeight": 7.962703006132541,
+                  "coverage": 1,
+                  "residual": 0.3778262510179055,
+                  "matchedImageGroups": [
+                    22
+                  ],
+                  "matchedImageComponents": [
+                    41
+                  ]
+                },
+                {
+                  "group": 191776,
+                  "totalWeight": 16.134995753213506,
+                  "matchedWeight": 16.134995753213506,
+                  "coverage": 1,
+                  "residual": 0.3223221719081088,
+                  "matchedImageGroups": [
+                    22
+                  ],
+                  "matchedImageComponents": [
+                    41
+                  ]
+                }
+              ],
+              "fullMatchesSha256": "3d0ef8bebaa0184860a7f8b4c52949b7c6c1b6f351e491df94d34290e2c696db",
+              "fullMatchCount": 39,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-5",
+            "camera": {
+              "yaw": 0,
+              "pitch": 25,
+              "perspective": 0.5
+            },
+            "silhouetteIoU": 0.881578947368421,
+            "geometrySamples": 39,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 0.22406304030533455,
+              "coverage": 1,
+              "matchedWeight": 23.637381036088154,
+              "groups": [
+                {
+                  "group": 64384,
+                  "totalWeight": 1.8270797133380456,
+                  "matchedWeight": 1.8270797133380456,
+                  "coverage": 1,
+                  "residual": 0.6363225334088148,
+                  "matchedImageGroups": [
+                    21
+                  ],
+                  "matchedImageComponents": [
+                    9
+                  ]
+                },
+                {
+                  "group": 191731,
+                  "totalWeight": 7.166031657201368,
+                  "matchedWeight": 7.166031657201368,
+                  "coverage": 1,
+                  "residual": 0.12847274336238076,
+                  "matchedImageGroups": [
+                    22
+                  ],
+                  "matchedImageComponents": [
+                    41
+                  ]
+                },
+                {
+                  "group": 191776,
+                  "totalWeight": 14.644269665548745,
+                  "matchedWeight": 14.644269665548745,
+                  "coverage": 1,
+                  "residual": 0.21940402595882744,
+                  "matchedImageGroups": [
+                    22,
+                    29
+                  ],
+                  "matchedImageComponents": [
+                    41,
+                    47
+                  ]
+                }
+              ],
+              "fullMatchesSha256": "5f2f2901cd2d1169f0c9d7a8932ba82fa63343d9ee38c58c46f2d03621d36b21",
+              "fullMatchCount": 39,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-6",
+            "camera": {
+              "yaw": 5,
+              "pitch": 15,
+              "perspective": 0.5
+            },
+            "silhouetteIoU": 0.8226007478188616,
+            "geometrySamples": 39,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 0.2844468490502279,
+              "coverage": 0.9240787531773136,
+              "matchedWeight": 23.699119905401474,
+              "groups": [
+                {
+                  "group": 64384,
+                  "totalWeight": 1.947092415697155,
+                  "matchedWeight": 0,
+                  "coverage": 0,
+                  "residual": 1,
+                  "matchedImageGroups": [],
+                  "matchedImageComponents": []
+                },
+                {
+                  "group": 191731,
+                  "totalWeight": 7.8302555187057905,
+                  "matchedWeight": 7.8302555187057905,
+                  "coverage": 1,
+                  "residual": 0.2516270547684735,
+                  "matchedImageGroups": [
+                    25,
+                    30
+                  ],
+                  "matchedImageComponents": [
+                    47,
+                    54
+                  ]
+                },
+                {
+                  "group": 191776,
+                  "totalWeight": 15.868864386695694,
+                  "matchedWeight": 15.868864386695694,
+                  "coverage": 1,
+                  "residual": 0.2128436952103322,
+                  "matchedImageGroups": [
+                    25
+                  ],
+                  "matchedImageComponents": [
+                    47
+                  ]
+                }
+              ],
+              "fullMatchesSha256": "b050cdb4aa1821c92b203133cef430d9e3b8bc15af66b16a85a5beeccd968cdf",
+              "fullMatchCount": 39,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-7",
+            "camera": {
+              "yaw": 5,
+              "pitch": 20,
+              "perspective": 0.5
+            },
+            "silhouetteIoU": 0.82184619617554,
+            "geometrySamples": 39,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 0.1626783368843741,
+              "coverage": 0.9240705559660268,
+              "matchedWeight": 22.407980884883703,
+              "groups": [
+                {
+                  "group": 64384,
+                  "totalWeight": 1.8412290268619627,
+                  "matchedWeight": 0,
+                  "coverage": 0,
+                  "residual": 1,
+                  "matchedImageGroups": [],
+                  "matchedImageComponents": []
+                },
+                {
+                  "group": 191731,
+                  "totalWeight": 7.382225555697083,
+                  "matchedWeight": 7.382225555697083,
+                  "coverage": 1,
+                  "residual": 0.06234764613452969,
+                  "matchedImageGroups": [
+                    25
+                  ],
+                  "matchedImageComponents": [
+                    47
+                  ]
+                },
+                {
+                  "group": 191776,
+                  "totalWeight": 15.02575532918661,
+                  "matchedWeight": 15.02575532918661,
+                  "coverage": 1,
+                  "residual": 0.1093673954957162,
+                  "matchedImageGroups": [
+                    25
+                  ],
+                  "matchedImageComponents": [
+                    47
+                  ]
+                }
+              ],
+              "fullMatchesSha256": "aeca8729f1526a3a342414075da827c8172b4627e713d5c5217072e3a27aa988",
+              "fullMatchCount": 39,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-8",
+            "camera": {
+              "yaw": 5,
+              "pitch": 25,
+              "perspective": 0.5
+            },
+            "silhouetteIoU": 0.8178590933915892,
+            "geometrySamples": 39,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 0.23437339348208802,
+              "coverage": 0.9239787187872768,
+              "matchedWeight": 21.235510554815946,
+              "groups": [
+                {
+                  "group": 64384,
+                  "totalWeight": 1.7471730536199528,
+                  "matchedWeight": 0,
+                  "coverage": 0,
+                  "residual": 1,
+                  "matchedImageGroups": [],
+                  "matchedImageComponents": []
+                },
+                {
+                  "group": 191731,
+                  "totalWeight": 6.976171989439296,
+                  "matchedWeight": 6.976171989439296,
+                  "coverage": 1,
+                  "residual": 0.23622308567934058,
+                  "matchedImageGroups": [
+                    18
+                  ],
+                  "matchedImageComponents": [
+                    41
+                  ]
+                },
+                {
+                  "group": 191776,
+                  "totalWeight": 14.259338565376654,
+                  "matchedWeight": 14.259338565376654,
+                  "coverage": 1,
+                  "residual": 0.13965750320808024,
+                  "matchedImageGroups": [
+                    18
+                  ],
+                  "matchedImageComponents": [
+                    41
+                  ]
+                }
+              ],
+              "fullMatchesSha256": "d81fd7c44b05528afedaaae5df5aaa2b6044124cf5db6d0f5be213ef28607a71",
+              "fullMatchCount": 39,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          },
+          {
+            "id": "pose-9",
+            "camera": {
+              "yaw": -180,
+              "pitch": 20,
+              "perspective": 0.5
+            },
+            "silhouetteIoU": 0.8433413397384575,
+            "geometrySamples": 0,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "persistent-interior-residual",
+              "insufficient-directional-coverage",
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "match": {
+              "residual": 1,
+              "coverage": 0,
+              "matchedWeight": 0,
+              "groups": [],
+              "fullMatchesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "fullMatchCount": 0,
+              "fullMatchesHashEncoding": "Python JSON, sort_keys=True, separators=(comma,colon), ensure_ascii=True, UTF-8"
+            }
+          }
+        ],
+        "limitations": "Persistent image edges may be paint, mortar, shadow or geometry. Nearby pose search is bounded and cannot recover missing source geometry. Matching stability does not establish camera truth or hidden material identity. No automatic production changes."
+      },
+      "elapsedMs": 4890.831000000001,
+      "sourceRasterUnchanged": true,
+      "sourceMeshUnchanged": true,
+      "productionCameraChanged": false,
+      "modelAppearanceImproved": false,
+      "detailedEvidenceSha256": "9a84514b25b7905725fcefb9e2a0a6c5df6a6d99f0f644b0c40d3b828bcc9ab6"
+    }
+  ],
+  "inferenceCalls": 0,
+  "downloadedWeights": false,
+  "productionChanged": false,
+  "physicalBuildabilityVerified": false,
+  "scope": "Two cached failure inputs; bounded silhouette-neighbour camera search plus one silhouette competitor. Persistent grayscale image contours are radiance evidence, not material or geometry truth. Scores and leave-one-out stability are not calibrated probabilities or camera identifiability proofs.",
+  "controls": {
+    "tests": 17,
+    "passed": 17,
+    "failed": 0,
+    "coreProductionTestsRerun": false,
+    "lastCoreProductionTests": {
+      "passed": 259,
+      "productionFingerprint": "ea8b01354e21a4b16e6fbdf4eb7624e7fbe7681db7360eab502ccee8e046d0b4",
+      "report": "benchmarks/material-palette-evaluation-2026-10-04.json"
+    },
+    "knownCameraDiagnostics": [
+      {
+        "maxProjectionError": 0.6886715608213207,
+        "image": {
+          "inputSize": [
+            192,
+            192
+          ],
+          "analysisSize": [
+            192,
+            192
+          ],
+          "scale": [
+            1,
+            1
+          ],
+          "persistentEdgePixels": 1170,
+          "retainedChains": 24,
+          "persistentComponents": 11,
+          "rejectedShortChains": 34,
+          "rejectedIncoherentChains": 0,
+          "sampleCount": 508,
+          "contrastSpan": 0.5098039215686275,
+          "minChainLength": 12,
+          "semanticBoundaryTruth": false,
+          "retainedSourceComponents": 8
+        },
+        "candidates": [
+          {
+            "id": "known",
+            "residual": 0.28841283754476826,
+            "coverage": 0.7889422475493475,
+            "silhouette": 0.9922762380736029,
+            "samples": 1120,
+            "supportedForRanking": true,
+            "supportReasons": [],
+            "totalWeight": 831.1456425700433,
+            "visibleGroups": 24,
+            "matchedImageComponents": 8,
+            "geometry": {
+              "method": "visible-geometric-contours",
+              "status": "ok",
+              "reasons": [],
+              "rasterSize": [
+                192,
+                192
+              ],
+              "sourceFaces": 48,
+              "validFaces": 48,
+              "invalidFaces": 0,
+              "exactEdges": 72,
+              "nonManifoldEdges": 0,
+              "stablePatches": 24,
+              "creaseCandidates": 48,
+              "unsupportedCreases": 0,
+              "occludedSamples": 1071,
+              "exteriorSamples": 881,
+              "visibleSegments": 30,
+              "internalSamples": 1120,
+              "limits": {
+                "faces": 250000,
+                "rasterPixels": 1048576,
+                "visibilityBinEntries": 2000000,
+                "visibilityPixelVisits": 16000000,
+                "queryFaceVisits": 25000000,
+                "samples": 80000,
+                "segments": 20000
+              }
+            }
+          },
+          {
+            "id": "opposite",
+            "residual": 0.13226736691569288,
+            "coverage": 1,
+            "silhouette": 0.9552951388888888,
+            "samples": 79,
+            "supportedForRanking": false,
+            "supportReasons": [
+              "insufficient-independent-contours",
+              "parallel-or-degenerate-contours",
+              "spatially-concentrated-contours"
+            ],
+            "totalWeight": 59.16143497757853,
+            "visibleGroups": 1,
+            "matchedImageComponents": 1,
+            "geometry": {
+              "method": "visible-geometric-contours",
+              "status": "ok",
+              "reasons": [],
+              "rasterSize": [
+                192,
+                192
+              ],
+              "sourceFaces": 48,
+              "validFaces": 48,
+              "invalidFaces": 0,
+              "exactEdges": 72,
+              "nonManifoldEdges": 0,
+              "stablePatches": 16,
+              "creaseCandidates": 48,
+              "unsupportedCreases": 32,
+              "occludedSamples": 835,
+              "exteriorSamples": 590,
+              "visibleSegments": 3,
+              "internalSamples": 79,
+              "limits": {
+                "faces": 250000,
+                "rasterPixels": 1048576,
+                "visibilityBinEntries": 2000000,
+                "visibilityPixelVisits": 16000000,
+                "queryFaceVisits": 25000000,
+                "samples": 80000,
+                "segments": 20000
+              }
+            }
+          }
+        ],
+        "proposed": "known",
+        "status": "unresolved",
+        "directionDeterminant": 0.24157468812796157,
+        "reasons": [
+          "competing-camera-ambiguity",
+          "baseline-has-no-comparable-interior-evidence"
+        ]
+      },
+      {
+        "original": {
+          "image": {
+            "inputSize": [
+              192,
+              192
+            ],
+            "analysisSize": [
+              192,
+              192
+            ],
+            "scale": [
+              1,
+              1
+            ],
+            "persistentEdgePixels": 1170,
+            "retainedChains": 24,
+            "persistentComponents": 11,
+            "rejectedShortChains": 34,
+            "rejectedIncoherentChains": 0,
+            "sampleCount": 508,
+            "contrastSpan": 0.5098039215686275,
+            "minChainLength": 12,
+            "semanticBoundaryTruth": false,
+            "retainedSourceComponents": 8
+          },
+          "candidates": [
+            {
+              "id": "known",
+              "residual": 0.28841283754476826,
+              "coverage": 0.7889422475493475,
+              "silhouette": 0.9922762380736029,
+              "samples": 1120,
+              "supportedForRanking": true,
+              "supportReasons": [],
+              "totalWeight": 831.1456425700433,
+              "visibleGroups": 24,
+              "matchedImageComponents": 8,
+              "geometry": {
+                "method": "visible-geometric-contours",
+                "status": "ok",
+                "reasons": [],
+                "rasterSize": [
+                  192,
+                  192
+                ],
+                "sourceFaces": 48,
+                "validFaces": 48,
+                "invalidFaces": 0,
+                "exactEdges": 72,
+                "nonManifoldEdges": 0,
+                "stablePatches": 24,
+                "creaseCandidates": 48,
+                "unsupportedCreases": 0,
+                "occludedSamples": 1071,
+                "exteriorSamples": 881,
+                "visibleSegments": 30,
+                "internalSamples": 1120,
+                "limits": {
+                  "faces": 250000,
+                  "rasterPixels": 1048576,
+                  "visibilityBinEntries": 2000000,
+                  "visibilityPixelVisits": 16000000,
+                  "queryFaceVisits": 25000000,
+                  "samples": 80000,
+                  "segments": 20000
+                }
+              }
+            },
+            {
+              "id": "opposite",
+              "residual": 0.13226736691569288,
+              "coverage": 1,
+              "silhouette": 0.9552951388888888,
+              "samples": 79,
+              "supportedForRanking": false,
+              "supportReasons": [
+                "insufficient-independent-contours",
+                "parallel-or-degenerate-contours",
+                "spatially-concentrated-contours"
+              ],
+              "totalWeight": 59.16143497757853,
+              "visibleGroups": 1,
+              "matchedImageComponents": 1,
+              "geometry": {
+                "method": "visible-geometric-contours",
+                "status": "ok",
+                "reasons": [],
+                "rasterSize": [
+                  192,
+                  192
+                ],
+                "sourceFaces": 48,
+                "validFaces": 48,
+                "invalidFaces": 0,
+                "exactEdges": 72,
+                "nonManifoldEdges": 0,
+                "stablePatches": 16,
+                "creaseCandidates": 48,
+                "unsupportedCreases": 32,
+                "occludedSamples": 835,
+                "exteriorSamples": 590,
+                "visibleSegments": 3,
+                "internalSamples": 79,
+                "limits": {
+                  "faces": 250000,
+                  "rasterPixels": 1048576,
+                  "visibilityBinEntries": 2000000,
+                  "visibilityPixelVisits": 16000000,
+                  "queryFaceVisits": 25000000,
+                  "samples": 80000,
+                  "segments": 20000
+                }
+              }
+            }
+          ],
+          "proposed": "known",
+          "status": "unresolved",
+          "directionDeterminant": 0.24157468812796157,
+          "reasons": [
+            "competing-camera-ambiguity",
+            "baseline-has-no-comparable-interior-evidence"
+          ]
+        },
+        "illuminated": {
+          "image": {
+            "inputSize": [
+              192,
+              192
+            ],
+            "analysisSize": [
+              192,
+              192
+            ],
+            "scale": [
+              1,
+              1
+            ],
+            "persistentEdgePixels": 1169,
+            "retainedChains": 24,
+            "persistentComponents": 11,
+            "rejectedShortChains": 34,
+            "rejectedIncoherentChains": 0,
+            "sampleCount": 508,
+            "contrastSpan": 0.32941176470588246,
+            "minChainLength": 12,
+            "semanticBoundaryTruth": false,
+            "retainedSourceComponents": 8
+          },
+          "candidates": [
+            {
+              "id": "known",
+              "residual": 0.2884317267047322,
+              "coverage": 0.7889422475493475,
+              "silhouette": 0.9922762380736029,
+              "samples": 1120,
+              "supportedForRanking": true,
+              "supportReasons": [],
+              "totalWeight": 831.1456425700433,
+              "visibleGroups": 24,
+              "matchedImageComponents": 8,
+              "geometry": {
+                "method": "visible-geometric-contours",
+                "status": "ok",
+                "reasons": [],
+                "rasterSize": [
+                  192,
+                  192
+                ],
+                "sourceFaces": 48,
+                "validFaces": 48,
+                "invalidFaces": 0,
+                "exactEdges": 72,
+                "nonManifoldEdges": 0,
+                "stablePatches": 24,
+                "creaseCandidates": 48,
+                "unsupportedCreases": 0,
+                "occludedSamples": 1071,
+                "exteriorSamples": 881,
+                "visibleSegments": 30,
+                "internalSamples": 1120,
+                "limits": {
+                  "faces": 250000,
+                  "rasterPixels": 1048576,
+                  "visibilityBinEntries": 2000000,
+                  "visibilityPixelVisits": 16000000,
+                  "queryFaceVisits": 25000000,
+                  "samples": 80000,
+                  "segments": 20000
+                }
+              }
+            },
+            {
+              "id": "opposite",
+              "residual": 0.13226736720088678,
+              "coverage": 1,
+              "silhouette": 0.9552951388888888,
+              "samples": 79,
+              "supportedForRanking": false,
+              "supportReasons": [
+                "insufficient-independent-contours",
+                "parallel-or-degenerate-contours",
+                "spatially-concentrated-contours"
+              ],
+              "totalWeight": 59.16143497757853,
+              "visibleGroups": 1,
+              "matchedImageComponents": 1,
+              "geometry": {
+                "method": "visible-geometric-contours",
+                "status": "ok",
+                "reasons": [],
+                "rasterSize": [
+                  192,
+                  192
+                ],
+                "sourceFaces": 48,
+                "validFaces": 48,
+                "invalidFaces": 0,
+                "exactEdges": 72,
+                "nonManifoldEdges": 0,
+                "stablePatches": 16,
+                "creaseCandidates": 48,
+                "unsupportedCreases": 32,
+                "occludedSamples": 835,
+                "exteriorSamples": 590,
+                "visibleSegments": 3,
+                "internalSamples": 79,
+                "limits": {
+                  "faces": 250000,
+                  "rasterPixels": 1048576,
+                  "visibilityBinEntries": 2000000,
+                  "visibilityPixelVisits": 16000000,
+                  "queryFaceVisits": 25000000,
+                  "samples": 80000,
+                  "segments": 20000
+                }
+              }
+            }
+          ],
+          "proposed": "known",
+          "status": "unresolved",
+          "directionDeterminant": 0.24157468812796157,
+          "reasons": [
+            "competing-camera-ambiguity",
+            "baseline-has-no-comparable-interior-evidence"
+          ]
+        }
+      }
+    ],
+    "runtimeLogSha256": "2c681ded1d4ceb1c13aadd02722392575dc2bf775fe9b1ed57b861141772cd97"
+  },
+  "plots": [
+    {
+      "case": "house",
+      "plot": "outputs/interior-camera-calibration/house-contours.png",
+      "sha256": "57416b55a475e42aa0a2115857bbac1b4b5f8c0fb20a9302dbcd65985fc5a3f1",
+      "method": "original-coordinate contour plot; no browser or CAD appearance acceptance"
+    },
+    {
+      "case": "temple-standard",
+      "plot": "outputs/interior-camera-calibration/temple-standard-contours.png",
+      "sha256": "3b5b1843484ef0dc1fba010bec844c6e2a09e66e6660a14f532759fa8ed39f87",
+      "method": "original-coordinate contour plot; no browser or CAD appearance acceptance"
+    }
+  ],
+  "validation": {
+    "typecheck": "passed",
+    "scopedLint": "passed",
+    "sourceEvidenceUnchanged": true,
+    "productionCameraOrMaterialIntegration": "not-applied",
+    "appearanceAcceptance": false,
+    "physicalBuildabilityVerified": false
+  },
+  "probeSummary": {
+    "images": 2,
+    "detections": {
+      "house": 9,
+      "temple": 6
+    },
+    "maskRoundtrip": {
+      "count": 15,
+      "allExact": true
+    },
+    "wallDetected": false,
+    "roofMaterialMaskAccepted": false,
+    "templeDoorFreeSpaceMaskAccepted": false,
+    "learnedSemanticSegmentationGroundTruth": false,
+    "engineFingerprint": "c6c6a791a10c5c44de30ce0b16ea0c12a99b1c5b463f4ffef1b40d2494ffeb04"
+  }
+}

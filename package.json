@@ -13,8 +13,10 @@
     "lint": "oxlint",
     "format": "oxfmt",
     "test": "node --experimental-strip-types --test lib/*.test.ts",
+    "test:correspondence": "node --experimental-strip-types --test scripts/correspondence/*.test.ts",
     "benchmark": "node --experimental-strip-types scripts/benchmark-packing.ts",
     "benchmark:images": "node --experimental-strip-types scripts/benchmark-images.ts",
+    "benchmark:correspondence": "node --experimental-strip-types scripts/benchmark-correspondence.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
