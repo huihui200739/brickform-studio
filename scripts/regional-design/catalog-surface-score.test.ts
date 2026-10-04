@@ -208,3 +208,217 @@ void test('coverage and finite work budgets are explicit; all inputs are immutab
   );
   assert.deepEqual([...original], [1, 2, 3, 2, 3, 4]);
 });
+
+void test('conservative projection culling preserves full-scene metrics and never removes a distant occluder', () => {
+  const base = input(patch(1, 3, 1, 3, 0.4), [part(1, '3068b', [0, -8, 0])]);
+  base.contextBricks = [part(2, '3068b', [1000, -8, 0])];
+  base.maxRayDistanceStuds = 100;
+  const full = scored(scoreCatalogSurface(base));
+  const culled = scored(
+    scoreCatalogSurface({ ...base, cullDisjointContext: true }),
+  );
+  assert.deepEqual(culled.sourceToParts, full.sourceToParts);
+  assert.deepEqual(culled.partsToSource, full.partsToSource);
+  assert.deepEqual(culled.contextCulling, {
+    inputParts: 1,
+    retainedParts: 0,
+    inputSourceTriangles: 2,
+    retainedSourceTriangles: 2,
+  });
+  base.contextBricks = [part(2, '3068b', [0, -1000, 0])];
+  const distant = scored(
+    scoreCatalogSurface({ ...base, cullDisjointContext: true }),
+  );
+  assert.deepEqual(distant.contextCulling, {
+    inputParts: 1,
+    retainedParts: 1,
+    inputSourceTriangles: 2,
+    retainedSourceTriangles: 2,
+  });
+  assert.ok(distant.sourceToParts.coverage < 0.1);
+  assert.equal(distant.partsToSource.visibleSamples, 0);
+});
+void test('a context part that can occlude any supplied view remains, regardless of nominal coordinates', () => {
+  const base = input(patch(1, 3, 1, 3, 0.4), [part(1, '3068b', [0, -8, 0])]);
+  base.views = [
+    [0, 1, 0],
+    [1, 0, 0],
+  ];
+  base.maxRayDistanceStuds = 100;
+  base.contextBricks = [
+    { ...part(2, '3068b', [1000, -8, 0]), x: -500, z: -500 },
+  ];
+  const result = scored(
+    scoreCatalogSurface({ ...base, cullDisjointContext: true }),
+  );
+  assert.deepEqual(result.contextCulling, {
+    inputParts: 1,
+    retainedParts: 1,
+    inputSourceTriangles: 2,
+    retainedSourceTriangles: 2,
+  });
+  base.contextBricks = [
+    { ...part(2, '3068b', [1000, -8, 0]), pose: undefined },
+  ];
+  assert.equal(
+    scoreCatalogSurface({ ...base, cullDisjointContext: true }).status,
+    'unavailable',
+  );
+  base.contextBricks = [part(2, 'missing-geometry', [1000, -8, 0])];
+  assert.equal(
+    scoreCatalogSurface({ ...base, cullDisjointContext: true }).status,
+    'unavailable',
+  );
+});
+void test('explicit source-projection scope does not penalize preserved parts outside the target and remains visibly limited', () => {
+  const base = input(patch(1, 2, 1, 2, 0.4), [part(1, '3068b', [0, -8, 0])]);
+  const full = scored(scoreCatalogSurface(base));
+  assert.equal(full.missingOrExtraArea, true);
+  const scoped = scored(
+    scoreCatalogSurface({
+      ...base,
+      partScoringFootprint: 'owned-source-projection',
+    }),
+  );
+  assert.equal(scoped.scope, 'sampled-owned-projection-only');
+  assert.ok(scoped.symmetricRmsStuds < 1e-8);
+  assert.ok(scoped.sourceToParts.coverage > 0.99);
+  // Scope cannot hide a protrusion in front of the actual owned projected region.
+  base.model.bricks.push(part(2, '3070b', [-10, -16, -10]));
+  const extra = scored(
+    scoreCatalogSurface({
+      ...base,
+      partScoringFootprint: 'owned-source-projection',
+    }),
+  );
+  assert.ok(extra.symmetricRmsStuds > 0.1);
+});
+
+void test('final-scene comparison includes retained target surfaces, but still penalizes missing or wrong-depth geometry', () => {
+  const base = input(patch(1, 3, 1, 3, 0.4), [part(1, '3069b', [0, -8, -10])]);
+  base.contextBricks = [part(2, '3069b', [0, -8, 10])];
+  base.comparison = 'final-scene-owned-projection';
+  base.partScoringFootprint = 'owned-source-projection';
+  const complete = scored(scoreCatalogSurface(base));
+  assert.equal(complete.scope, 'sampled-final-scene-owned-projection-only');
+  assert.equal(complete.sourceToParts.coverage, 1);
+  assert.ok(complete.symmetricRmsStuds < 1e-8);
+  assert.ok(
+    Math.abs(complete.partsToSource.visibleAreaStudsSquared - 4) < 1e-8,
+  );
+  const missing = scored(scoreCatalogSurface({ ...base, contextBricks: [] }));
+  assert.ok(missing.sourceToParts.coverage < 0.55);
+  assert.ok(missing.symmetricRmsStuds > 3);
+  const displaced = scored(
+    scoreCatalogSurface({
+      ...base,
+      contextBricks: [part(2, '3069b', [0, -28, 10])],
+    }),
+  );
+  assert.equal(displaced.sourceToParts.coverage, 1);
+  assert.ok(displaced.symmetricRmsStuds > 0.65);
+  assert.equal(
+    scoreCatalogSurface({ ...base, partScoringFootprint: undefined }).status,
+    'unavailable',
+  );
+});
+
+void test('a hidden owned source cannot authorize scoring the exterior of another original object', () => {
+  const source = [...patch(1, 3, 1, 3, 0.4), ...patch(2, 3, 1, 3, 1.4)];
+  const base = input(source, [
+    part(1, '3069b', [-10, -8, 0], [0, 0, 1, 0, 1, 0, -1, 0, 0]),
+  ]);
+  base.source.faceIds = [0, 1];
+  base.contextBricks = [
+    part(2, '3069b', [10, -28, 0], [0, 0, 1, 0, 1, 0, -1, 0, 0]),
+  ];
+  base.comparison = 'final-scene-owned-projection';
+  base.partScoringFootprint = 'owned-source-projection';
+  const result = scored(scoreCatalogSurface(base));
+  assert.ok(result.symmetricRmsStuds < 1e-8);
+  assert.ok(Math.abs(result.sourceToParts.visibleAreaStudsSquared - 2) < 0.1);
+  assert.ok(Math.abs(result.partsToSource.visibleAreaStudsSquared - 2) < 1e-8);
+});
+
+void test('lateral source culling preserves exact metrics, bounded work and complete input validation', () => {
+  const source = patch(1, 3, 1, 3, 0.4);
+  for (let i = 0; i < 1000; i++) source.push(...patch(100, 102, 100, 102, 0.4));
+  const base = input(source, [part(1, '3068b', [0, -8, 0])]);
+  base.source.faceIds = [0, 1];
+  const full = scored(scoreCatalogSurface(base));
+  const culled = scored(
+    scoreCatalogSurface({ ...base, cullDisjointContext: true }),
+  );
+  assert.deepEqual(culled.sourceToParts, full.sourceToParts);
+  assert.deepEqual(culled.partsToSource, full.partsToSource);
+  assert.equal(culled.contextCulling?.inputSourceTriangles, 2002);
+  assert.equal(culled.contextCulling?.retainedSourceTriangles, 2);
+  const limits = { triangles: catalog['3068b'].positions.length / 9 + 2 };
+  assert.equal(scoreCatalogSurface({ ...base, limits }).status, 'unavailable');
+  assert.equal(
+    scoreCatalogSurface({ ...base, limits, cullDisjointContext: true }).status,
+    'scored',
+  );
+  source[source.length - 1] = NaN;
+  assert.equal(
+    scoreCatalogSurface({ ...base, cullDisjointContext: true }).status,
+    'unavailable',
+  );
+});
+
+void test('triangle-level lateral context culling keeps the full visible final-scene metrics under a tighter geometry budget', () => {
+  const base = input(patch(1, 3, 1, 3, 0.4), [part(1, '3068b', [0, -8, 0])]);
+  base.contextBricks = [part(2, '3001', [0, -48, 20])];
+  base.comparison = 'final-scene-owned-projection';
+  base.partScoringFootprint = 'owned-source-projection';
+  const full = scored(scoreCatalogSurface(base));
+  const cropped = scored(
+    scoreCatalogSurface({ ...base, cullDisjointContext: true }),
+  );
+  assert.deepEqual(cropped.sourceToParts, full.sourceToParts);
+  assert.deepEqual(cropped.partsToSource, full.partsToSource);
+  const triangles =
+    2 +
+    catalog['3068b'].positions.length / 9 +
+    catalog['3001'].positions.length / 9 -
+    1;
+  assert.equal(
+    scoreCatalogSurface({ ...base, limits: { triangles } }).status,
+    'unavailable',
+  );
+  assert.equal(
+    scoreCatalogSurface({
+      ...base,
+      limits: { triangles },
+      cullDisjointContext: true,
+    }).status,
+    'scored',
+  );
+});
+
+void test('disconnected owned patches exclude irrelevant gap surfaces from sampling without changing visible errors', () => {
+  const base = input(
+    [...patch(1, 2, 1, 2, 0.4), ...patch(4, 5, 1, 2, 0.4)],
+    [part(1, '3070b', [-10, -8, -10]), part(2, '3070b', [50, -8, -10])],
+  );
+  // Real catalog tile surfaces occupy the gap between the owned patches.
+  // They are still scene occluders, but do not lie in the owned projection.
+  base.contextBricks = Array.from({ length: 16 }, (_, i) =>
+    part(3 + i, '3070b', [20, -8 - i * 8, -10]),
+  );
+  base.comparison = 'final-scene-owned-projection';
+  base.partScoringFootprint = 'owned-source-projection';
+  const full = scored(scoreCatalogSurface(base));
+  const cropped = scored(
+    scoreCatalogSurface({ ...base, cullDisjointContext: true }),
+  );
+  assert.deepEqual(cropped.sourceToParts, full.sourceToParts);
+  assert.deepEqual(cropped.partsToSource, full.partsToSource);
+  assert.ok(cropped.samples < full.samples / 2);
+  const limits = { samples: cropped.samples };
+  assert.equal(scoreCatalogSurface({ ...base, limits }).status, 'unavailable');
+  assert.equal(
+    scoreCatalogSurface({ ...base, limits, cullDisjointContext: true }).status,
+    'scored',
+  );
+});

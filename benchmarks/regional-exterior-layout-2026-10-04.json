@@ -1,0 +1,2107 @@
+{
+  "date": "2026-10-04",
+  "boundaryRepacking": true,
+  "sourceExterior": true,
+  "conversionFingerprint": "8067b760e7f860e3592574d690148ce444166f895578d33a62a43f3a154cfd05",
+  "experimentalCodeFingerprint": "62ebeee99babe27bb9b9b916cec9cf23f2d0eb73cd91cab8393c86b4a524682b",
+  "selectionSha256": "8b14c939a72fc9443e04feba99ef41d86298913e3f5cd2ea054f70a3a6876009",
+  "cases": [
+    {
+      "id": "temple-standard",
+      "resolution": 48,
+      "status": "evaluated",
+      "sourceGLBSha256": "432bff9f81a91d9e02f9e8ba3b09344b107fe2a6d08a1266ddce172215ed051f",
+      "sourceRGBASha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "sourcePositionSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "camera": {
+        "yaw": 0,
+        "pitch": 20,
+        "perspective": 0.5
+      },
+      "cells": 72803,
+      "sparseOwnershipCells": 185,
+      "sparseContributors": 3017,
+      "regions": [
+        {
+          "id": "A",
+          "status": "ready-for-layout",
+          "sourceFaces": 113,
+          "components": 1,
+          "planeComponents": 0,
+          "boundaries": [
+            {
+              "kind": "unclassified",
+              "vertices": 25,
+              "outsideInterfaceFaces": 18
+            }
+          ],
+          "editableShellCells": 2,
+          "lockedShellCells": 24,
+          "observations": {
+            "gridSamples": 21,
+            "observedGridSamples": 21,
+            "centroidSamples": 38,
+            "internalCorrespondenceVerified": false
+          },
+          "exteriorVoid": {
+            "status": "unavailable",
+            "reasons": [
+              "steep, folded or wrong-facing target requires another construction"
+            ],
+            "eligibleExteriorCells": 0,
+            "blockedExteriorCells": 0
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 12,
+            "crossings": 24,
+            "intervals": 12,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 165196,
+              "columns": 12,
+              "bboxColumnTests": 5076,
+              "rayTriangleTests": 59,
+              "rawCrossings": 24
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 6,
+            "unresolvedCells": 0,
+            "uniqueRays": 6,
+            "raysStatus": "collected",
+            "ambiguousRays": 0
+          },
+          "layout": {
+            "status": "noop",
+            "reasons": [
+              "no complete replaceable part or new intended cells"
+            ],
+            "candidates": []
+          },
+          "warnings": [],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        },
+        {
+          "id": "B",
+          "status": "unresolved",
+          "sourceFaces": 115,
+          "components": 1,
+          "planeComponents": 0,
+          "boundaries": [
+            {
+              "kind": "unclassified",
+              "vertices": 29,
+              "outsideInterfaceFaces": 20
+            }
+          ],
+          "editableShellCells": 0,
+          "lockedShellCells": 25,
+          "observations": {
+            "gridSamples": 20,
+            "observedGridSamples": 20,
+            "centroidSamples": 46,
+            "internalCorrespondenceVerified": false
+          },
+          "exteriorVoid": {
+            "status": "unavailable",
+            "reasons": [
+              "steep, folded or wrong-facing target requires another construction"
+            ],
+            "eligibleExteriorCells": 0,
+            "blockedExteriorCells": 0
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 12,
+            "crossings": 24,
+            "intervals": 12,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 165196,
+              "columns": 12,
+              "bboxColumnTests": 5076,
+              "rayTriangleTests": 59,
+              "rawCrossings": 24
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 0,
+            "unresolvedCells": 0,
+            "uniqueRays": 0,
+            "raysStatus": "not-requested",
+            "ambiguousRays": null
+          },
+          "layout": {
+            "status": "not-proposed",
+            "reason": "source target unresolved"
+          },
+          "warnings": [
+            "no-sole-owned-editable-shell"
+          ],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        },
+        {
+          "id": "C",
+          "status": "ready-for-layout",
+          "sourceFaces": 651,
+          "components": 2,
+          "planeComponents": 1,
+          "boundaries": [
+            {
+              "kind": "unclassified",
+              "vertices": 172,
+              "outsideInterfaceFaces": 106
+            },
+            {
+              "kind": "outer",
+              "vertices": 3,
+              "outsideInterfaceFaces": 3
+            }
+          ],
+          "editableShellCells": 33,
+          "lockedShellCells": 101,
+          "observations": {
+            "gridSamples": 239,
+            "observedGridSamples": 239,
+            "centroidSamples": 375,
+            "internalCorrespondenceVerified": false
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 101,
+            "crossings": 266,
+            "intervals": 133,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 165196,
+              "columns": 101,
+              "bboxColumnTests": 17652,
+              "rayTriangleTests": 566,
+              "rawCrossings": 266
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 558,
+            "unresolvedCells": 0,
+            "uniqueRays": 558,
+            "raysStatus": "collected",
+            "ambiguousRays": 0
+          },
+          "layout": {
+            "status": "candidate",
+            "reasons": [
+              "bounded offline proposals; no supports inserted and no commit authorized"
+            ],
+            "candidates": [
+              {
+                "strategy": "brick-courses-0",
+                "removedParts": 16,
+                "addedParts": 18,
+                "reconstructedSupportIDs": [],
+                "changedCells": 0,
+                "boundary": {
+                  "policy": "repack-complete-parts",
+                  "frozenCells": [
+                    "17,76,21",
+                    "17,77,21",
+                    "17,78,21",
+                    "18,76,21",
+                    "18,77,21",
+                    "18,78,21",
+                    "19,76,21",
+                    "19,78,21",
+                    "20,76,21",
+                    "20,78,21",
+                    "21,77,18",
+                    "21,77,19",
+                    "21,77,20",
+                    "22,78,21",
+                    "22,79,21",
+                    "26,77,18",
+                    "26,77,19",
+                    "26,77,20",
+                    "27,77,18",
+                    "27,77,19",
+                    "27,77,20",
+                    "28,77,18",
+                    "28,77,19",
+                    "28,77,20",
+                    "29,76,21",
+                    "29,78,21",
+                    "30,76,21",
+                    "30,78,21",
+                    "31,76,21",
+                    "31,77,21",
+                    "31,78,21",
+                    "32,76,21",
+                    "32,77,21",
+                    "32,78,21"
+                  ],
+                  "outsideOccupancyColorChanges": 0
+                },
+                "baselineScore": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 8597,
+                    "retainedParts": 1053,
+                    "inputSourceTriangles": 165196,
+                    "retainedSourceTriangles": 17814
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 1241,
+                    "visibleAreaStudsSquared": 37.17969099757757,
+                    "matchedAreaStudsSquared": 37.17969099757757,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.383608869423948,
+                    "p95Studs": 1.9157638307173102,
+                    "maxStuds": 6.254063843340191,
+                    "normalAgreement": 0.6191071183188337
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 655,
+                    "visibleAreaStudsSquared": 23.510435751215326,
+                    "matchedAreaStudsSquared": 23.510435751215326,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.3253740049986051,
+                    "p95Studs": 1.8461194417941584,
+                    "maxStuds": 6.475615574655919,
+                    "normalAgreement": 0.7648730444617362
+                  },
+                  "symmetricRmsStuds": 1.3613451929935083,
+                  "symmetricP95Studs": 1.9031008037957804,
+                  "symmetricMaxStuds": 6.475615574655919,
+                  "missingOrExtraArea": false,
+                  "samples": 82612,
+                  "rayTriangleTests": 7970286
+                },
+                "score": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 8597,
+                    "retainedParts": 1053,
+                    "inputSourceTriangles": 165196,
+                    "retainedSourceTriangles": 17814
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 1241,
+                    "visibleAreaStudsSquared": 37.17969099757757,
+                    "matchedAreaStudsSquared": 37.17969099757757,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.383608869423948,
+                    "p95Studs": 1.9157638307173102,
+                    "maxStuds": 6.254063843340191,
+                    "normalAgreement": 0.6191071183188337
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 655,
+                    "visibleAreaStudsSquared": 23.510435751215333,
+                    "matchedAreaStudsSquared": 23.510435751215333,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.3253740049986047,
+                    "p95Studs": 1.8461194417941584,
+                    "maxStuds": 6.475615574655919,
+                    "normalAgreement": 0.764873044461736
+                  },
+                  "symmetricRmsStuds": 1.3613451929935083,
+                  "symmetricP95Studs": 1.9031008037957804,
+                  "symmetricMaxStuds": 6.475615574655919,
+                  "missingOrExtraArea": false,
+                  "samples": 82709,
+                  "rayTriangleTests": 7951015
+                },
+                "assemblyAudited": false,
+                "accepted": false
+              },
+              {
+                "strategy": "brick-courses-1-staggered",
+                "removedParts": 16,
+                "addedParts": 20,
+                "reconstructedSupportIDs": [],
+                "changedCells": 0,
+                "boundary": {
+                  "policy": "repack-complete-parts",
+                  "frozenCells": [
+                    "17,76,21",
+                    "17,77,21",
+                    "17,78,21",
+                    "18,76,21",
+                    "18,77,21",
+                    "18,78,21",
+                    "19,76,21",
+                    "19,78,21",
+                    "20,76,21",
+                    "20,78,21",
+                    "21,77,18",
+                    "21,77,19",
+                    "21,77,20",
+                    "22,78,21",
+                    "22,79,21",
+                    "26,77,18",
+                    "26,77,19",
+                    "26,77,20",
+                    "27,77,18",
+                    "27,77,19",
+                    "27,77,20",
+                    "28,77,18",
+                    "28,77,19",
+                    "28,77,20",
+                    "29,76,21",
+                    "29,78,21",
+                    "30,76,21",
+                    "30,78,21",
+                    "31,76,21",
+                    "31,77,21",
+                    "31,78,21",
+                    "32,76,21",
+                    "32,77,21",
+                    "32,78,21"
+                  ],
+                  "outsideOccupancyColorChanges": 0
+                },
+                "baselineScore": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 8597,
+                    "retainedParts": 1053,
+                    "inputSourceTriangles": 165196,
+                    "retainedSourceTriangles": 17814
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 1241,
+                    "visibleAreaStudsSquared": 37.17969099757757,
+                    "matchedAreaStudsSquared": 37.17969099757757,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.383608869423948,
+                    "p95Studs": 1.9157638307173102,
+                    "maxStuds": 6.254063843340191,
+                    "normalAgreement": 0.6191071183188337
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 655,
+                    "visibleAreaStudsSquared": 23.510435751215326,
+                    "matchedAreaStudsSquared": 23.510435751215326,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.3253740049986051,
+                    "p95Studs": 1.8461194417941584,
+                    "maxStuds": 6.475615574655919,
+                    "normalAgreement": 0.7648730444617362
+                  },
+                  "symmetricRmsStuds": 1.3613451929935083,
+                  "symmetricP95Studs": 1.9031008037957804,
+                  "symmetricMaxStuds": 6.475615574655919,
+                  "missingOrExtraArea": false,
+                  "samples": 82612,
+                  "rayTriangleTests": 7970286
+                },
+                "score": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 8597,
+                    "retainedParts": 1053,
+                    "inputSourceTriangles": 165196,
+                    "retainedSourceTriangles": 17814
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 1241,
+                    "visibleAreaStudsSquared": 37.17969099757757,
+                    "matchedAreaStudsSquared": 37.17969099757757,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.383608869423948,
+                    "p95Studs": 1.9157638307173102,
+                    "maxStuds": 6.254063843340191,
+                    "normalAgreement": 0.6191071183188337
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 654,
+                    "visibleAreaStudsSquared": 23.423628569326187,
+                    "matchedAreaStudsSquared": 23.423628569326187,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.3280152488375605,
+                    "p95Studs": 1.8461194417941584,
+                    "maxStuds": 6.475615574655919,
+                    "normalAgreement": 0.7645314908114669
+                  },
+                  "symmetricRmsStuds": 1.3623905114944947,
+                  "symmetricP95Studs": 1.9031008037957804,
+                  "symmetricMaxStuds": 6.475615574655919,
+                  "missingOrExtraArea": false,
+                  "samples": 83646,
+                  "rayTriangleTests": 8243348
+                },
+                "assemblyAudited": false,
+                "accepted": false
+              },
+              {
+                "strategy": "brick-courses-2-staggered",
+                "removedParts": 16,
+                "addedParts": 22,
+                "reconstructedSupportIDs": [],
+                "changedCells": 0,
+                "boundary": {
+                  "policy": "repack-complete-parts",
+                  "frozenCells": [
+                    "17,76,21",
+                    "17,77,21",
+                    "17,78,21",
+                    "18,76,21",
+                    "18,77,21",
+                    "18,78,21",
+                    "19,76,21",
+                    "19,78,21",
+                    "20,76,21",
+                    "20,78,21",
+                    "21,77,18",
+                    "21,77,19",
+                    "21,77,20",
+                    "22,78,21",
+                    "22,79,21",
+                    "26,77,18",
+                    "26,77,19",
+                    "26,77,20",
+                    "27,77,18",
+                    "27,77,19",
+                    "27,77,20",
+                    "28,77,18",
+                    "28,77,19",
+                    "28,77,20",
+                    "29,76,21",
+                    "29,78,21",
+                    "30,76,21",
+                    "30,78,21",
+                    "31,76,21",
+                    "31,77,21",
+                    "31,78,21",
+                    "32,76,21",
+                    "32,77,21",
+                    "32,78,21"
+                  ],
+                  "outsideOccupancyColorChanges": 0
+                },
+                "baselineScore": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 8597,
+                    "retainedParts": 1053,
+                    "inputSourceTriangles": 165196,
+                    "retainedSourceTriangles": 17814
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 1241,
+                    "visibleAreaStudsSquared": 37.17969099757757,
+                    "matchedAreaStudsSquared": 37.17969099757757,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.383608869423948,
+                    "p95Studs": 1.9157638307173102,
+                    "maxStuds": 6.254063843340191,
+                    "normalAgreement": 0.6191071183188337
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 655,
+                    "visibleAreaStudsSquared": 23.510435751215326,
+                    "matchedAreaStudsSquared": 23.510435751215326,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.3253740049986051,
+                    "p95Studs": 1.8461194417941584,
+                    "maxStuds": 6.475615574655919,
+                    "normalAgreement": 0.7648730444617362
+                  },
+                  "symmetricRmsStuds": 1.3613451929935083,
+                  "symmetricP95Studs": 1.9031008037957804,
+                  "symmetricMaxStuds": 6.475615574655919,
+                  "missingOrExtraArea": false,
+                  "samples": 82612,
+                  "rayTriangleTests": 7970286
+                },
+                "score": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 8597,
+                    "retainedParts": 1053,
+                    "inputSourceTriangles": 165196,
+                    "retainedSourceTriangles": 17814
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 1241,
+                    "visibleAreaStudsSquared": 37.17969099757757,
+                    "matchedAreaStudsSquared": 37.17969099757757,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.383608869423948,
+                    "p95Studs": 1.9157638307173102,
+                    "maxStuds": 6.254063843340191,
+                    "normalAgreement": 0.6191071183188337
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 654,
+                    "visibleAreaStudsSquared": 23.423628569326187,
+                    "matchedAreaStudsSquared": 23.423628569326187,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.3280152488375605,
+                    "p95Studs": 1.8461194417941584,
+                    "maxStuds": 6.475615574655919,
+                    "normalAgreement": 0.7645314908114669
+                  },
+                  "symmetricRmsStuds": 1.3623905114944947,
+                  "symmetricP95Studs": 1.9031008037957804,
+                  "symmetricMaxStuds": 6.475615574655919,
+                  "missingOrExtraArea": false,
+                  "samples": 83743,
+                  "rayTriangleTests": 8101347
+                },
+                "assemblyAudited": false,
+                "accepted": false
+              }
+            ]
+          },
+          "warnings": [],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        }
+      ],
+      "finalModel": {
+        "brickCount": 8613,
+        "modelSha256": "181578b976a58591b9585bf595cdbe3f90b809d8f2bcd91198c7e1197decc946",
+        "recordedSceneSha256": "b693151ce3d12186370bf9e63a7c8544ade94d306d73defdf45b8663b3034550",
+        "cachedInferenceOnly": true,
+        "baselineReused": true,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 8613
+        },
+        "procurement": {
+          "unverified": 30,
+          "unsupportedColors": 0,
+          "requiresReview": true
+        }
+      },
+      "elapsedSeconds": 14.207
+    },
+    {
+      "id": "house",
+      "resolution": 28,
+      "status": "evaluated",
+      "sourceGLBSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+      "sourceRGBASha256": "ed3a7ba90ee9b293fc9703fb6333b81f024a323217aa995484e138101013c71b",
+      "sourcePositionSha256": "9c0cbbcd70b271b19d77d8d10fc4195e7d653f2df64b8f88b153e44e8b46a4c2",
+      "camera": {
+        "yaw": 35,
+        "pitch": 10,
+        "perspective": 0
+      },
+      "cells": 12259,
+      "sparseOwnershipCells": 134,
+      "sparseContributors": 4979,
+      "regions": [
+        {
+          "id": "60564",
+          "status": "unresolved",
+          "sourceFaces": 762,
+          "components": 1,
+          "planeComponents": 0,
+          "boundaries": [
+            {
+              "kind": "unclassified",
+              "vertices": 91,
+              "outsideInterfaceFaces": 91
+            },
+            {
+              "kind": "unclassified",
+              "vertices": 25,
+              "outsideInterfaceFaces": 24
+            }
+          ],
+          "editableShellCells": 0,
+          "lockedShellCells": 67,
+          "observations": {
+            "gridSamples": 618,
+            "observedGridSamples": 618,
+            "centroidSamples": 198,
+            "internalCorrespondenceVerified": false
+          },
+          "exteriorVoid": {
+            "status": "unavailable",
+            "reasons": [
+              "steep, folded or wrong-facing target requires another construction"
+            ],
+            "eligibleExteriorCells": 0,
+            "blockedExteriorCells": 0
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 67,
+            "crossings": 140,
+            "intervals": 70,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 154720,
+              "columns": 67,
+              "bboxColumnTests": 5338,
+              "rayTriangleTests": 298,
+              "rawCrossings": 140
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 0,
+            "unresolvedCells": 0,
+            "uniqueRays": 0,
+            "raysStatus": "not-requested",
+            "ambiguousRays": null
+          },
+          "layout": {
+            "status": "not-proposed",
+            "reason": "source target unresolved"
+          },
+          "warnings": [
+            "no-sole-owned-editable-shell"
+          ],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        },
+        {
+          "id": "60866",
+          "status": "unresolved",
+          "sourceFaces": 292,
+          "components": 1,
+          "planeComponents": 0,
+          "boundaries": [
+            {
+              "kind": "unclassified",
+              "vertices": 44,
+              "outsideInterfaceFaces": 44
+            }
+          ],
+          "editableShellCells": 0,
+          "lockedShellCells": 26,
+          "observations": {
+            "gridSamples": 233,
+            "observedGridSamples": 233,
+            "centroidSamples": 69,
+            "internalCorrespondenceVerified": false
+          },
+          "exteriorVoid": {
+            "status": "unavailable",
+            "reasons": [
+              "steep, folded or wrong-facing target requires another construction"
+            ],
+            "eligibleExteriorCells": 0,
+            "blockedExteriorCells": 0
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 26,
+            "crossings": 52,
+            "intervals": 26,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 154720,
+              "columns": 26,
+              "bboxColumnTests": 5153,
+              "rayTriangleTests": 113,
+              "rawCrossings": 52
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 0,
+            "unresolvedCells": 0,
+            "uniqueRays": 0,
+            "raysStatus": "not-requested",
+            "ambiguousRays": null
+          },
+          "layout": {
+            "status": "not-proposed",
+            "reason": "source target unresolved"
+          },
+          "warnings": [
+            "no-sole-owned-editable-shell"
+          ],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        },
+        {
+          "id": "124066",
+          "status": "ready-for-layout",
+          "sourceFaces": 238,
+          "components": 1,
+          "planeComponents": 1,
+          "boundaries": [
+            {
+              "kind": "outer",
+              "vertices": 40,
+              "outsideInterfaceFaces": 40
+            }
+          ],
+          "editableShellCells": 4,
+          "lockedShellCells": 16,
+          "observations": {
+            "gridSamples": 102,
+            "observedGridSamples": 102,
+            "centroidSamples": 79,
+            "internalCorrespondenceVerified": false
+          },
+          "exteriorVoid": {
+            "status": "candidate",
+            "scope": "source-defined-exterior-only",
+            "columns": [
+              {
+                "column": [
+                  32,
+                  12
+                ],
+                "sourceMaxSignedDepth": 21.621870733891384,
+                "sourceFaceIds": [
+                  124120,
+                  124121,
+                  124122,
+                  124123,
+                  124124,
+                  124125,
+                  124126,
+                  124127,
+                  124128,
+                  124129,
+                  124170,
+                  124171,
+                  124172,
+                  124173,
+                  124174,
+                  124175,
+                  124176,
+                  124177,
+                  124178,
+                  124179,
+                  124220,
+                  124221,
+                  124222,
+                  124223,
+                  124224,
+                  124225,
+                  124226,
+                  124227,
+                  124228,
+                  124229
+                ]
+              },
+              {
+                "column": [
+                  33,
+                  12
+                ],
+                "sourceMaxSignedDepth": 21.634775337677645,
+                "sourceFaceIds": [
+                  124220,
+                  124221,
+                  124222,
+                  124223,
+                  124224,
+                  124225,
+                  124226,
+                  124227,
+                  124228,
+                  124229,
+                  124270,
+                  124271,
+                  124272,
+                  124273,
+                  124274,
+                  124275,
+                  124276,
+                  124277,
+                  124278,
+                  124279,
+                  124320,
+                  124321,
+                  124322,
+                  124323,
+                  124324,
+                  124325,
+                  124326,
+                  124327,
+                  124328,
+                  124329
+                ]
+              },
+              {
+                "column": [
+                  34,
+                  12
+                ],
+                "sourceMaxSignedDepth": 21.63344581013858,
+                "sourceFaceIds": [
+                  124320,
+                  124321,
+                  124322,
+                  124323,
+                  124324,
+                  124325,
+                  124326,
+                  124327,
+                  124328,
+                  124329,
+                  124372,
+                  124373,
+                  124374,
+                  124375,
+                  124376,
+                  124377,
+                  124378,
+                  124379,
+                  124380,
+                  124381,
+                  124422,
+                  124424,
+                  124425,
+                  124426,
+                  124427,
+                  124428,
+                  124429,
+                  124430,
+                  124431
+                ]
+              },
+              {
+                "column": [
+                  35,
+                  12
+                ],
+                "sourceMaxSignedDepth": 21.64256316966441,
+                "sourceFaceIds": [
+                  124422,
+                  124423,
+                  124424,
+                  124425,
+                  124426,
+                  124427,
+                  124428,
+                  124429,
+                  124430,
+                  124431,
+                  124472,
+                  124473,
+                  124474,
+                  124475,
+                  124476,
+                  124477,
+                  124478,
+                  124479,
+                  124480,
+                  124481
+                ]
+              }
+            ],
+            "emptyBodyCells": [
+              "23,32,12",
+              "23,33,12",
+              "23,34,12",
+              "23,35,12"
+            ],
+            "rejectedColumns": [
+              {
+                "column": [
+                  31,
+                  11
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  31,
+                  12
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  31,
+                  13
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  32,
+                  11
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  32,
+                  13
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  33,
+                  11
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  33,
+                  13
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  34,
+                  11
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  34,
+                  13
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  35,
+                  11
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  35,
+                  13
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  36,
+                  11
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  36,
+                  12
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  36,
+                  13
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  37,
+                  12
+                ],
+                "reason": "partial target footprint or hole"
+              },
+              {
+                "column": [
+                  37,
+                  13
+                ],
+                "reason": "partial target footprint or hole"
+              }
+            ],
+            "reasons": [],
+            "sourceTruthVerified": false,
+            "assemblyVerified": false,
+            "eligibleExteriorCells": 4,
+            "blockedExteriorCells": 0
+          },
+          "finalist": {
+            "strategy": "brick-courses-0",
+            "status": "audited",
+            "assemblyAudited": true,
+            "softwareConnected": true,
+            "declaredGeometryPassed": null,
+            "validation": {
+              "collisions": 0,
+              "unsupported": 0,
+              "invalidParts": 0,
+              "connected": true,
+              "brickCount": 3149
+            },
+            "outsideNominalOccupancyColorChanges": 0,
+            "replannedParts": 3136,
+            "semanticPartsRetained": 13,
+            "reconstructedSupportIDs": [
+              2235,
+              2335,
+              2444,
+              2769
+            ],
+            "procurement": {
+              "unverifiedLines": 44,
+              "unsupportedColors": 0,
+              "stockChecked": false,
+              "requiresReview": true,
+              "assemblyStepsRequireReview": false
+            },
+            "fullInsertionPathVerified": false,
+            "physicalBuildVerified": false,
+            "accepted": false,
+            "modelPath": "outputs/regional-design-calibration/house-124066-exterior-finalist.json",
+            "modelSha256": "a53dbc2faf7c2c098689e4a898d3ee654a0efd47d76a3dd39dd3b053ba3d9479",
+            "appearanceAccepted": false
+          },
+          "interfaceRetry": {
+            "firstRejection": {
+              "status": "rejected",
+              "reasons": [
+                "whole-model connection/final-approach plan unresolved"
+              ],
+              "unresolvedPartIds": [
+                2444,
+                2538,
+                2627,
+                2722,
+                2769,
+                2799,
+                2833,
+                3149,
+                3150
+              ],
+              "assemblyAudited": true,
+              "accepted": false
+            },
+            "interfacePartIds": [
+              2444,
+              2443,
+              2769,
+              2768
+            ],
+            "reason": "same-color existing support interface; outside occupancy/color frozen"
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 20,
+            "crossings": 40,
+            "intervals": 20,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 154720,
+              "columns": 20,
+              "bboxColumnTests": 4582,
+              "rayTriangleTests": 89,
+              "rawCrossings": 40
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 109,
+            "unresolvedCells": 0,
+            "uniqueRays": 109,
+            "raysStatus": "collected",
+            "ambiguousRays": 0
+          },
+          "layout": {
+            "status": "candidate",
+            "reasons": [
+              "bounded offline proposals; no supports inserted and no commit authorized"
+            ],
+            "candidates": [
+              {
+                "strategy": "brick-courses-0",
+                "removedParts": 8,
+                "addedParts": 11,
+                "reconstructedSupportIDs": [
+                  2235,
+                  2335,
+                  2444,
+                  2769
+                ],
+                "changedCells": 4,
+                "boundary": {
+                  "policy": "repack-complete-parts",
+                  "frozenCells": [
+                    "20,32,12",
+                    "20,32,13",
+                    "20,33,12",
+                    "20,33,13",
+                    "20,34,12",
+                    "20,34,13",
+                    "20,35,12",
+                    "20,35,13",
+                    "20,36,12",
+                    "20,36,13",
+                    "20,37,12",
+                    "20,37,13",
+                    "21,32,13",
+                    "21,33,13",
+                    "21,34,13",
+                    "21,35,13",
+                    "21,36,12",
+                    "21,36,13",
+                    "21,37,12",
+                    "21,37,13",
+                    "21,48,12",
+                    "21,49,12",
+                    "21,50,12",
+                    "22,38,12",
+                    "22,48,12",
+                    "22,49,12",
+                    "22,50,12",
+                    "23,36,12",
+                    "23,37,12",
+                    "23,38,12",
+                    "23,39,12",
+                    "23,40,12",
+                    "23,48,12"
+                  ],
+                  "outsideOccupancyColorChanges": 0
+                },
+                "baselineScore": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 3138,
+                    "retainedParts": 517,
+                    "inputSourceTriangles": 154720,
+                    "retainedSourceTriangles": 14350
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 238,
+                    "visibleAreaStudsSquared": 5.847078318534204,
+                    "matchedAreaStudsSquared": 5.847078318534204,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.779925477273194,
+                    "p95Studs": 2.3881920069897546,
+                    "maxStuds": 2.393209650928924,
+                    "normalAgreement": 0.9984411865966069
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 149,
+                    "visibleAreaStudsSquared": 5.867778592375358,
+                    "matchedAreaStudsSquared": 5.867778592375358,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.717838212855815,
+                    "p95Studs": 2.3884080821720914,
+                    "maxStuds": 2.392561748132451,
+                    "normalAgreement": 0.9984080589898602
+                  },
+                  "symmetricRmsStuds": 1.7491024976531482,
+                  "symmetricP95Studs": 2.388221904859293,
+                  "symmetricMaxStuds": 2.393209650928924,
+                  "missingOrExtraArea": false,
+                  "samples": 14771,
+                  "rayTriangleTests": 839815
+                },
+                "score": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 3138,
+                    "retainedParts": 517,
+                    "inputSourceTriangles": 154720,
+                    "retainedSourceTriangles": 14350
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 238,
+                    "visibleAreaStudsSquared": 5.847078318534204,
+                    "matchedAreaStudsSquared": 5.847078318534204,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.2661514625159744,
+                    "p95Studs": 2.386502463954457,
+                    "maxStuds": 2.393209650928924,
+                    "normalAgreement": 0.9957638045511403
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 166,
+                    "visibleAreaStudsSquared": 6.0150672175084905,
+                    "matchedAreaStudsSquared": 6.0150672175084905,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.2579782546418947,
+                    "p95Studs": 2.386321841509556,
+                    "maxStuds": 2.392561748132451,
+                    "normalAgreement": 0.9871908604591894
+                  },
+                  "symmetricRmsStuds": 1.2620136002929632,
+                  "symmetricP95Studs": 2.386321841509556,
+                  "symmetricMaxStuds": 2.393209650928924,
+                  "missingOrExtraArea": false,
+                  "samples": 14825,
+                  "rayTriangleTests": 831101
+                },
+                "assemblyAudited": false,
+                "accepted": false
+              },
+              {
+                "strategy": "brick-courses-1-staggered",
+                "removedParts": 8,
+                "addedParts": 12,
+                "reconstructedSupportIDs": [
+                  2235,
+                  2335,
+                  2444,
+                  2769
+                ],
+                "changedCells": 4,
+                "boundary": {
+                  "policy": "repack-complete-parts",
+                  "frozenCells": [
+                    "20,32,12",
+                    "20,32,13",
+                    "20,33,12",
+                    "20,33,13",
+                    "20,34,12",
+                    "20,34,13",
+                    "20,35,12",
+                    "20,35,13",
+                    "20,36,12",
+                    "20,36,13",
+                    "20,37,12",
+                    "20,37,13",
+                    "21,32,13",
+                    "21,33,13",
+                    "21,34,13",
+                    "21,35,13",
+                    "21,36,12",
+                    "21,36,13",
+                    "21,37,12",
+                    "21,37,13",
+                    "21,48,12",
+                    "21,49,12",
+                    "21,50,12",
+                    "22,38,12",
+                    "22,48,12",
+                    "22,49,12",
+                    "22,50,12",
+                    "23,36,12",
+                    "23,37,12",
+                    "23,38,12",
+                    "23,39,12",
+                    "23,40,12",
+                    "23,48,12"
+                  ],
+                  "outsideOccupancyColorChanges": 0
+                },
+                "baselineScore": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 3138,
+                    "retainedParts": 517,
+                    "inputSourceTriangles": 154720,
+                    "retainedSourceTriangles": 14350
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 238,
+                    "visibleAreaStudsSquared": 5.847078318534204,
+                    "matchedAreaStudsSquared": 5.847078318534204,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.779925477273194,
+                    "p95Studs": 2.3881920069897546,
+                    "maxStuds": 2.393209650928924,
+                    "normalAgreement": 0.9984411865966069
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 149,
+                    "visibleAreaStudsSquared": 5.867778592375358,
+                    "matchedAreaStudsSquared": 5.867778592375358,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.717838212855815,
+                    "p95Studs": 2.3884080821720914,
+                    "maxStuds": 2.392561748132451,
+                    "normalAgreement": 0.9984080589898602
+                  },
+                  "symmetricRmsStuds": 1.7491024976531482,
+                  "symmetricP95Studs": 2.388221904859293,
+                  "symmetricMaxStuds": 2.393209650928924,
+                  "missingOrExtraArea": false,
+                  "samples": 14771,
+                  "rayTriangleTests": 839815
+                },
+                "score": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 3138,
+                    "retainedParts": 517,
+                    "inputSourceTriangles": 154720,
+                    "retainedSourceTriangles": 14350
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 238,
+                    "visibleAreaStudsSquared": 5.847078318534204,
+                    "matchedAreaStudsSquared": 5.847078318534204,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.2661514625159742,
+                    "p95Studs": 2.386502463954457,
+                    "maxStuds": 2.393209650928924,
+                    "normalAgreement": 0.9957638045511403
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 164,
+                    "visibleAreaStudsSquared": 5.937647862669781,
+                    "matchedAreaStudsSquared": 5.937647862669781,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.2651889842153223,
+                    "p95Studs": 2.38480118652177,
+                    "maxStuds": 2.392561748132451,
+                    "normalAgreement": 0.9870058149098265
+                  },
+                  "symmetricRmsStuds": 1.2656666163669401,
+                  "symmetricP95Studs": 2.3853959523965784,
+                  "symmetricMaxStuds": 2.393209650928924,
+                  "missingOrExtraArea": false,
+                  "samples": 15041,
+                  "rayTriangleTests": 815080
+                },
+                "assemblyAudited": false,
+                "accepted": false
+              },
+              {
+                "strategy": "brick-courses-2-staggered",
+                "removedParts": 8,
+                "addedParts": 12,
+                "reconstructedSupportIDs": [
+                  2235,
+                  2335,
+                  2444,
+                  2769
+                ],
+                "changedCells": 4,
+                "boundary": {
+                  "policy": "repack-complete-parts",
+                  "frozenCells": [
+                    "20,32,12",
+                    "20,32,13",
+                    "20,33,12",
+                    "20,33,13",
+                    "20,34,12",
+                    "20,34,13",
+                    "20,35,12",
+                    "20,35,13",
+                    "20,36,12",
+                    "20,36,13",
+                    "20,37,12",
+                    "20,37,13",
+                    "21,32,13",
+                    "21,33,13",
+                    "21,34,13",
+                    "21,35,13",
+                    "21,36,12",
+                    "21,36,13",
+                    "21,37,12",
+                    "21,37,13",
+                    "21,48,12",
+                    "21,49,12",
+                    "21,50,12",
+                    "22,38,12",
+                    "22,48,12",
+                    "22,49,12",
+                    "22,50,12",
+                    "23,36,12",
+                    "23,37,12",
+                    "23,38,12",
+                    "23,39,12",
+                    "23,40,12",
+                    "23,48,12"
+                  ],
+                  "outsideOccupancyColorChanges": 0
+                },
+                "baselineScore": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 3138,
+                    "retainedParts": 517,
+                    "inputSourceTriangles": 154720,
+                    "retainedSourceTriangles": 14350
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 238,
+                    "visibleAreaStudsSquared": 5.847078318534204,
+                    "matchedAreaStudsSquared": 5.847078318534204,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.779925477273194,
+                    "p95Studs": 2.3881920069897546,
+                    "maxStuds": 2.393209650928924,
+                    "normalAgreement": 0.9984411865966069
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 149,
+                    "visibleAreaStudsSquared": 5.867778592375358,
+                    "matchedAreaStudsSquared": 5.867778592375358,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.717838212855815,
+                    "p95Studs": 2.3884080821720914,
+                    "maxStuds": 2.392561748132451,
+                    "normalAgreement": 0.9984080589898602
+                  },
+                  "symmetricRmsStuds": 1.7491024976531482,
+                  "symmetricP95Studs": 2.388221904859293,
+                  "symmetricMaxStuds": 2.393209650928924,
+                  "missingOrExtraArea": false,
+                  "samples": 14771,
+                  "rayTriangleTests": 839815
+                },
+                "score": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 3138,
+                    "retainedParts": 517,
+                    "inputSourceTriangles": 154720,
+                    "retainedSourceTriangles": 14350
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 238,
+                    "visibleAreaStudsSquared": 5.847078318534204,
+                    "matchedAreaStudsSquared": 5.847078318534204,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.2661514625159742,
+                    "p95Studs": 2.386502463954457,
+                    "maxStuds": 2.393209650928924,
+                    "normalAgreement": 0.9957638045511403
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 168,
+                    "visibleAreaStudsSquared": 5.965800355338399,
+                    "matchedAreaStudsSquared": 5.965800355338399,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.262738850145923,
+                    "p95Studs": 2.3867125059003342,
+                    "maxStuds": 2.392561748132451,
+                    "normalAgreement": 0.9871053459963226
+                  },
+                  "symmetricRmsStuds": 1.2644291587640395,
+                  "symmetricP95Studs": 2.386502463954457,
+                  "symmetricMaxStuds": 2.393209650928924,
+                  "missingOrExtraArea": false,
+                  "samples": 15202,
+                  "rayTriangleTests": 839431
+                },
+                "assemblyAudited": false,
+                "accepted": false
+              }
+            ]
+          },
+          "warnings": [],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        },
+        {
+          "id": "118898",
+          "status": "ready-for-layout",
+          "sourceFaces": 264,
+          "components": 1,
+          "planeComponents": 0,
+          "boundaries": [
+            {
+              "kind": "unclassified",
+              "vertices": 46,
+              "outsideInterfaceFaces": 46
+            }
+          ],
+          "editableShellCells": 5,
+          "lockedShellCells": 16,
+          "observations": {
+            "gridSamples": 93,
+            "observedGridSamples": 93,
+            "centroidSamples": 86,
+            "internalCorrespondenceVerified": false
+          },
+          "exteriorVoid": {
+            "status": "unavailable",
+            "reasons": [
+              "steep, folded or wrong-facing target requires another construction"
+            ],
+            "eligibleExteriorCells": 0,
+            "blockedExteriorCells": 0
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 21,
+            "crossings": 42,
+            "intervals": 21,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 154720,
+              "columns": 21,
+              "bboxColumnTests": 4509,
+              "rayTriangleTests": 84,
+              "rawCrossings": 42
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 138,
+            "unresolvedCells": 0,
+            "uniqueRays": 138,
+            "raysStatus": "collected",
+            "ambiguousRays": 0
+          },
+          "layout": {
+            "status": "candidate",
+            "reasons": [
+              "bounded offline proposals; no supports inserted and no commit authorized"
+            ],
+            "candidates": [
+              {
+                "strategy": "brick-courses-1-staggered",
+                "removedParts": 2,
+                "addedParts": 5,
+                "reconstructedSupportIDs": [],
+                "changedCells": 0,
+                "boundary": {
+                  "policy": "repack-complete-parts",
+                  "frozenCells": [
+                    "20,17,12",
+                    "20,17,13",
+                    "20,18,12",
+                    "20,18,13",
+                    "20,19,12",
+                    "20,19,13",
+                    "21,14,13",
+                    "21,15,13",
+                    "21,16,13",
+                    "21,17,13",
+                    "21,18,13",
+                    "21,19,12",
+                    "21,19,13"
+                  ],
+                  "outsideOccupancyColorChanges": 0
+                },
+                "baselineScore": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 3144,
+                    "retainedParts": 341,
+                    "inputSourceTriangles": 154720,
+                    "retainedSourceTriangles": 5864
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 264,
+                    "visibleAreaStudsSquared": 6.495334401265785,
+                    "matchedAreaStudsSquared": 6.495334401265785,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.018551763499691,
+                    "p95Studs": 1.674016100329709,
+                    "maxStuds": 1.6794056590919837,
+                    "normalAgreement": 0.996980719444957
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 165,
+                    "visibleAreaStudsSquared": 6.522626262626263,
+                    "matchedAreaStudsSquared": 6.522626262626263,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.0597205422625038,
+                    "p95Studs": 1.675876538596512,
+                    "maxStuds": 1.6800363665724518,
+                    "normalAgreement": 0.996805729733558
+                  },
+                  "symmetricRmsStuds": 1.0393831577175152,
+                  "symmetricP95Studs": 1.6750451054372917,
+                  "symmetricMaxStuds": 1.6800363665724518,
+                  "missingOrExtraArea": false,
+                  "samples": 16127,
+                  "rayTriangleTests": 1103334
+                },
+                "score": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 3144,
+                    "retainedParts": 341,
+                    "inputSourceTriangles": 154720,
+                    "retainedSourceTriangles": 5864
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 264,
+                    "visibleAreaStudsSquared": 6.495334401265785,
+                    "matchedAreaStudsSquared": 6.495334401265785,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.01855176349969,
+                    "p95Studs": 1.674016100329709,
+                    "maxStuds": 1.6794056590919837,
+                    "normalAgreement": 0.996980719444957
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 168,
+                    "visibleAreaStudsSquared": 6.489898989898988,
+                    "matchedAreaStudsSquared": 6.489898989898988,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.0613076606263558,
+                    "p95Studs": 1.675876538596512,
+                    "maxStuds": 1.6800363665724518,
+                    "normalAgreement": 0.9967837698074596
+                  },
+                  "symmetricRmsStuds": 1.0401404766476967,
+                  "symmetricP95Studs": 1.6750451054372917,
+                  "symmetricMaxStuds": 1.6800363665724518,
+                  "missingOrExtraArea": false,
+                  "samples": 16472,
+                  "rayTriangleTests": 1160583
+                },
+                "assemblyAudited": false,
+                "accepted": false
+              },
+              {
+                "strategy": "brick-courses-2-staggered",
+                "removedParts": 2,
+                "addedParts": 6,
+                "reconstructedSupportIDs": [],
+                "changedCells": 0,
+                "boundary": {
+                  "policy": "repack-complete-parts",
+                  "frozenCells": [
+                    "20,17,12",
+                    "20,17,13",
+                    "20,18,12",
+                    "20,18,13",
+                    "20,19,12",
+                    "20,19,13",
+                    "21,14,13",
+                    "21,15,13",
+                    "21,16,13",
+                    "21,17,13",
+                    "21,18,13",
+                    "21,19,12",
+                    "21,19,13"
+                  ],
+                  "outsideOccupancyColorChanges": 0
+                },
+                "baselineScore": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 3144,
+                    "retainedParts": 341,
+                    "inputSourceTriangles": 154720,
+                    "retainedSourceTriangles": 5864
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 264,
+                    "visibleAreaStudsSquared": 6.495334401265785,
+                    "matchedAreaStudsSquared": 6.495334401265785,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.018551763499691,
+                    "p95Studs": 1.674016100329709,
+                    "maxStuds": 1.6794056590919837,
+                    "normalAgreement": 0.996980719444957
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 165,
+                    "visibleAreaStudsSquared": 6.522626262626263,
+                    "matchedAreaStudsSquared": 6.522626262626263,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.0597205422625038,
+                    "p95Studs": 1.675876538596512,
+                    "maxStuds": 1.6800363665724518,
+                    "normalAgreement": 0.996805729733558
+                  },
+                  "symmetricRmsStuds": 1.0393831577175152,
+                  "symmetricP95Studs": 1.6750451054372917,
+                  "symmetricMaxStuds": 1.6800363665724518,
+                  "missingOrExtraArea": false,
+                  "samples": 16127,
+                  "rayTriangleTests": 1103334
+                },
+                "score": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 3144,
+                    "retainedParts": 341,
+                    "inputSourceTriangles": 154720,
+                    "retainedSourceTriangles": 5864
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 264,
+                    "visibleAreaStudsSquared": 6.495334401265785,
+                    "matchedAreaStudsSquared": 6.495334401265785,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.01855176349969,
+                    "p95Studs": 1.674016100329709,
+                    "maxStuds": 1.6794056590919837,
+                    "normalAgreement": 0.996980719444957
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 170,
+                    "visibleAreaStudsSquared": 6.493535353535351,
+                    "matchedAreaStudsSquared": 6.493535353535351,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.0611255910130044,
+                    "p95Studs": 1.675876538596512,
+                    "maxStuds": 1.6800363665724518,
+                    "normalAgreement": 0.9967917838129926
+                  },
+                  "symmetricRmsStuds": 1.040053592719328,
+                  "symmetricP95Studs": 1.6750451054372917,
+                  "symmetricMaxStuds": 1.6800363665724518,
+                  "missingOrExtraArea": false,
+                  "samples": 16442,
+                  "rayTriangleTests": 1163725
+                },
+                "assemblyAudited": false,
+                "accepted": false
+              },
+              {
+                "strategy": "plate-courses-forward",
+                "removedParts": 2,
+                "addedParts": 6,
+                "reconstructedSupportIDs": [],
+                "changedCells": 0,
+                "boundary": {
+                  "policy": "repack-complete-parts",
+                  "frozenCells": [
+                    "20,17,12",
+                    "20,17,13",
+                    "20,18,12",
+                    "20,18,13",
+                    "20,19,12",
+                    "20,19,13",
+                    "21,14,13",
+                    "21,15,13",
+                    "21,16,13",
+                    "21,17,13",
+                    "21,18,13",
+                    "21,19,12",
+                    "21,19,13"
+                  ],
+                  "outsideOccupancyColorChanges": 0
+                },
+                "baselineScore": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 3144,
+                    "retainedParts": 341,
+                    "inputSourceTriangles": 154720,
+                    "retainedSourceTriangles": 5864
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 264,
+                    "visibleAreaStudsSquared": 6.495334401265785,
+                    "matchedAreaStudsSquared": 6.495334401265785,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.018551763499691,
+                    "p95Studs": 1.674016100329709,
+                    "maxStuds": 1.6794056590919837,
+                    "normalAgreement": 0.996980719444957
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 165,
+                    "visibleAreaStudsSquared": 6.522626262626263,
+                    "matchedAreaStudsSquared": 6.522626262626263,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.0597205422625038,
+                    "p95Studs": 1.675876538596512,
+                    "maxStuds": 1.6800363665724518,
+                    "normalAgreement": 0.996805729733558
+                  },
+                  "symmetricRmsStuds": 1.0393831577175152,
+                  "symmetricP95Studs": 1.6750451054372917,
+                  "symmetricMaxStuds": 1.6800363665724518,
+                  "missingOrExtraArea": false,
+                  "samples": 16127,
+                  "rayTriangleTests": 1103334
+                },
+                "score": {
+                  "status": "scored",
+                  "scope": "sampled-final-scene-owned-projection-only",
+                  "contextCulling": {
+                    "inputParts": 3144,
+                    "retainedParts": 341,
+                    "inputSourceTriangles": 154720,
+                    "retainedSourceTriangles": 5864
+                  },
+                  "sourceToParts": {
+                    "visibleSamples": 264,
+                    "visibleAreaStudsSquared": 6.495334401265785,
+                    "matchedAreaStudsSquared": 6.495334401265785,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.0185517634996892,
+                    "p95Studs": 1.674016100329709,
+                    "maxStuds": 1.6794056590919837,
+                    "normalAgreement": 0.996980719444957
+                  },
+                  "partsToSource": {
+                    "visibleSamples": 171,
+                    "visibleAreaStudsSquared": 6.457171717171719,
+                    "matchedAreaStudsSquared": 6.457171717171719,
+                    "unmatchedAreaStudsSquared": 0,
+                    "coverage": 1,
+                    "rmsStuds": 1.0629031275894694,
+                    "p95Studs": 1.675876538596512,
+                    "maxStuds": 1.6800363665724518,
+                    "normalAgreement": 0.9967722869983232
+                  },
+                  "symmetricRmsStuds": 1.0408983523172375,
+                  "symmetricP95Studs": 1.6750451054372917,
+                  "symmetricMaxStuds": 1.6800363665724518,
+                  "missingOrExtraArea": false,
+                  "samples": 16730,
+                  "rayTriangleTests": 1209962
+                },
+                "assemblyAudited": false,
+                "accepted": false
+              }
+            ]
+          },
+          "warnings": [],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        }
+      ],
+      "finalModel": {
+        "brickCount": 3146,
+        "modelSha256": "cff0ddaaa303edf294daf5760a1cc85317e3ddd9c3dfbb7323c6f4e4c91569e6",
+        "recordedSceneSha256": "0f7df2a7c09b3077d8d5775d78c6bfe507a0dbdfb281007a760f5c07ec2cc165",
+        "cachedInferenceOnly": true,
+        "baselineReused": true,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 3146
+        },
+        "procurement": {
+          "unverified": 44,
+          "unsupportedColors": 0,
+          "requiresReview": true
+        }
+      },
+      "elapsedSeconds": 11.94
+    }
+  ],
+  "catalogControl": {
+    "curve": {
+      "status": "scored",
+      "scope": "sampled-visible-surface-only",
+      "sourceToParts": {
+        "visibleSamples": 384,
+        "visibleAreaStudsSquared": 4.243177061690562,
+        "matchedAreaStudsSquared": 4.243177061690562,
+        "unmatchedAreaStudsSquared": 0,
+        "coverage": 1,
+        "rmsStuds": 0.0035753272354293137,
+        "p95Studs": 0.0053277678102325865,
+        "maxStuds": 0.005847211019588627,
+        "normalAgreement": 0.9995446391119959
+      },
+      "partsToSource": {
+        "visibleSamples": 300,
+        "visibleAreaStudsSquared": 4.241247916019323,
+        "matchedAreaStudsSquared": 4.241247916019323,
+        "unmatchedAreaStudsSquared": 0,
+        "coverage": 1,
+        "rmsStuds": 0.0035576878766541767,
+        "p95Studs": 0.005326914301022612,
+        "maxStuds": 0.005846681367217776,
+        "normalAgreement": 0.9995401376452451
+      },
+      "symmetricRmsStuds": 0.0035665204665628024,
+      "symmetricP95Studs": 0.005326914301022612,
+      "symmetricMaxStuds": 0.005847211019588627,
+      "missingOrExtraArea": false,
+      "samples": 684,
+      "rayTriangleTests": 33820
+    },
+    "staircase": {
+      "status": "scored",
+      "scope": "sampled-visible-surface-only",
+      "sourceToParts": {
+        "visibleSamples": 384,
+        "visibleAreaStudsSquared": 4.243177061690562,
+        "matchedAreaStudsSquared": 4.243177061690562,
+        "unmatchedAreaStudsSquared": 0,
+        "coverage": 1,
+        "rmsStuds": 0.11562191375875168,
+        "p95Studs": 0.23881968280324095,
+        "maxStuds": 0.2669166051160605,
+        "normalAgreement": 0.9426898623000955
+      },
+      "partsToSource": {
+        "visibleSamples": 280,
+        "visibleAreaStudsSquared": 3.999999999999988,
+        "matchedAreaStudsSquared": 3.999999999999988,
+        "unmatchedAreaStudsSquared": 0,
+        "coverage": 1,
+        "rmsStuds": 0.114294575984718,
+        "p95Studs": 0.23823273391889277,
+        "maxStuds": 0.2666986722749396,
+        "normalAgreement": 0.9462377806900906
+      },
+      "symmetricRmsStuds": 0.11497973708698735,
+      "symmetricP95Studs": 0.23881968280324095,
+      "symmetricMaxStuds": 0.2669166051160605,
+      "missingOrExtraArea": false,
+      "samples": 664,
+      "rayTriangleTests": 30299
+    }
+  },
+  "catalogGeometrySha256": "cc59df77484c5c0fcdd77e178dd500cfa618b2a99c6cb32d4f75b3a2eebd8330",
+  "generationChanged": false,
+  "appearanceAccepted": false,
+  "softwareLayoutAccepted": false,
+  "scope": [
+    "Frozen diagnostic face regions; no detection, neural inference, material model or camera refit.",
+    "Source ownership is a necessary constraint, not noise identity or permission to edit.",
+    "Current converter replay and bounded upright catalog layout proposals; no candidate committed or physically accepted.",
+    "Stored raw and designed mesh snapshots are separate; source ray pairs retain gaps and ambiguous crossings.",
+    "Final deliberate construction, support, installed and semantic pieces supplied as locks; source-exterior explicitly reconstructs ordinary generated supports only after whole-model assembly audit. Unchanged observations do not establish material identity."
+  ],
+  "validationEvidence": {
+    "regionalTests": {
+      "command": "npm run test:regional-design",
+      "passed": 71,
+      "failed": 0,
+      "logSha256": "d37273b1243d523e8960a66f60eeaf50bdf02218d4505bd7760c594e9f415e87"
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    "scopedLint": {
+      "command": "npx oxlint scripts/benchmark-regional-design.ts scripts/regional-design",
+      "exitCode": 0
+    },
+    "format": {
+      "command": "npx oxfmt --check scripts/benchmark-regional-design.ts scripts/regional-design",
+      "exitCode": 0
+    },
+    "rendererSyntax": {
+      "command": "python3 -m py_compile scripts/render-assembly.py",
+      "exitCode": 0
+    },
+    "freshInferenceRun": false,
+    "fullCoreTestRun": false,
+    "buildRun": false,
+    "note": "Offline experimental scripts only. Production conversion unchanged. Core/build evidence from prior commits remains historical."
+  },
+  "renderEvidence": {
+    "renderer": "scripts/render-assembly.py",
+    "rendererSha256": "cf7950395ccc846504347cab12bea323d4c1db9bd1910fb2ab82c6a9186b1baa",
+    "view": "right",
+    "direction": [
+      1,
+      0.04,
+      0
+    ],
+    "crop": {
+      "wholePartEnvelopePositiveIntersection": {
+        "x": [
+          18,
+          26
+        ],
+        "y": [
+          26,
+          48
+        ],
+        "z": [
+          7,
+          16
+        ]
+      },
+      "worldFrameRetained": true,
+      "catalogGeometryAndPosesRetained": true,
+      "fullSceneOcclusionCertified": false
+    },
+    "files": [
+      {
+        "path": "outputs/regional-design-calibration/house-upper-before-crop.json",
+        "sha256": "d2316ef37115cb48dc5c5b20a02c58c107eae050e4d3a1e6052b3d6584a43e2a"
+      },
+      {
+        "path": "outputs/regional-design-calibration/house-upper-after-crop.json",
+        "sha256": "68f1247a828fe5a5520e8a003f4390a2c478ce3add543bc81ffb647471a883c3"
+      },
+      {
+        "path": "outputs/regional-design-calibration/house-upper-before-right.png",
+        "sha256": "6918901f1657991f00464fa0e4aadcd232c6fd8bf1a023061c7d3423d1b84e8f"
+      },
+      {
+        "path": "outputs/regional-design-calibration/house-upper-after-right.png",
+        "sha256": "739390d37961b80611557f6346a8b090e41e7578227c29c01971668924a8426f"
+      },
+      {
+        "path": "outputs/regional-design-calibration/house-upper-comparison.png",
+        "sha256": "71f10f3096e2c3bd297972556e3f6911cdee09c23cf6ca9d6b0b63792ba45990"
+      }
+    ],
+    "observation": "Window obstruction locally reduced. Overall model shape and palette still rough. Not a browser screenshot or finished-kit acceptance."
+  },
+  "userPhysicalTrialPreference": "Deferred by user; complete software work first."
+}

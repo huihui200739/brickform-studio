@@ -8,7 +8,7 @@ palette=['#F4F4F4','#242424','#C91A09','#F2CD37','#0055BF','#237841','#FE8A18','
 # Official LDraw display alpha, not a measured refraction/absorption model.
 opacity=[1.0]*14+[128/255]+[1.0]*2
 view=sys.argv[3] if len(sys.argv)>3 else 'hero'
-views={'hero':[-1.3,.8,1.5],'front':[.0001,.05,1],'side':[-1,.04,0],'back':[.0001,.08,-1],'top':[.0001,1,.01]}
+views={'hero':[-1.3,.8,1.5],'front':[.0001,.05,1],'side':[-1,.04,0],'right':[1,.04,0],'right-hero':[1.3,.8,1.5],'back':[.0001,.08,-1],'top':[.0001,1,.01]}
 if view not in views:raise ValueError('Unknown inspection view: '+view)
 camera=np.array(views[view]); camera=camera/np.linalg.norm(camera)
 right=np.cross([0,1,0],camera);right/=np.linalg.norm(right)

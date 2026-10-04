@@ -23,7 +23,16 @@ export type UprightLayoutInput = {
   /** Already established sole source ownership, not a bounding box. */
   editableCells: ReadonlySet<string>;
   lockedPartIds: ReadonlySet<number>;
+  /** Explicit offline support redesign. Ordinary generated supports only;
+   * all resulting candidates still require whole-model assembly validation. */
+  reconstructSupportIds?: ReadonlySet<number>;
+  /** Whole existing neighbors participate with every outside body/color frozen. */
+  interfacePartIds?: ReadonlySet<number>;
+  allowSupportSectionMerge?: boolean;
   lockedCells?: ReadonlySet<string>;
+  /** Whole crossing brick/plate may be repacked, with every outside body cell
+   * and its material frozen. Deliberate/installed/posed pieces stay locked. */
+  boundaryPolicy?: 'preserve-parts' | 'repack-complete-parts';
   /** Complete desired occupancy/color within editableCells; omissions are void.
    * Geometry inference belongs to the source target builder, not this packer. */
   intendedCells?: ReadonlyMap<string, Cell>;
@@ -35,7 +44,13 @@ export type UprightLayoutInput = {
   maxCandidates?: number;
   scoreOptions?: Pick<
     SurfaceScoreInput,
-    'catalog' | 'sampleSpacingStuds' | 'maxRayDistanceStuds' | 'limits'
+    | 'catalog'
+    | 'sampleSpacingStuds'
+    | 'maxRayDistanceStuds'
+    | 'limits'
+    | 'cullDisjointContext'
+    | 'partScoringFootprint'
+    | 'comparison'
   >;
 };
 export type UprightLayoutCandidate = {
@@ -45,6 +60,12 @@ export type UprightLayoutCandidate = {
   removedIDs: number[];
   addedIDs: number[];
   retainedIDs: number[];
+  reconstructedSupportIDs: number[];
+  boundary: {
+    policy: 'preserve-parts' | 'repack-complete-parts';
+    frozenCells: string[];
+    outsideOccupancyColorChanges: 0;
+  };
   baselineScore: SurfaceScore;
   score: SurfaceScore;
   /** Both are mandatory root integration gates, not supplied by this module. */
@@ -193,6 +214,9 @@ export function proposeUprightLayouts(
   });
   try {
     const model = input.baselineModel;
+    const boundaryPolicy = input.boundaryPolicy ?? 'preserve-parts';
+    if (!['preserve-parts', 'repack-complete-parts'].includes(boundaryPolicy))
+      throw Error('invalid boundary policy');
     if (!input.editableCells.size)
       return end('noop', ['no source-owned editable cells']);
     if (input.editableCells.size > MAX_CELLS)
@@ -239,6 +263,57 @@ export function proposeUprightLayouts(
       removals: Brick[] = [],
       retained: Brick[] = [];
     const keepReasons = new Set<string>();
+    const frozenBoundary = new Map<string, Cell>();
+    const sections = new Map<string, string | undefined>();
+    const supportCells = new Set<string>();
+    const hardBlocked = new Set<string>();
+    const supportRedesign = (b: Brick) =>
+      !!b.support &&
+      !!input.reconstructSupportIds?.has(b.id) &&
+      !b.construction &&
+      !b.installation &&
+      !b.colorChoice &&
+      !b.section?.startsWith('component-') &&
+      uprightRegular(b, model);
+    for (const id of input.reconstructSupportIds ?? []) {
+      const b = model.bricks.find((b) => b.id === id);
+      if (
+        !b ||
+        !supportRedesign(b) ||
+        boundaryPolicy !== 'repack-complete-parts'
+      )
+        throw Error(
+          'support reconstruction requires a known ordinary generated support and complete-part policy',
+        );
+    }
+    for (const id of input.interfacePartIds ?? []) {
+      const b = model.bricks.find((b) => b.id === id);
+      if (
+        !b ||
+        boundaryPolicy !== 'repack-complete-parts' ||
+        b.construction ||
+        b.installation ||
+        b.colorChoice ||
+        b.section?.startsWith('component-') ||
+        !uprightRegular(b, model) ||
+        ASSEMBLY_PARTS[b.part].kind === 'tile'
+      )
+        throw Error(
+          'interface repacking requires a known ordinary complete part',
+        );
+    }
+    if (boundaryPolicy === 'repack-complete-parts')
+      for (const b of model.bricks)
+        if (
+          (input.lockedPartIds.has(b.id) && !supportRedesign(b)) ||
+          (b.support && !supportRedesign(b)) ||
+          b.construction ||
+          b.installation ||
+          b.colorChoice ||
+          b.section?.startsWith('component-') ||
+          !uprightRegular(b, model)
+        )
+          for (const k of bodyKeys(b)) hardBlocked.add(k);
     for (const b of model.bricks) {
       if (!Number.isSafeInteger(b.id) || b.id < 1 || ids.has(b.id))
         throw Error('baseline part IDs are invalid or duplicated');
@@ -248,16 +323,48 @@ export function proposeUprightLayouts(
         if (input.editableCells.has(k))
           baselineCells.set(k, { color: b.color });
       const locked =
-        input.lockedPartIds.has(b.id) ||
-        b.support ||
+        (input.lockedPartIds.has(b.id) && !supportRedesign(b)) ||
+        (b.support && !supportRedesign(b)) ||
         b.construction ||
         b.installation ||
+        b.colorChoice ||
         b.section?.startsWith('component-');
       const inside = keys.every(
-        (k) => input.editableCells.has(k) && !blocked.has(k),
+        (k) =>
+          input.editableCells.has(k) && !blocked.has(k) && !hardBlocked.has(k),
       );
-      if (!locked && inside && uprightRegular(b, model)) removals.push(b);
-      else {
+      const crossingRepack =
+        boundaryPolicy === 'repack-complete-parts' &&
+        (keys.some((k) => input.editableCells.has(k)) ||
+          input.interfacePartIds?.has(b.id)) &&
+        !keys.some(
+          (k) =>
+            hardBlocked.has(k) ||
+            (input.editableCells.has(k) && blocked.has(k)),
+        ) &&
+        ASSEMBLY_PARTS[b.part]?.kind !== 'tile' &&
+        keys.every((k) => {
+          const [x, y, z] = parseKey(k);
+          return (
+            x >= 0 &&
+            x < model.width &&
+            y >= 0 &&
+            y < model.height &&
+            z >= 0 &&
+            z < model.depth
+          );
+        });
+      if (!locked && (inside || crossingRepack) && uprightRegular(b, model)) {
+        removals.push(b);
+        for (const k of keys) {
+          if (sections.has(k))
+            throw Error('overlapping replaceable baseline parts');
+          sections.set(k, b.section);
+          if (b.support) supportCells.add(k);
+          if (!input.editableCells.has(k))
+            frozenBoundary.set(k, { color: b.color });
+        }
+      } else {
         retained.push(b);
         for (const k of keys) if (input.editableCells.has(k)) blocked.add(k);
         if (keys.some((k) => input.editableCells.has(k)))
@@ -289,6 +396,14 @@ export function proposeUprightLayouts(
       if (!isOpaquePaletteColor(cell.color))
         throw Error('invalid or translucent intended color');
     }
+    // The caller can authorize only source-owned edits. Crossing-part cells
+    // are added from the baseline, never from a bounding box or desired fill.
+    for (const [k, cell] of frozenBoundary) {
+      baselineCells.set(k, { ...cell });
+      desired.set(k, { ...cell });
+    }
+    if (desired.size > MAX_CELLS)
+      throw Error('complete boundary band exceeds layout work bound');
     for (const k of blocked)
       if (input.editableCells.has(k)) {
         const before = baselineCells.get(k),
@@ -298,7 +413,9 @@ export function proposeUprightLayouts(
             `intended target conflicts with locked/retained cell: ${k}`,
           );
       }
-    const remaining = new Map([...desired].filter(([k]) => !blocked.has(k)));
+    const remaining = new Map(
+      [...desired].filter(([k]) => frozenBoundary.has(k) || !blocked.has(k)),
+    );
     // A complete kept part must keep its original material at every retained body cell.
     for (const b of retained)
       for (const k of bodyKeys(b))
@@ -307,7 +424,7 @@ export function proposeUprightLayouts(
             `intended target changes retained part material: ${b.id}`,
           );
     for (const k of input.smoothTopCells ?? [])
-      if (!remaining.has(k))
+      if (!input.editableCells.has(k) || !remaining.has(k))
         throw Error(`smooth-top target is not an editable intended cell: ${k}`);
     if (!removals.length && !remaining.size)
       return end('noop', [
@@ -437,6 +554,15 @@ export function proposeUprightLayouts(
               if (
                 !remaining.has(k) ||
                 remaining.get(k)!.color !== color ||
+                ((sections.get(k) !== sections.get(cellKey) ||
+                  supportCells.has(k) !== supportCells.has(cellKey)) &&
+                  !(
+                    input.allowSupportSectionMerge &&
+                    ['subject', 'supports'].includes(sections.get(k) ?? '') &&
+                    ['subject', 'supports'].includes(
+                      sections.get(cellKey) ?? '',
+                    )
+                  )) ||
                 used.has(k)
               ) {
                 valid = false;
@@ -473,7 +599,19 @@ export function proposeUprightLayouts(
             `no real catalog footprint covers intended cell: ${cellKey}`,
           );
         for (const k of picked.keys) used.add(k);
-        added.push(picked.brick);
+        added.push({
+          ...picked.brick,
+          ...(picked.keys.some((k) => supportCells.has(k))
+            ? { support: true }
+            : {}),
+          ...(sections.get(cellKey) === undefined
+            ? {}
+            : {
+                section: picked.keys.some((k) => supportCells.has(k))
+                  ? 'supports'
+                  : sections.get(cellKey),
+              }),
+        });
         nextID++;
       }
       if (used.size !== remaining.size)
@@ -484,6 +622,22 @@ export function proposeUprightLayouts(
       if (seen.has(layoutSignature)) continue;
       seen.add(layoutSignature);
       const full = [...retained.map((b) => structuredClone(b)), ...added];
+      // Independently reconstruct the complete repacking band, including holes.
+      const actual = new Map<string, number>();
+      for (const b of added)
+        for (const k of bodyKeys(b)) {
+          if (actual.has(k)) throw Error('candidate body overlap');
+          actual.set(k, b.color);
+        }
+      if (
+        actual.size !== remaining.size ||
+        [...remaining].some(([k, v]) => actual.get(k) !== v.color)
+      )
+        throw Error(
+          'candidate does not preserve complete target/boundary occupancy',
+        );
+      if ([...frozenBoundary].some(([k, v]) => actual.get(k) !== v.color))
+        throw Error('candidate alters frozen outside cells');
       const surfaceScore = score(added, retained);
       candidates.push({
         strategy: variant.name,
@@ -492,6 +646,14 @@ export function proposeUprightLayouts(
         removedIDs: removals.map((b) => b.id),
         addedIDs: added.map((b) => b.id),
         retainedIDs: retained.map((b) => b.id),
+        reconstructedSupportIDs: removals
+          .filter((b) => b.support)
+          .map((b) => b.id),
+        boundary: {
+          policy: boundaryPolicy,
+          frozenCells: [...frozenBoundary.keys()].sort(),
+          outsideOccupancyColorChanges: 0,
+        },
         baselineScore,
         score: surfaceScore,
         requiresConnectionAndInstallationAudit: true,

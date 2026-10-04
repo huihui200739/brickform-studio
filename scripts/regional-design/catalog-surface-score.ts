@@ -15,9 +15,18 @@ export type SurfaceScoreInput = {
     completeOcclusionGeometry: boolean;
   };
   model: Pick<Model, 'width' | 'depth' | 'bricks'>;
-  /** Unscored surrounding parts, used only for occlusion. */
+  /** Surrounding final-model parts; normally used only for occlusion. */
   contextBricks?: readonly Brick[];
+  /** Complete final-scene comparison only where the original first visible
+   * source face belongs to the target. Retained pieces may represent that area.
+   * Missing surfaces and depth errors still count. Requires projection scope. */
+  comparison?: 'regional-parts' | 'final-scene-owned-projection';
   completeCandidateOcclusionGeometry: boolean;
+  /** Exact conservative lateral projection culling, never a distance crop. */
+  cullDisjointContext?: boolean;
+  /** Only for a boundary band whose outside volume/material/interfaces are
+   * separately frozen. This cannot certify extra geometry outside that band. */
+  partScoringFootprint?: 'all-regional-parts' | 'owned-source-projection';
   /** Unit directions from the model toward each observer. No camera refitting. */
   views: readonly V3[];
   catalog?: CatalogGeometry;
@@ -51,7 +60,16 @@ export type SurfaceScore =
   | { status: 'unavailable'; reasons: string[] }
   | {
       status: 'scored';
-      scope: 'sampled-visible-surface-only';
+      scope:
+        | 'sampled-visible-surface-only'
+        | 'sampled-owned-projection-only'
+        | 'sampled-final-scene-owned-projection-only';
+      contextCulling?: {
+        inputParts: number;
+        retainedParts: number;
+        inputSourceTriangles: number;
+        retainedSourceTriangles: number;
+      };
       sourceToParts: DirectionalMetrics;
       partsToSource: DirectionalMetrics;
       symmetricRmsStuds: number;
@@ -144,40 +162,55 @@ function sourceTriangles(input: SurfaceScoreInput['source']) {
   }
   return out;
 }
+function rigidRows(b: Brick): V3[] {
+  const pose = b.pose;
+  if (
+    !pose ||
+    pose.matrix.length !== 9 ||
+    pose.position.length !== 3 ||
+    !finite(pose.matrix) ||
+    !finite(pose.position)
+  )
+    throw Error(`unresolved part pose: ${b.id}`);
+  const r = pose!.matrix;
+  const rows = [r.slice(0, 3), r.slice(3, 6), r.slice(6, 9)] as V3[];
+  if (
+    rows.some((row, i) =>
+      rows.some(
+        (other, j) => Math.abs(dot(row, other) - (i === j ? 1 : 0)) > 1e-6,
+      ),
+    ) ||
+    Math.abs(dot(rows[0], cross(rows[1], rows[2])) - 1) > 1e-6
+  )
+    throw Error(`non-rigid or reflected part pose: ${b.id}`);
+  return rows;
+}
 function partTriangles(
   bricks: readonly Brick[],
   model: SurfaceScoreInput['model'],
   catalog: CatalogGeometry,
   scored: boolean,
+  frames?: LateralFrame[],
+  maxOutput = 300000,
 ) {
   const out: Triangle[] = [];
+  const validated = new Set<string>();
+  let transformed = 0;
   for (const b of bricks) {
     const raw = catalog[b.part]?.positions,
       pose = b.pose;
-    if (!raw || !raw.length || raw.length % 9 || !finite(raw))
+    if (
+      !raw ||
+      !raw.length ||
+      raw.length % 9 ||
+      (!validated.has(b.part) && !finite(raw))
+    )
       throw Error(`unavailable catalog triangles: ${b.part}`);
-    if (
-      !pose ||
-      pose.matrix.length !== 9 ||
-      pose.position.length !== 3 ||
-      !finite(pose.matrix) ||
-      !finite(pose.position)
-    )
-      throw Error(`unresolved part pose: ${b.id}`);
-    const r = pose.matrix;
-    const rows = [r.slice(0, 3), r.slice(3, 6), r.slice(6, 9)] as V3[];
-    if (
-      rows.some((row, i) =>
-        rows.some(
-          (other, j) => Math.abs(dot(row, other) - (i === j ? 1 : 0)) > 1e-6,
-        ),
-      ) ||
-      Math.abs(dot(rows[0], cross(rows[1], rows[2])) - 1) > 1e-6
-    )
-      throw Error(`non-rigid or reflected part pose: ${b.id}`);
+    validated.add(b.part);
+    const rows = rigidRows(b);
     const point = (at: number): V3 => {
       const local: V3 = [raw[at], raw[at + 1], raw[at + 2]];
-      const world = rows.map((row, i) => dot(row, local) + pose.position[i]);
+      const world = rows.map((row, i) => dot(row, local) + pose!.position[i]);
       return [
         world[0] / 20 + model.width / 2,
         -world[1] / 20,
@@ -185,12 +218,198 @@ function partTriangles(
       ];
     };
     for (let i = 0; i < raw.length; i += 9) {
+      if (++transformed > 2000000)
+        throw Error('part projection work budget exceeded');
+      const a = point(i),
+        bPoint = point(i + 6),
+        c = point(i + 3);
+      if (
+        frames &&
+        !frames.some((frame) => overlapsProjection([a, bPoint, c], frame))
+      )
+        continue;
       // Y reflection changes handedness, as in viewerGeometry: reverse winding.
-      const t = triangle(point(i), point(i + 6), point(i + 3), b.id, scored);
+      const t = triangle(a, bPoint, c, b.id, scored);
       if (t) out.push(t);
+      if (out.length > maxOutput) throw Error('triangle work budget exceeded');
     }
   }
   return out;
+}
+/** All possible query rays start on a scored source/proposed surface and are
+ * parallel to a supplied view. A context AABB disjoint in a perpendicular
+ * coordinate can never meet one of these rays, however far along the view. */
+type LateralFrame = { u: V3; v: V3; lo: number[]; hi: number[] };
+function lateralFrames(
+  views: readonly V3[],
+  source: Triangle[],
+  proposed: Triangle[],
+): LateralFrame[] {
+  const coordinates = views.map((view) => {
+    const axis = view.map(Math.abs).indexOf(Math.min(...view.map(Math.abs)));
+    const seed: V3 = [0, 0, 0];
+    seed[axis] = 1;
+    const u0 = cross(view, seed),
+      u = mul(u0, 1 / Math.hypot(...u0)),
+      v = cross(view, u);
+    return { u, v, lo: [Infinity, Infinity], hi: [-Infinity, -Infinity] };
+  });
+  for (const t of [...source.filter((t) => t.scored), ...proposed])
+    for (const p of [t.a, t.b, t.c])
+      for (const frame of coordinates)
+        for (const [axis, basis] of [frame.u, frame.v].entries()) {
+          const value = dot(p, basis);
+          frame.lo[axis] = Math.min(frame.lo[axis], value);
+          frame.hi[axis] = Math.max(frame.hi[axis], value);
+        }
+  return coordinates;
+}
+function overlapsProjection(points: V3[], frame: LateralFrame) {
+  return [frame.u, frame.v].every((basis, axis) => {
+    const values = points.map((p) => dot(p, basis));
+    return (
+      Math.max(...values) >= frame.lo[axis] - 1e-7 &&
+      Math.min(...values) <= frame.hi[axis] + 1e-7
+    );
+  });
+}
+type P2 = [number, number];
+type ProjectedFace = { points: P2[]; lo: P2; hi: P2 };
+type ProjectionNode = {
+  lo: P2;
+  hi: P2;
+  children?: [ProjectionNode, ProjectionNode];
+  items?: ProjectedFace[];
+};
+function projectFace(t: Triangle, frame: LateralFrame): ProjectedFace {
+  const points = [t.a, t.b, t.c].map(
+    (p) => [dot(p, frame.u), dot(p, frame.v)] as P2,
+  );
+  return {
+    points,
+    lo: [0, 1].map((i) => Math.min(...points.map((p) => p[i]))) as P2,
+    hi: [0, 1].map((i) => Math.max(...points.map((p) => p[i]))) as P2,
+  };
+}
+function projectionTree(items: ProjectedFace[]): ProjectionNode {
+  const lo: P2 = [Infinity, Infinity],
+    hi: P2 = [-Infinity, -Infinity];
+  for (const item of items)
+    for (let i = 0; i < 2; i++) {
+      lo[i] = Math.min(lo[i], item.lo[i]);
+      hi[i] = Math.max(hi[i], item.hi[i]);
+    }
+  if (items.length <= 8) return { lo, hi, items };
+  const axis = hi[0] - lo[0] >= hi[1] - lo[1] ? 0 : 1;
+  const sorted = [...items].sort(
+    (a, b) => a.lo[axis] + a.hi[axis] - b.lo[axis] - b.hi[axis],
+  );
+  const middle = Math.floor(items.length / 2);
+  return {
+    lo,
+    hi,
+    children: [
+      projectionTree(sorted.slice(0, middle)),
+      projectionTree(sorted.slice(middle)),
+    ],
+  };
+}
+/** Conservative separating-axis rejection only. The margin exceeds the ray
+ * barycentric tolerance; edge/degenerate contacts stay eligible. This avoids
+ * generating samples in large holes between disconnected owned source faces,
+ * without changing the sample locations or removing any scene occluder. */
+function overlapsOwnedProjection(
+  face: ProjectedFace,
+  root: ProjectionNode,
+  charge: () => void,
+) {
+  const margin =
+    1e-7 *
+    (1 +
+      Math.max(
+        ...face.lo.map(Math.abs),
+        ...face.hi.map(Math.abs),
+        ...root.lo.map(Math.abs),
+        ...root.hi.map(Math.abs),
+      ));
+  const visit = (node: ProjectionNode): boolean => {
+    charge();
+    if (
+      [0, 1].some(
+        (i) =>
+          face.hi[i] < node.lo[i] - margin || face.lo[i] > node.hi[i] + margin,
+      )
+    )
+      return false;
+    if (node.children) return node.children.some(visit);
+    return node.items!.some((other) => {
+      charge();
+      if (
+        [0, 1].some(
+          (i) =>
+            face.hi[i] < other.lo[i] - margin ||
+            face.lo[i] > other.hi[i] + margin,
+        )
+      )
+        return false;
+      for (const polygon of [face.points, other.points])
+        for (let i = 0; i < 3; i++) {
+          const a = polygon[i],
+            b = polygon[(i + 1) % 3];
+          const axis: P2 = [a[1] - b[1], b[0] - a[0]];
+          const project = (p: P2) => p[0] * axis[0] + p[1] * axis[1];
+          const left = face.points.map(project),
+            right = other.points.map(project);
+          const tolerance = margin * Math.hypot(...axis);
+          if (
+            Math.max(...left) < Math.min(...right) - tolerance ||
+            Math.max(...right) < Math.min(...left) - tolerance
+          )
+            return false;
+        }
+      return true;
+    });
+  };
+  return visit(root);
+}
+function cullContext(
+  input: SurfaceScoreInput,
+  catalog: CatalogGeometry,
+  coordinates: LateralFrame[],
+) {
+  const bounds = new Map<string, { lo: V3; hi: V3 }>();
+  return (input.contextBricks ?? []).filter((b) => {
+    let bound = bounds.get(b.part);
+    if (!bound) {
+      const raw = catalog[b.part]?.positions;
+      if (!raw?.length || raw.length % 9 || !finite(raw))
+        throw Error(`unavailable catalog triangles: ${b.part}`);
+      const lo: V3 = [Infinity, Infinity, Infinity],
+        hi: V3 = [-Infinity, -Infinity, -Infinity];
+      for (let i = 0; i < raw.length; i++) {
+        lo[i % 3] = Math.min(lo[i % 3], raw[i]);
+        hi[i % 3] = Math.max(hi[i % 3], raw[i]);
+      }
+      bound = { lo, hi };
+      bounds.set(b.part, bound);
+    }
+    const rows = rigidRows(b),
+      corners: V3[] = [];
+    for (const x of [bound.lo[0], bound.hi[0]])
+      for (const y of [bound.lo[1], bound.hi[1]])
+        for (const z of [bound.lo[2], bound.hi[2]]) {
+          const local: V3 = [x, y, z];
+          const world = rows.map(
+            (row, i) => dot(row, local) + b.pose!.position[i],
+          );
+          corners.push([
+            world[0] / 20 + input.model.width / 2,
+            -world[1] / 20,
+            world[2] / 20 + input.model.depth / 2,
+          ]);
+        }
+    return coordinates.some((frame) => overlapsProjection(corners, frame));
+  });
 }
 function tree(items: Triangle[]): Node {
   const lo: V3 = [Infinity, Infinity, Infinity],
@@ -348,27 +567,69 @@ export function scoreCatalogSurface(input: SurfaceScoreInput): SurfaceScore {
     if (maxTriangles > 300000 || maxSamples > 100000 || maxTests > 20000000)
       throw Error('work budgets may only tighten the bounded offline limits');
     const catalog = input.catalog ?? loadCatalogGeometry();
-    let triangleCount = input.source.positions.length / 9;
-    if (triangleCount > maxTriangles)
+    // The raw source remains bounded and completely validated, even if the
+    // safe lateral crop removes triangles from the ray acceleration structure.
+    if (input.source.positions.length / 9 > 300000)
       throw Error('triangle work budget exceeded');
-    for (const b of [...input.model.bricks, ...(input.contextBricks ?? [])]) {
+    const allSource = sourceTriangles(input.source);
+    let triangleCount = 0;
+    for (const b of input.model.bricks) {
       const raw = catalog[b.part]?.positions;
       if (!raw) throw Error(`unavailable catalog triangles: ${b.part}`);
       triangleCount += raw.length / 9;
       if (triangleCount > maxTriangles)
         throw Error('triangle work budget exceeded');
     }
-    const source = sourceTriangles(input.source);
     const proposed = partTriangles(
       input.model.bricks,
       input.model,
       catalog,
       true,
     );
+    const frames = lateralFrames(input.views, allSource, proposed);
+    // The same query domain bounds source and part rays. Source triangles far
+    // along a view must remain; only lateral disjointness proves irrelevance.
+    const source = input.cullDisjointContext
+      ? allSource.filter((t) =>
+          frames.some((frame) => overlapsProjection([t.a, t.b, t.c], frame)),
+        )
+      : allSource;
+    triangleCount += source.length;
+    if (triangleCount > maxTriangles)
+      throw Error('triangle work budget exceeded');
+    const context = input.cullDisjointContext
+      ? cullContext(input, catalog, frames)
+      : (input.contextBricks ?? []);
+    const finalScene = input.comparison === 'final-scene-owned-projection';
+    if (
+      input.comparison !== undefined &&
+      !['regional-parts', 'final-scene-owned-projection'].includes(
+        input.comparison,
+      )
+    )
+      throw Error('invalid surface comparison');
+    if (finalScene && input.partScoringFootprint !== 'owned-source-projection')
+      throw Error(
+        'final-scene regional comparison requires explicit projection scope',
+      );
     const parts = [
       ...proposed,
-      ...partTriangles(input.contextBricks ?? [], input.model, catalog, false),
+      ...partTriangles(
+        context,
+        input.model,
+        catalog,
+        finalScene,
+        input.cullDisjointContext ? frames : undefined,
+        maxTriangles - triangleCount,
+      ),
     ];
+    if (
+      input.partScoringFootprint !== undefined &&
+      !['all-regional-parts', 'owned-source-projection'].includes(
+        input.partScoringFootprint,
+      )
+    )
+      throw Error('invalid regional scoring footprint');
     if (!source.some((t) => t.scored))
       throw Error('empty source surface coverage');
     // The bound must reach beyond both scenes in every evaluated direction.
@@ -388,8 +649,22 @@ export function scoreCatalogSurface(input: SurfaceScoreInput): SurfaceScore {
     }
     const sourceTree = tree(source),
       partTree = parts.length ? tree(parts) : undefined;
+    const ownedProjectionTree =
+      input.partScoringFootprint === 'owned-source-projection'
+        ? tree(source.filter((t) => t.scored))
+        : undefined;
+    const ownedFrames = lateralFrames(input.views, source, []);
+    const projectedFootprints =
+      ownedProjectionTree && input.cullDisjointContext
+        ? ownedFrames.map((frame) =>
+            projectionTree(
+              source.filter((t) => t.scored).map((t) => projectFace(t, frame)),
+            ),
+          )
+        : undefined;
     let rayTests = 0,
-      sampleCount = 0;
+      sampleCount = 0,
+      projectionTests = 0;
     const hit = (
       root: Node | undefined,
       origin: V3,
@@ -423,17 +698,58 @@ export function scoreCatalogSurface(input: SurfaceScoreInput): SurfaceScore {
       triangles: Triangle[],
       own: Node | undefined,
       other: Node | undefined,
+      projectedDomain?: Node,
+      visibleOwnedProjection = false,
     ) => {
       const errors: ErrorSample[] = [];
-      for (const view of input.views)
+      for (const [viewIndex, view] of input.views.entries())
         for (const t of triangles) {
           if (!t.scored || dot(t.n, view) <= 1e-8) continue;
+          if (
+            projectedDomain &&
+            !overlapsProjection([t.a, t.b, t.c], ownedFrames[viewIndex])
+          )
+            continue;
+          if (
+            projectedDomain &&
+            projectedFootprints &&
+            !overlapsOwnedProjection(
+              projectFace(t, ownedFrames[viewIndex]),
+              projectedFootprints[viewIndex],
+              () => {
+                if (++projectionTests > 2000000)
+                  throw Error('owned projection work budget exceeded');
+              },
+            )
+          )
+            continue;
           const count = Math.max(1, Math.ceil(t.area / spacing ** 2));
           if (sampleCount + count > maxSamples)
             throw Error('surface sample work budget exceeded');
           const sampled = samples(t, spacing);
           sampleCount += sampled.length;
           for (const s of sampled) {
+            const projectedHit = projectedDomain
+              ? hit(
+                  projectedDomain,
+                  add(s.p, mul(view, range)),
+                  mul(view, -1),
+                  range * 2,
+                )
+              : undefined;
+            if (projectedDomain && !projectedHit) continue;
+            // A hidden target cannot authorize scoring the surface of another
+            // original object which occludes it. Keep original scene ownership.
+            if (
+              visibleOwnedProjection &&
+              !hit(
+                sourceTree,
+                add(s.p, mul(view, range)),
+                mul(view, -1),
+                range * 2,
+              )?.t.scored
+            )
+              continue;
             // Occluded source/part surfaces never supply exterior fit samples.
             if (hit(own, add(s.p, mul(view, 1e-6)), view, range)) continue;
             const nearest = hit(
@@ -456,7 +772,13 @@ export function scoreCatalogSurface(input: SurfaceScoreInput): SurfaceScore {
       return errors;
     };
     const forward = evaluate(source, sourceTree, partTree),
-      reverse = evaluate(parts, partTree, sourceTree);
+      reverse = evaluate(
+        parts,
+        partTree,
+        sourceTree,
+        ownedProjectionTree,
+        finalScene,
+      );
     if (!forward.length)
       throw Error('no observable owned source area in supplied views');
     const a = metrics(forward),
@@ -464,7 +786,21 @@ export function scoreCatalogSurface(input: SurfaceScoreInput): SurfaceScore {
       combined = metrics([...forward, ...reverse]);
     return {
       status: 'scored',
-      scope: 'sampled-visible-surface-only',
+      scope: finalScene
+        ? 'sampled-final-scene-owned-projection-only'
+        : ownedProjectionTree
+          ? 'sampled-owned-projection-only'
+          : 'sampled-visible-surface-only',
+      ...(input.cullDisjointContext
+        ? {
+            contextCulling: {
+              inputParts: input.contextBricks?.length ?? 0,
+              retainedParts: context.length,
+              inputSourceTriangles: allSource.length,
+              retainedSourceTriangles: source.length,
+            },
+          }
+        : {}),
       sourceToParts: a,
       partsToSource: b,
       symmetricRmsStuds: combined.rmsStuds,

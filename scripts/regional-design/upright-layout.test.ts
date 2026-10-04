@@ -218,3 +218,54 @@ void test('malformed grids, unknown locks, wrong poses and transparent targets c
   assert.equal(result.status, 'noop');
   assert.deepEqual(result.bricks, i.baselineModel.bricks);
 });
+
+void test('explicit complete-part repacking freezes outside colors, holes, connector tops and sections', () => {
+  const a = { ...brick(1, '3022'), section: 'subject' },
+    b = { ...brick(2, '3022', 1, 1, 1), section: 'subject' };
+  const i = input([a, b]);
+  i.boundaryPolicy = 'repack-complete-parts';
+  i.editableCells = new Set(['1,0,1']);
+  i.intendedCells = new Map([['1,0,1', { color: 11 }]]);
+  const result = proposeUprightLayouts(i);
+  assert.equal(result.status, 'candidate', JSON.stringify(result.reasons));
+  const expected = occupancy([a, b]);
+  expected.set('1,0,1', 11);
+  for (const c of result.candidates) {
+    assert.deepEqual(occupancy(c.bricks), expected);
+    assert.equal(c.boundary.outsideOccupancyColorChanges, 0);
+    assert.ok(c.boundary.frozenCells.length === 3);
+    assert.ok(c.bricks.every((p) => p.section === 'subject'));
+    assert.deepEqual(
+      c.bricks.find((p) => p.id === 2),
+      b,
+    );
+  }
+  // Explicit smooth permission is only for editable cells, never outside studs.
+  i.smoothTopCells = new Set(['2,0,2']);
+  assert.equal(proposeUprightLayouts(i).status, 'rejected');
+});
+void test('complete-part repacking cannot touch installed supports, posed parts or outside tiles', () => {
+  for (const extra of [
+    { support: true },
+    {
+      construction: {
+        origin: 'cavity-lintel' as const,
+        openingId: 'o',
+        role: 'bridge' as const,
+      },
+    },
+    { installation: 'm' },
+    { section: 'component-tree' },
+  ]) {
+    const i = input([{ ...brick(1, '3022'), ...extra }]);
+    i.boundaryPolicy = 'repack-complete-parts';
+    i.editableCells = new Set(['1,0,1']);
+    assert.equal(proposeUprightLayouts(i).status, 'noop');
+    i.intendedCells = new Map([['1,0,1', { color: 11 }]]);
+    assert.equal(proposeUprightLayouts(i).status, 'rejected');
+  }
+  const i = input([brick(1, '3068b')]);
+  i.boundaryPolicy = 'repack-complete-parts';
+  i.editableCells = new Set(['1,0,1']);
+  assert.equal(proposeUprightLayouts(i).status, 'noop');
+});

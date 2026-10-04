@@ -22,9 +22,17 @@ import {
   VisionSceneDetector,
   type VisionSceneResponse,
 } from '../lib/scene/detectors/vision-detector.ts';
-import { proposeUprightLayouts } from './regional-design/upright-layout.ts';
+import {
+  proposeUprightLayouts,
+  type UprightLayoutInput,
+} from './regional-design/upright-layout.ts';
 import { normalizeSourceMesh } from './regional-design/catalog-surface-score.ts';
 import { procurementReport } from '../lib/purchase-inventory.ts';
+import { proposeExteriorVoid } from './regional-design/exterior-void.ts';
+import {
+  auditLayoutAssembly,
+  supportInterfaceParts,
+} from './regional-design/layout-assembly.ts';
 
 const selectionPath = 'benchmarks/regional-design-selections-2026-10-04.json';
 const selections = JSON.parse(readFileSync(selectionPath, 'utf8')) as {
@@ -44,6 +52,12 @@ const directory = 'outputs/regional-design-calibration';
 mkdirSync(directory, { recursive: true });
 const withLayouts = process.argv.includes('--layouts');
 const reuseBaseline = process.argv.includes('--reuse-baseline');
+const repackBoundary = process.argv.includes('--repack-boundary');
+const sourceExterior = process.argv.includes('--source-exterior');
+if (sourceExterior && !repackBoundary)
+  throw Error('--source-exterior requires --repack-boundary and --layouts.');
+if (repackBoundary && !withLayouts)
+  throw Error('--repack-boundary requires --layouts.');
 if (reuseBaseline && !withLayouts)
   throw Error('--reuse-baseline requires --layouts.');
 const productionFingerprint = conversionFingerprint();
@@ -62,7 +76,15 @@ const cachedRun = reuseBaseline
   : undefined;
 const filter = process.argv
   .slice(2)
-  .filter((arg) => !['--layouts', '--reuse-baseline'].includes(arg));
+  .filter(
+    (arg) =>
+      ![
+        '--layouts',
+        '--reuse-baseline',
+        '--repack-boundary',
+        '--source-exterior',
+      ].includes(arg),
+  );
 if (filter.some((id) => !selections.cases.some((c) => c.id === id)))
   throw Error('Unknown regional diagnostic case.');
 const rows: Record<string, unknown>[] = [];
@@ -207,31 +229,195 @@ for (const c of selections.cases) {
       }),
     );
     const depth = target.depth;
-    const layout =
-      finalModel && target.status === 'ready-for-layout'
-        ? proposeUprightLayouts({
+    const normalizedSource = normalizeSourceMesh(
+      source.positions,
+      ledger.normalization.min,
+      ledger.normalization.scale,
+    );
+    const component =
+      target.components.length === 1 ? target.components[0] : undefined;
+    const axis = component?.normal
+      .map(Math.abs)
+      .indexOf(Math.max(...component.normal.map(Math.abs))) as
+      | 0
+      | 1
+      | 2
+      | undefined;
+    const exterior =
+      sourceExterior && finalModel && component && axis !== undefined
+        ? proposeExteriorVoid({
             source: {
-              positions: normalizeSourceMesh(
-                source.positions,
-                ledger.normalization.min,
-                ledger.normalization.scale,
-              ),
+              positions: normalizedSource,
+              faceIds: target.sourceFaceIds,
+              complete: true,
+            },
+            model: finalModel,
+            axis,
+            direction: component.normal[axis] > 0 ? 1 : -1,
+          })
+        : undefined;
+    const deletes = new Set(
+      exterior?.status === 'candidate' ? exterior.emptyBodyCells : [],
+    );
+    const lockedIDs = new Set(target.lockedParts.map((part) => part.id));
+    const reconstructSupportIds = new Set<number>();
+    const editable = new Set(target.editableShell);
+    const intended = new Map<string, { color: number }>();
+    if (sourceExterior && finalModel) {
+      // A source void cannot override active construction or protected joints.
+      for (const b of finalModel.bricks) {
+        let touchesVoid = false;
+        for (let x = Math.floor(b.x); x < Math.ceil(b.x + b.w); x++)
+          for (let y = Math.floor(b.y); y < Math.ceil(b.y + b.h); y++)
+            for (let z = Math.floor(b.z); z < Math.ceil(b.z + b.d); z++)
+              if (deletes.has(`${x},${y},${z}`)) touchesVoid = true;
+        const rebuildSupport =
+          !!b.support &&
+          touchesVoid &&
+          !b.construction &&
+          !b.installation &&
+          !b.colorChoice &&
+          !b.section?.startsWith('component-') &&
+          ['brick', 'plate'].includes(ASSEMBLY_PARTS[b.part]?.kind);
+        if (rebuildSupport) reconstructSupportIds.add(b.id);
+        const protectedPart =
+          (lockedIDs.has(b.id) && !rebuildSupport) ||
+          (b.support && !rebuildSupport) ||
+          b.construction ||
+          b.installation ||
+          b.colorChoice ||
+          b.section?.startsWith('component-') ||
+          !['brick', 'plate'].includes(ASSEMBLY_PARTS[b.part]?.kind);
+        for (let x = Math.floor(b.x); x < Math.ceil(b.x + b.w); x++)
+          for (let y = Math.floor(b.y); y < Math.ceil(b.y + b.h); y++)
+            for (let z = Math.floor(b.z); z < Math.ceil(b.z + b.d); z++) {
+              const k = `${x},${y},${z}`;
+              if (protectedPart || volume.protectedCells.has(k))
+                deletes.delete(k);
+            }
+      }
+      for (const k of deletes) editable.add(k);
+      for (const b of finalModel.bricks)
+        for (let x = Math.floor(b.x); x < Math.ceil(b.x + b.w); x++)
+          for (let y = Math.floor(b.y); y < Math.ceil(b.y + b.h); y++)
+            for (let z = Math.floor(b.z); z < Math.ceil(b.z + b.d); z++) {
+              const k = `${x},${y},${z}`;
+              if (editable.has(k) && !deletes.has(k))
+                intended.set(k, { color: b.color });
+            }
+    }
+    const layoutInput: UprightLayoutInput | undefined =
+      finalModel && (target.status === 'ready-for-layout' || deletes.size > 0)
+        ? {
+            source: {
+              positions: normalizedSource,
               faceIds: target.sourceFaceIds,
               completeOcclusionGeometry: true,
             },
             baselineModel: finalModel,
-            editableCells: new Set(target.editableShell),
+            editableCells: editable,
+            ...(sourceExterior ? { intendedCells: intended } : {}),
             lockedCells: new Set(target.lockedShell.map((cell) => cell.key)),
-            lockedPartIds: new Set(target.lockedParts.map((part) => part.id)),
+            lockedPartIds: lockedIDs,
+            reconstructSupportIds,
+            boundaryPolicy: repackBoundary
+              ? 'repack-complete-parts'
+              : 'preserve-parts',
             views: [
               [0, 0, 1],
               [1, 0, 0],
               [0, 1, 0],
             ],
             maxCandidates: 3,
-            scoreOptions: { maxRayDistanceStuds: 100, sampleSpacingStuds: 0.2 },
-          })
+            scoreOptions: {
+              maxRayDistanceStuds: 100,
+              sampleSpacingStuds: 0.2,
+              cullDisjointContext: repackBoundary,
+              comparison: repackBoundary
+                ? 'final-scene-owned-projection'
+                : 'regional-parts',
+              partScoringFootprint: repackBoundary
+                ? 'owned-source-projection'
+                : 'all-regional-parts',
+            },
+          }
         : undefined;
+    let layout = layoutInput ? proposeUprightLayouts(layoutInput) : undefined;
+    let finalist: Record<string, unknown> | undefined;
+    const improvingLayouts = () =>
+      layout?.candidates
+        .filter(
+          (c) =>
+            c.score.status === 'scored' &&
+            c.baselineScore.status === 'scored' &&
+            c.baselineScore.sourceToParts.rmsStuds -
+              c.score.sourceToParts.rmsStuds >
+              0.05 &&
+            c.baselineScore.symmetricRmsStuds - c.score.symmetricRmsStuds >
+              0.05 &&
+            c.score.symmetricP95Studs <=
+              c.baselineScore.symmetricP95Studs + 0.02 &&
+            !c.score.missingOrExtraArea,
+        )
+        .sort(
+          (a, b) =>
+            (a.score.status === 'scored'
+              ? a.score.symmetricRmsStuds
+              : Infinity) -
+            (b.score.status === 'scored'
+              ? b.score.symmetricRmsStuds
+              : Infinity),
+        );
+    let interfaceRetry: Record<string, unknown> | undefined;
+    for (let pass = 0; pass < 2; pass++) {
+      const improving = improvingLayouts();
+      if (!improving?.length || !finalModel) break;
+      const chosen = improving[0];
+      const audit = auditLayoutAssembly(finalModel, chosen);
+      if (
+        pass === 0 &&
+        sourceExterior &&
+        layoutInput &&
+        audit.status === 'rejected' &&
+        audit.unresolvedPartIds
+      ) {
+        const interfaces = supportInterfaceParts(
+          finalModel,
+          audit.unresolvedPartIds,
+        );
+        if (interfaces) {
+          interfaceRetry = {
+            firstRejection: audit,
+            interfacePartIds: [...interfaces.interfacePartIds],
+            reason:
+              'same-color existing support interface; outside occupancy/color frozen',
+          };
+          layout = proposeUprightLayouts({
+            ...layoutInput,
+            ...interfaces,
+            reconstructSupportIds: new Set([
+              ...reconstructSupportIds,
+              ...interfaces.reconstructSupportIds,
+            ]),
+          });
+          continue;
+        }
+      }
+      const path = `${directory}/${c.id}-${r.regionId}-exterior-finalist.json`;
+      if (audit.status === 'audited')
+        writeFileSync(path, JSON.stringify(audit.model));
+      finalist = {
+        strategy: chosen.strategy,
+        ...audit,
+        model: undefined,
+        ...(audit.status === 'audited'
+          ? { modelPath: path, modelSha256: sha(readFileSync(path)) }
+          : {}),
+        accepted: false,
+        appearanceAccepted: false,
+      };
+      break;
+    }
     if (layout)
       writeFileSync(
         `${directory}/${c.id}-${r.regionId}-layouts.json`,
@@ -264,6 +450,20 @@ for (const c of selections.cases) {
               target.observations.internalCorrespondenceVerified,
           }
         : { status: 'absent' },
+      ...(exterior
+        ? {
+            exteriorVoid: {
+              ...exterior,
+              eligibleExteriorCells: deletes.size,
+              blockedExteriorCells:
+                exterior.status === 'candidate'
+                  ? exterior.emptyBodyCells.length - deletes.size
+                  : 0,
+            },
+            finalist,
+            interfaceRetry,
+          }
+        : {}),
       depth:
         depth.status === 'collected'
           ? {
@@ -303,7 +503,9 @@ for (const c of selections.cases) {
               strategy: candidate.strategy,
               removedParts: candidate.removedIDs.length,
               addedParts: candidate.addedIDs.length,
+              reconstructedSupportIDs: candidate.reconstructedSupportIDs,
               changedCells: candidate.changedCells.length,
+              boundary: candidate.boundary,
               baselineScore: candidate.baselineScore,
               score: candidate.score,
               assemblyAudited: false,
@@ -450,6 +652,8 @@ for (const file of experimentalFiles)
     .update('\0');
 const summary = {
   date: '2026-10-04',
+  boundaryRepacking: repackBoundary,
+  sourceExterior,
   conversionFingerprint: productionFingerprint,
   experimentalCodeFingerprint: experimentHash.digest('hex'),
   selectionSha256: sha(readFileSync(selectionPath)),
@@ -467,7 +671,7 @@ const summary = {
       : 'Only source targets evaluated; no final layout, packing, procurement, assembly or physical acceptance.',
     'Stored raw and designed mesh snapshots are separate; source ray pairs retain gaps and ambiguous crossings.',
     withLayouts
-      ? 'Final deliberate construction, support, installed and semantic pieces supplied as locks; unchanged source observations do not establish material identity.'
+      ? 'Final deliberate construction, support, installed and semantic pieces supplied as locks; source-exterior explicitly reconstructs ordinary generated supports only after whole-model assembly audit. Unchanged observations do not establish material identity.'
       : 'Baseline protected cells applied; final construction/component constraints require final model input and are not certified by this source-only replay.',
   ],
 };
