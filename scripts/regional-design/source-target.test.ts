@@ -91,11 +91,7 @@ void test('an owned subcell face missed by the center ray cannot borrow an unrel
   });
   assert.ok(target.editableShell.includes('5,6,11'));
   assert.equal(target.status, 'unresolved');
-  assert.ok(
-    target.warnings.includes(
-      'editable-source-column-without-selected-crossing',
-    ),
-  );
+  assert.ok(target.warnings.includes('ambiguous-source-depth-crossings'));
   assert.equal(target.depth.status, 'collected');
   if (target.depth.status === 'collected') {
     assert.ok(
@@ -108,6 +104,15 @@ void test('an owned subcell face missed by the center ray cannot borrow an unrel
     );
   }
   assert.equal(target.permissions.commit, false);
+  assert.equal(target.ownedDepth.rays?.status, 'collected');
+  if (target.ownedDepth.rays?.status === 'collected')
+    assert.ok(
+      target.ownedDepth.rays.columns.some(
+        (column) =>
+          column.ambiguous &&
+          column.crossings.some((crossing) => crossing.faceIds.includes(12)),
+      ),
+    );
 });
 
 void test('a selected crossing at another layer cannot validate an owned cell from a different face', () => {
@@ -121,11 +126,7 @@ void test('a selected crossing at another layer cannot validate an owned cell fr
     depthAxis: 2,
   });
   assert.equal(target.status, 'unresolved');
-  assert.ok(
-    target.warnings.includes(
-      'editable-source-cell-without-corresponding-depth-crossing',
-    ),
-  );
+  assert.ok(target.warnings.includes('ambiguous-source-depth-crossings'));
   assert.equal(target.depth.status, 'collected');
   if (target.depth.status === 'collected') {
     const column = target.depth.columns.find(
@@ -161,10 +162,95 @@ void test('even the same selected face must cross the closed depth interval of i
     ),
   );
   assert.deepEqual(target.depthCorrespondence, {
-    method: 'owned-face-center-ray-in-closed-cell',
+    method: 'owned-original-fragment-centroid-ray-in-closed-cell',
     toleranceGridUnits: 1e-8,
     surfaceDesignDisplacementAllowanceGridUnits: 0,
+    scope: 'sampled-face-fragments-not-whole-cell-solid',
   });
+});
+
+void test('every owned front fragment of a closed tessellated wall gets its own depth query', () => {
+  const original = box();
+  const positions: number[] = [];
+  for (let f = 0; f < 12; f++)
+    if (!frontIds(original, 20).includes(f))
+      positions.push(...original.positions.subarray(f * 9, f * 9 + 9));
+  const xs = [0, 4.1, 4.3, 20],
+    ys = [0, 1.64, 1.72, 4];
+  for (let x = 0; x < xs.length - 1; x++)
+    for (let y = 0; y < ys.length - 1; y++) {
+      const a = [xs[x], ys[y], 20],
+        b = [xs[x + 1], ys[y], 20],
+        c = [xs[x + 1], ys[y + 1], 20],
+        d = [xs[x], ys[y + 1], 20];
+      positions.push(...a, ...b, ...c, ...a, ...c, ...d);
+    }
+  const mesh = {
+    name: 'closed tessellated wall',
+    positions: Float32Array.from(positions),
+    colors: new Uint8Array(positions.length / 3).fill(140),
+  };
+  const ids = frontIds(mesh, 20);
+  const target = proposeRegionalTarget({
+    sourceMesh: mesh,
+    ownership: captureRaw(mesh, ids),
+    regionId: 'test',
+    depthAxis: 2,
+  });
+  assert.equal(
+    target.status,
+    'ready-for-layout',
+    JSON.stringify(target.warnings),
+  );
+  assert.equal(target.depth.status, 'collected');
+  assert.equal(target.ownedDepth.rays?.status, 'collected');
+  const tinyFaces = [18, 19]; // middle subcell quad, not sampled by any cell center
+  if (target.depth.status === 'collected')
+    assert.ok(
+      target.depth.columns.every((column) =>
+        column.crossings.every((crossing) =>
+          tinyFaces.every((face) => !crossing.faceIds.includes(face)),
+        ),
+      ),
+    );
+  if (target.ownedDepth.rays?.status === 'collected') {
+    assert.ok(
+      target.ownedDepth.rays.columns.every(
+        (column) => !column.ambiguous && column.intervals.length === 1,
+      ),
+    );
+    for (const face of tinyFaces)
+      assert.ok(
+        target.ownedDepth.rays.columns.some((column) =>
+          column.crossings.some((crossing) => crossing.faceIds.includes(face)),
+        ),
+      );
+  }
+  assert.equal(target.permissions.commit, false);
+});
+
+void test('selecting only a tiny closed object front cannot edit cells also owned by its sides', () => {
+  const bounds = box(1, 1, 1);
+  const g = new BoxGeometry(0.2, 0.04, 0.2).toNonIndexed();
+  g.translate(4.2, 1.66, 10.1);
+  const small = Float32Array.from(g.attributes.position.array);
+  g.dispose();
+  const positions = Float32Array.from([...bounds.positions, ...small]);
+  const mesh = {
+    name: 'two separated solids',
+    positions,
+    colors: new Uint8Array(positions.length / 3).fill(140),
+  };
+  const front = Math.max(...small.filter((_, i) => i % 3 === 2));
+  const target = proposeRegionalTarget({
+    sourceMesh: mesh,
+    ownership: captureRaw(mesh, frontIds(mesh, front)),
+    regionId: 'test',
+    depthAxis: 2,
+  });
+  assert.equal(target.status, 'unresolved');
+  assert.equal(target.editableShell.length, 0);
+  assert.ok(target.warnings.includes('no-sole-owned-editable-shell'));
 });
 
 for (const [name, triangles] of [

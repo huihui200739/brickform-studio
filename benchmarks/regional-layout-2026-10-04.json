@@ -1,0 +1,611 @@
+{
+  "date": "2026-10-04",
+  "conversionFingerprint": "8067b760e7f860e3592574d690148ce444166f895578d33a62a43f3a154cfd05",
+  "experimentalCodeFingerprint": "3bad92981e16bcceef0999421c8424a01347b7fefc675da94fb5fe525f508410",
+  "selectionSha256": "8b14c939a72fc9443e04feba99ef41d86298913e3f5cd2ea054f70a3a6876009",
+  "cases": [
+    {
+      "id": "temple-standard",
+      "resolution": 48,
+      "status": "evaluated",
+      "sourceGLBSha256": "432bff9f81a91d9e02f9e8ba3b09344b107fe2a6d08a1266ddce172215ed051f",
+      "sourceRGBASha256": "3a9882d3673f489b7bbb512fc5727d02bdabb252e949d8183675cb9e58d1a779",
+      "sourcePositionSha256": "e02957dd4ac7c8ce8246f9637c945e014879a5ed849041863f605c301c391c83",
+      "camera": {
+        "yaw": 0,
+        "pitch": 20,
+        "perspective": 0.5
+      },
+      "cells": 72803,
+      "sparseOwnershipCells": 185,
+      "sparseContributors": 3017,
+      "regions": [
+        {
+          "id": "A",
+          "status": "ready-for-layout",
+          "sourceFaces": 113,
+          "components": 1,
+          "planeComponents": 0,
+          "boundaries": [
+            {
+              "kind": "unclassified",
+              "vertices": 25,
+              "outsideInterfaceFaces": 18
+            }
+          ],
+          "editableShellCells": 2,
+          "lockedShellCells": 24,
+          "observations": {
+            "gridSamples": 21,
+            "observedGridSamples": 21,
+            "centroidSamples": 38,
+            "internalCorrespondenceVerified": false
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 12,
+            "crossings": 24,
+            "intervals": 12,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 165196,
+              "columns": 12,
+              "bboxColumnTests": 5076,
+              "rayTriangleTests": 59,
+              "rawCrossings": 24
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 6,
+            "unresolvedCells": 0,
+            "uniqueRays": 6,
+            "raysStatus": "collected",
+            "ambiguousRays": 0
+          },
+          "layout": {
+            "status": "noop",
+            "reasons": [
+              "no complete replaceable part or new intended cells"
+            ],
+            "candidates": [],
+            "baselinePartsUnchanged": true,
+            "proposalArtifactSha256": "e140fcddc5789beb6e19d8b1ffc3f54dca798114cebbe2ed3140f490332de5bd"
+          },
+          "warnings": [],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        },
+        {
+          "id": "B",
+          "status": "unresolved",
+          "sourceFaces": 115,
+          "components": 1,
+          "planeComponents": 0,
+          "boundaries": [
+            {
+              "kind": "unclassified",
+              "vertices": 29,
+              "outsideInterfaceFaces": 20
+            }
+          ],
+          "editableShellCells": 0,
+          "lockedShellCells": 25,
+          "observations": {
+            "gridSamples": 20,
+            "observedGridSamples": 20,
+            "centroidSamples": 46,
+            "internalCorrespondenceVerified": false
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 12,
+            "crossings": 24,
+            "intervals": 12,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 165196,
+              "columns": 12,
+              "bboxColumnTests": 5076,
+              "rayTriangleTests": 59,
+              "rawCrossings": 24
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 0,
+            "unresolvedCells": 0,
+            "uniqueRays": 0,
+            "raysStatus": "not-requested",
+            "ambiguousRays": null
+          },
+          "layout": {
+            "status": "not-proposed",
+            "reason": "source target unresolved"
+          },
+          "warnings": [
+            "no-sole-owned-editable-shell"
+          ],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        },
+        {
+          "id": "C",
+          "status": "ready-for-layout",
+          "sourceFaces": 651,
+          "components": 2,
+          "planeComponents": 1,
+          "boundaries": [
+            {
+              "kind": "unclassified",
+              "vertices": 172,
+              "outsideInterfaceFaces": 106
+            },
+            {
+              "kind": "outer",
+              "vertices": 3,
+              "outsideInterfaceFaces": 3
+            }
+          ],
+          "editableShellCells": 33,
+          "lockedShellCells": 101,
+          "observations": {
+            "gridSamples": 239,
+            "observedGridSamples": 239,
+            "centroidSamples": 375,
+            "internalCorrespondenceVerified": false
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 101,
+            "crossings": 266,
+            "intervals": 133,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 165196,
+              "columns": 101,
+              "bboxColumnTests": 17652,
+              "rayTriangleTests": 566,
+              "rawCrossings": 266
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 558,
+            "unresolvedCells": 0,
+            "uniqueRays": 558,
+            "raysStatus": "collected",
+            "ambiguousRays": 0
+          },
+          "layout": {
+            "status": "noop",
+            "reasons": [
+              "complete part crosses editable boundary and is retained",
+              "enumerated layouts reproduce baseline complete parts"
+            ],
+            "candidates": [],
+            "baselinePartsUnchanged": true,
+            "proposalArtifactSha256": "c4f2977cf7e90a2caeb6c4e46ae40d01aa314a29626522ae0f3cf9d7b35c8656"
+          },
+          "warnings": [],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        }
+      ],
+      "finalModel": {
+        "brickCount": 8613,
+        "modelSha256": "181578b976a58591b9585bf595cdbe3f90b809d8f2bcd91198c7e1197decc946",
+        "recordedSceneSha256": "b693151ce3d12186370bf9e63a7c8544ade94d306d73defdf45b8663b3034550",
+        "cachedInferenceOnly": true,
+        "baselineReused": true,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 8613
+        },
+        "procurement": {
+          "unverified": 30,
+          "unsupportedColors": 0,
+          "requiresReview": true
+        },
+        "committedSemanticComponents": [
+          {
+            "kind": "statue",
+            "parts": 13
+          },
+          {
+            "kind": "tree",
+            "parts": 9
+          },
+          {
+            "kind": "brazier",
+            "parts": 5
+          },
+          {
+            "kind": "brazier",
+            "parts": 5
+          }
+        ],
+        "statueVisible": true,
+        "brazierAttachedCount": 2
+      },
+      "elapsedSeconds": 4.786
+    },
+    {
+      "id": "house",
+      "resolution": 28,
+      "status": "evaluated",
+      "sourceGLBSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+      "sourceRGBASha256": "ed3a7ba90ee9b293fc9703fb6333b81f024a323217aa995484e138101013c71b",
+      "sourcePositionSha256": "9c0cbbcd70b271b19d77d8d10fc4195e7d653f2df64b8f88b153e44e8b46a4c2",
+      "camera": {
+        "yaw": 35,
+        "pitch": 10,
+        "perspective": 0
+      },
+      "cells": 12259,
+      "sparseOwnershipCells": 134,
+      "sparseContributors": 4979,
+      "regions": [
+        {
+          "id": "60564",
+          "status": "unresolved",
+          "sourceFaces": 762,
+          "components": 1,
+          "planeComponents": 0,
+          "boundaries": [
+            {
+              "kind": "unclassified",
+              "vertices": 91,
+              "outsideInterfaceFaces": 91
+            },
+            {
+              "kind": "unclassified",
+              "vertices": 25,
+              "outsideInterfaceFaces": 24
+            }
+          ],
+          "editableShellCells": 0,
+          "lockedShellCells": 67,
+          "observations": {
+            "gridSamples": 618,
+            "observedGridSamples": 618,
+            "centroidSamples": 198,
+            "internalCorrespondenceVerified": false
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 67,
+            "crossings": 140,
+            "intervals": 70,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 154720,
+              "columns": 67,
+              "bboxColumnTests": 5338,
+              "rayTriangleTests": 298,
+              "rawCrossings": 140
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 0,
+            "unresolvedCells": 0,
+            "uniqueRays": 0,
+            "raysStatus": "not-requested",
+            "ambiguousRays": null
+          },
+          "layout": {
+            "status": "not-proposed",
+            "reason": "source target unresolved"
+          },
+          "warnings": [
+            "no-sole-owned-editable-shell"
+          ],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        },
+        {
+          "id": "60866",
+          "status": "unresolved",
+          "sourceFaces": 292,
+          "components": 1,
+          "planeComponents": 0,
+          "boundaries": [
+            {
+              "kind": "unclassified",
+              "vertices": 44,
+              "outsideInterfaceFaces": 44
+            }
+          ],
+          "editableShellCells": 0,
+          "lockedShellCells": 26,
+          "observations": {
+            "gridSamples": 233,
+            "observedGridSamples": 233,
+            "centroidSamples": 69,
+            "internalCorrespondenceVerified": false
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 26,
+            "crossings": 52,
+            "intervals": 26,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 154720,
+              "columns": 26,
+              "bboxColumnTests": 5153,
+              "rayTriangleTests": 113,
+              "rawCrossings": 52
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 0,
+            "unresolvedCells": 0,
+            "uniqueRays": 0,
+            "raysStatus": "not-requested",
+            "ambiguousRays": null
+          },
+          "layout": {
+            "status": "not-proposed",
+            "reason": "source target unresolved"
+          },
+          "warnings": [
+            "no-sole-owned-editable-shell"
+          ],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        },
+        {
+          "id": "124066",
+          "status": "ready-for-layout",
+          "sourceFaces": 238,
+          "components": 1,
+          "planeComponents": 1,
+          "boundaries": [
+            {
+              "kind": "outer",
+              "vertices": 40,
+              "outsideInterfaceFaces": 40
+            }
+          ],
+          "editableShellCells": 4,
+          "lockedShellCells": 16,
+          "observations": {
+            "gridSamples": 102,
+            "observedGridSamples": 102,
+            "centroidSamples": 79,
+            "internalCorrespondenceVerified": false
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 20,
+            "crossings": 40,
+            "intervals": 20,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 154720,
+              "columns": 20,
+              "bboxColumnTests": 4582,
+              "rayTriangleTests": 89,
+              "rawCrossings": 40
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 109,
+            "unresolvedCells": 0,
+            "uniqueRays": 109,
+            "raysStatus": "collected",
+            "ambiguousRays": 0
+          },
+          "layout": {
+            "status": "noop",
+            "reasons": [
+              "complete part crosses editable boundary and is retained",
+              "no complete replaceable part or new intended cells"
+            ],
+            "candidates": [],
+            "baselinePartsUnchanged": true,
+            "proposalArtifactSha256": "6675d5d21e0f822040668971905b80b747429e32baaf1e2dee0605dde3b9ecc8"
+          },
+          "warnings": [],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        },
+        {
+          "id": "118898",
+          "status": "ready-for-layout",
+          "sourceFaces": 264,
+          "components": 1,
+          "planeComponents": 0,
+          "boundaries": [
+            {
+              "kind": "unclassified",
+              "vertices": 46,
+              "outsideInterfaceFaces": 46
+            }
+          ],
+          "editableShellCells": 5,
+          "lockedShellCells": 16,
+          "observations": {
+            "gridSamples": 93,
+            "observedGridSamples": 93,
+            "centroidSamples": 86,
+            "internalCorrespondenceVerified": false
+          },
+          "depth": {
+            "status": "collected",
+            "columns": 21,
+            "crossings": 42,
+            "intervals": 21,
+            "ambiguousColumns": 0,
+            "stats": {
+              "faces": 154720,
+              "columns": 21,
+              "bboxColumnTests": 4509,
+              "rayTriangleTests": 84,
+              "rawCrossings": 42
+            }
+          },
+          "ownedDepth": {
+            "status": "collected",
+            "queries": 138,
+            "unresolvedCells": 0,
+            "uniqueRays": 138,
+            "raysStatus": "collected",
+            "ambiguousRays": 0
+          },
+          "layout": {
+            "status": "noop",
+            "reasons": [
+              "complete part crosses editable boundary and is retained",
+              "no complete replaceable part or new intended cells"
+            ],
+            "candidates": [],
+            "baselinePartsUnchanged": true,
+            "proposalArtifactSha256": "6675d5d21e0f822040668971905b80b747429e32baaf1e2dee0605dde3b9ecc8"
+          },
+          "warnings": [],
+          "permissions": {
+            "commit": false,
+            "materialIdentityVerified": false,
+            "physicalBuildVerified": false
+          }
+        }
+      ],
+      "finalModel": {
+        "brickCount": 3146,
+        "modelSha256": "cff0ddaaa303edf294daf5760a1cc85317e3ddd9c3dfbb7323c6f4e4c91569e6",
+        "recordedSceneSha256": "0f7df2a7c09b3077d8d5775d78c6bfe507a0dbdfb281007a760f5c07ec2cc165",
+        "cachedInferenceOnly": true,
+        "baselineReused": true,
+        "validation": {
+          "collisions": 0,
+          "unsupported": 0,
+          "invalidParts": 0,
+          "connected": true,
+          "brickCount": 3146
+        },
+        "procurement": {
+          "unverified": 44,
+          "unsupportedColors": 0,
+          "requiresReview": true
+        },
+        "committedSemanticComponents": [
+          {
+            "kind": "tree",
+            "parts": 4
+          },
+          {
+            "kind": "tree",
+            "parts": 9
+          }
+        ],
+        "statueVisible": true,
+        "brazierAttachedCount": 0
+      },
+      "elapsedSeconds": 3.743
+    }
+  ],
+  "catalogControl": {
+    "curve": {
+      "status": "scored",
+      "scope": "sampled-visible-surface-only",
+      "sourceToParts": {
+        "visibleSamples": 384,
+        "visibleAreaStudsSquared": 4.243177061690562,
+        "matchedAreaStudsSquared": 4.243177061690562,
+        "unmatchedAreaStudsSquared": 0,
+        "coverage": 1,
+        "rmsStuds": 0.0035753272354293137,
+        "p95Studs": 0.0053277678102325865,
+        "maxStuds": 0.005847211019588627,
+        "normalAgreement": 0.9995446391119959
+      },
+      "partsToSource": {
+        "visibleSamples": 300,
+        "visibleAreaStudsSquared": 4.241247916019323,
+        "matchedAreaStudsSquared": 4.241247916019323,
+        "unmatchedAreaStudsSquared": 0,
+        "coverage": 1,
+        "rmsStuds": 0.0035576878766541767,
+        "p95Studs": 0.005326914301022612,
+        "maxStuds": 0.005846681367217776,
+        "normalAgreement": 0.9995401376452451
+      },
+      "symmetricRmsStuds": 0.0035665204665628024,
+      "symmetricP95Studs": 0.005326914301022612,
+      "symmetricMaxStuds": 0.005847211019588627,
+      "missingOrExtraArea": false,
+      "samples": 684,
+      "rayTriangleTests": 33820
+    },
+    "staircase": {
+      "status": "scored",
+      "scope": "sampled-visible-surface-only",
+      "sourceToParts": {
+        "visibleSamples": 384,
+        "visibleAreaStudsSquared": 4.243177061690562,
+        "matchedAreaStudsSquared": 4.243177061690562,
+        "unmatchedAreaStudsSquared": 0,
+        "coverage": 1,
+        "rmsStuds": 0.11562191375875168,
+        "p95Studs": 0.23881968280324095,
+        "maxStuds": 0.2669166051160605,
+        "normalAgreement": 0.9426898623000955
+      },
+      "partsToSource": {
+        "visibleSamples": 280,
+        "visibleAreaStudsSquared": 3.999999999999988,
+        "matchedAreaStudsSquared": 3.999999999999988,
+        "unmatchedAreaStudsSquared": 0,
+        "coverage": 1,
+        "rmsStuds": 0.114294575984718,
+        "p95Studs": 0.23823273391889277,
+        "maxStuds": 0.2666986722749396,
+        "normalAgreement": 0.9462377806900906
+      },
+      "symmetricRmsStuds": 0.11497973708698735,
+      "symmetricP95Studs": 0.23881968280324095,
+      "symmetricMaxStuds": 0.2669166051160605,
+      "missingOrExtraArea": false,
+      "samples": 664,
+      "rayTriangleTests": 30299
+    }
+  },
+  "catalogGeometrySha256": "cc59df77484c5c0fcdd77e178dd500cfa618b2a99c6cb32d4f75b3a2eebd8330",
+  "generationChanged": false,
+  "appearanceAccepted": false,
+  "softwareLayoutAccepted": false,
+  "scope": [
+    "Frozen diagnostic face regions; no detection, neural inference, material model or camera refit.",
+    "Source ownership is a necessary constraint, not noise identity or permission to edit.",
+    "Current converter replay and bounded upright catalog layout proposals; no candidate committed or physically accepted.",
+    "Stored raw and designed mesh snapshots are separate; source ray pairs retain gaps and ambiguous crossings.",
+    "Final deliberate construction, support, installed and semantic pieces supplied as locks; unchanged source observations do not establish material identity."
+  ],
+  "evidenceNote": "Actual final model baseline replay performed once; reuse run verifies input, scene, production fingerprint and model bytes. All four proposed regions return unchanged baseline and no candidate. Independent flat-surface control is covered by upright-layout.test.ts, not an image-derived repair."
+}

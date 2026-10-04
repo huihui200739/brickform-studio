@@ -5,6 +5,7 @@ import {
   type MeshSurfaceOwnership,
 } from '../../lib/mesh-surface-ownership.ts';
 import { collectSourceDepth } from './source-depth.ts';
+import { buildOwnedDepthQueries } from './owned-depth-queries.ts';
 
 type Point = [number, number, number];
 type Box = { min: Point; max: Point; reason: string };
@@ -451,7 +452,11 @@ export function proposeRegionalTarget(input: {
         v + 1 > [b.x, b.y, b.z][i] && v < [b.x + b.w, b.y + b.h, b.z + b.d][i],
     );
   const structural = (input.baselineParts ?? []).filter(
-    (b) => b.construction || b.support || b.section?.startsWith('component-'),
+    (b) =>
+      b.construction ||
+      b.support ||
+      b.installation ||
+      b.section?.startsWith('component-'),
   );
   const selectedSet = new Set(region.sourceFaceIds);
   const gridSamples: {
@@ -568,35 +573,59 @@ export function proposeRegionalTarget(input: {
   });
   const warnings = [...topology.warnings];
   const depthCellTolerance = 1e-8;
-  if (depth.status === 'unavailable') warnings.push('source-depth-unavailable');
-  else {
-    if (
-      depth.columns.some(
-        (c) => c.ambiguous && c.crossings.some((h) => h.selectedFaceIds.length),
-      )
-    )
-      warnings.push('ambiguous-source-depth-crossings');
-    const depthColumns = new Map(
-      depth.columns.map((column) => [column.column.join(','), column]),
-    );
-    for (const key of editableShell) {
-      const q = key.split(',').map(Number);
-      const column = depthColumns.get(
-        columnAxes.map((axis) => q[axis]).join(','),
-      );
-      const faceIds = new Set(
-        ledger.cells.get(key)!.contributors.map((entry) => entry.sourceFaceId),
-      );
+  // Center-column diagnostics remain available, but a small area fragment is
+  // not required to cover the column center. Sample the actual original face
+  // fragment; every contributor retains its own cell/depth association.
+  const queryPlan = buildOwnedDepthQueries({
+    ownership: ledger,
+    regionId,
+    editableCellKeys: editableShell,
+    axis,
+  });
+  const queryByPoint = new Map<string, number>();
+  const samples: { column: [number, number]; samplePoint: [number, number] }[] =
+    [];
+  const queryIndices = queryPlan.queries.map((query) => {
+    const key = query.samplePoint.join(',');
+    let index = queryByPoint.get(key);
+    if (index === undefined) {
+      index = samples.length;
+      queryByPoint.set(key, index);
+      samples.push({ column: query.column, samplePoint: query.samplePoint });
+    }
+    return index;
+  });
+  const ownedDepth = samples.length
+    ? collectSourceDepth({
+        source: sourceMesh,
+        normalization: ledger.normalization,
+        axis,
+        columns: samples.map((s) => s.column),
+        samplePoints: samples.map((s) => s.samplePoint),
+        selectedSourceFaceIds: region.sourceFaceIds,
+      })
+    : undefined;
+  if (
+    queryPlan.status === 'unavailable' ||
+    (samples.length && ownedDepth?.status !== 'collected')
+  )
+    warnings.push('owned-source-depth-unavailable');
+  if (queryPlan.unresolvedCells.length)
+    warnings.push('editable-source-cell-without-corresponding-depth-crossing');
+  if (ownedDepth?.status === 'collected') {
+    for (let i = 0; i < queryPlan.queries.length; i++) {
+      const query = queryPlan.queries[i],
+        column = ownedDepth.columns[queryIndices[i]];
+      const cell = query.cellKey.split(',').map(Number);
+      if (column.ambiguous) warnings.push('ambiguous-source-depth-crossings');
       if (
-        !column?.crossings.some((crossing) => crossing.selectedFaceIds.length)
-      )
-        warnings.push('editable-source-column-without-selected-crossing');
-      else if (
         !column.crossings.some(
           (crossing) =>
-            crossing.depth >= q[axis] - depthCellTolerance &&
-            crossing.depth <= q[axis] + 1 + depthCellTolerance &&
-            crossing.selectedFaceIds.some((faceId) => faceIds.has(faceId)),
+            crossing.faceIds.includes(query.sourceFaceId) &&
+            Math.abs(crossing.depth - query.surfaceDepth) <=
+              depthCellTolerance &&
+            crossing.depth >= cell[axis] - depthCellTolerance &&
+            crossing.depth <= cell[axis] + 1 + depthCellTolerance,
         )
       )
         warnings.push(
@@ -634,10 +663,12 @@ export function proposeRegionalTarget(input: {
     frame: structuredClone(ledger.normalization),
     components: topology.components,
     depth,
+    ownedDepth: { queryPlan, queryIndices, rays: ownedDepth },
     depthCorrespondence: {
-      method: 'owned-face-center-ray-in-closed-cell' as const,
+      method: 'owned-original-fragment-centroid-ray-in-closed-cell' as const,
       toleranceGridUnits: depthCellTolerance,
       surfaceDesignDisplacementAllowanceGridUnits: 0,
+      scope: 'sampled-face-fragments-not-whole-cell-solid' as const,
     },
     boundaryScope:
       'validated-plane-loops-and-unclassified-3d-compound-loops' as const,

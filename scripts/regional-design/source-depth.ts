@@ -29,6 +29,8 @@ export type SourceDepthCrossing = {
 };
 export type SourceDepthColumn = {
   column: [number, number];
+  /** Actual grid-space query point, only included for explicit samples. */
+  samplePoint?: [number, number];
   crossings: SourceDepthCrossing[];
   intervals: {
     min: number;
@@ -54,6 +56,8 @@ export type SourceDepthInput = {
   normalization: MeshSurfaceOwnershipNormalization;
   axis: Axis;
   columns: readonly Column[];
+  /** One strictly interior grid-space point per column; columns may repeat. */
+  samplePoints?: readonly Column[];
   /** Relevance annotation only: all source faces still participate. */
   selectedSourceFaceIds?: readonly number[];
   limits?: Partial<SourceDepthLimits>;
@@ -137,6 +141,13 @@ export function collectSourceDepth(input: SourceDepthInput): SourceDepthResult {
       input.columns.length > limits.columns
     )
       throw Error('Invalid or over-budget source-depth columns.');
+    const samplePoints = input.samplePoints;
+    if (
+      samplePoints !== undefined &&
+      (!Array.isArray(samplePoints) ||
+        samplePoints.length !== input.columns.length)
+    )
+      throw Error('Source-depth sample points must match the columns.');
     const columnAxes = [0, 1, 2].filter((a) => a !== axis) as [Axis, Axis];
     const [uAxis, vAxis] = columnAxes;
     const selected = new Set<number>();
@@ -169,13 +180,31 @@ export function collectSourceDepth(input: SourceDepthInput): SourceDepthResult {
         )
       )
         throw Error('Source-depth column lies outside the source grid.');
-      const key = column.join(',');
-      if (seen.has(key)) throw Error('Duplicate source-depth column.');
+      const point = samplePoints === undefined ? column : samplePoints[id];
+      if (
+        samplePoints !== undefined &&
+        (!Array.isArray(point) ||
+          point.length !== 2 ||
+          point.some(
+            (v, i) =>
+              !Number.isFinite(v) || v <= column[i] || v >= column[i] + 1,
+          ))
+      )
+        throw Error(
+          'Source-depth sample point must lie strictly inside its column.',
+        );
+      const key = point.join(',');
+      if (seen.has(key))
+        throw Error(
+          samplePoints === undefined
+            ? 'Duplicate source-depth column.'
+            : 'Duplicate source-depth sample point.',
+        );
       seen.add(key);
-      let row = rows.get(column[0]);
-      if (!row) rows.set(column[0], (row = { values: [], ids: new Map() }));
-      row.values.push(column[1]);
-      row.ids.set(column[1], id);
+      let row = rows.get(point[0]);
+      if (!row) rows.set(point[0], (row = { values: [], ids: new Map() }));
+      row.values.push(point[1]);
+      row.ids.set(point[1], id);
     });
     const us = [...rows.keys()].sort((a, b) => a - b);
     for (const row of rows.values()) row.values.sort((a, b) => a - b);
@@ -197,6 +226,10 @@ export function collectSourceDepth(input: SourceDepthInput): SourceDepthResult {
       1e-12,
       frame.gridSize[axis] * Number.EPSILON * 64,
     );
+    // Explicit queries index their actual floating coordinates. Keep the
+    // legacy translated integer index unchanged when samples are omitted.
+    const uOffset = samplePoints === undefined ? 0.500013 : 0;
+    const vOffset = samplePoints === undefined ? 0.500027 : 0;
     for (let faceId = 0; faceId < faceCount; faceId++) {
       const verts = [0, 1, 2].map((j) =>
         [0, 1, 2].map(
@@ -219,10 +252,10 @@ export function collectSourceDepth(input: SourceDepthInput): SourceDepthResult {
       const den =
         (b[vAxis] - c[vAxis]) * (a[uAxis] - c[uAxis]) +
         (c[uAxis] - b[uAxis]) * (a[vAxis] - c[vAxis]);
-      const u0 = Math.min(...verts.map((v) => v[uAxis])) - 0.500013 - 1e-9;
-      const u1 = Math.max(...verts.map((v) => v[uAxis])) - 0.500013 + 1e-9;
-      const v0 = Math.min(...verts.map((v) => v[vAxis])) - 0.500027 - 1e-9;
-      const v1 = Math.max(...verts.map((v) => v[vAxis])) - 0.500027 + 1e-9;
+      const u0 = Math.min(...verts.map((v) => v[uAxis])) - uOffset - 1e-9;
+      const u1 = Math.max(...verts.map((v) => v[uAxis])) - uOffset + 1e-9;
+      const v0 = Math.min(...verts.map((v) => v[vAxis])) - vOffset - 1e-9;
+      const v1 = Math.max(...verts.map((v) => v[vAxis])) - vOffset + 1e-9;
       for (let at = lowerBound(us, u0); at < us.length && us[at] <= u1; at++) {
         charge('bboxColumnTests');
         const row = rows.get(us[at])!;
@@ -234,8 +267,8 @@ export function collectSourceDepth(input: SourceDepthInput): SourceDepthResult {
           charge('bboxColumnTests');
           charge('rayTriangleTests');
           const id = row.ids.get(row.values[vt])!,
-            u = us[at] + 0.500013,
-            v = row.values[vt] + 0.500027;
+            u = us[at] + uOffset,
+            v = row.values[vt] + vOffset;
           if (Math.abs(den) <= Math.hypot(...normal) * 1e-12) {
             // A ray on a projected line may lie within a source side face.
             for (let j = 0; j < 3; j++) {
@@ -344,6 +377,9 @@ export function collectSourceDepth(input: SourceDepthInput): SourceDepthResult {
           });
       return {
         column: [...input.columns[id]],
+        ...(samplePoints === undefined
+          ? {}
+          : { samplePoint: [...samplePoints[id]] as [number, number] }),
         crossings,
         intervals,
         ambiguous,

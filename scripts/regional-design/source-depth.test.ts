@@ -228,3 +228,252 @@ void test('raw source/frame validation and repeated calls never mutate inputs', 
   bad.source.positions[0] = NaN;
   assert.equal(collectSourceDepth(bad).status, 'unavailable');
 });
+
+void test('omitted samples preserve the complete default result and output shape', () => {
+  const input = fixture(box([0, 0, 0], [1, 1, 1]));
+  const result = collected(collectSourceDepth(input));
+  assert.deepEqual(result, {
+    status: 'collected',
+    axis: 0,
+    columnAxes: [1, 2],
+    columns: [
+      {
+        column: [2, 1],
+        crossings: [
+          {
+            depth: 1,
+            faceIds: [0],
+            signs: [-1],
+            selectedFaceIds: [],
+            direction: -1,
+          },
+          {
+            depth: 2,
+            faceIds: [3],
+            signs: [1],
+            selectedFaceIds: [],
+            direction: 1,
+          },
+        ],
+        intervals: [{ min: 1, max: 2, entryFaceIds: [0], exitFaceIds: [3] }],
+        ambiguous: false,
+        reasons: [],
+      },
+    ],
+    stats: {
+      faces: 12,
+      columns: 1,
+      bboxColumnTests: 12,
+      rayTriangleTests: 4,
+      rawCrossings: 2,
+    },
+  });
+  assert.deepEqual(
+    collectSourceDepth({ ...input, samplePoints: undefined }),
+    result,
+  );
+  const explicit = collected(
+    collectSourceDepth({
+      ...input,
+      samplePoints: [[2.500013, 1.500027]],
+    }),
+  );
+  const { samplePoint, ...row } = explicit.columns[0];
+  assert.deepEqual(samplePoint, [2.500013, 1.500027]);
+  assert.deepEqual({ ...explicit, columns: [row] }, result);
+  assert.equal('samplePoint' in result.columns[0], false);
+});
+
+void test('an explicit interior sample hits a small face missed by the default center', () => {
+  const input = fixture([
+    ...box([0, 0, 0], [1, 0.1, 0.1]),
+    ...box([2, 0.25, 0.25], [3, 0.3, 0.3]),
+  ]);
+  assert.deepEqual(
+    collected(collectSourceDepth(input)).columns[0].crossings,
+    [],
+  );
+  const result = collected(
+    collectSourceDepth({
+      ...input,
+      samplePoints: [[2.68, 1.27]],
+      selectedSourceFaceIds: [12],
+    }),
+  );
+  assert.equal(result.columns[0].ambiguous, false);
+  assert.deepEqual(result.columns[0].samplePoint, [2.68, 1.27]);
+  assert.deepEqual(
+    result.columns[0].intervals.map(({ min, max }) => [min, max]),
+    [[3, 4]],
+  );
+  assert.ok(
+    result.columns[0].crossings.every((c) => c.faceIds.every((id) => id >= 12)),
+  );
+  // Bounding boxes visit only the two small object's projected end faces.
+  assert.equal(result.stats.rayTriangleTests, 4);
+});
+
+void test('several explicit points in one integer column remain distinct and in input order', () => {
+  const input = {
+    ...fixture(box([0, 0, 0], [1, 1, 1]), 0, [
+      [2, 1],
+      [2, 1],
+      [2, 1],
+    ]),
+    samplePoints: [
+      [2.75, 1.75],
+      [2.25, 1.25],
+      [2.75, 1.25],
+    ] as const,
+  };
+  const before = JSON.stringify(input);
+  const result = collected(collectSourceDepth(input));
+  assert.deepEqual(
+    result.columns.map((c) => c.samplePoint),
+    input.samplePoints,
+  );
+  for (const row of result.columns) {
+    assert.deepEqual(row.column, [2, 1]);
+    assert.equal(row.ambiguous, false);
+    assert.deepEqual(
+      row.intervals.map(({ min, max }) => [min, max]),
+      [[1, 2]],
+    );
+  }
+  assert.equal(result.stats.columns, 3);
+  assert.deepEqual(collectSourceDepth(input), result);
+  assert.equal(JSON.stringify(input), before);
+  assert.equal(
+    collectSourceDepth({ ...input, samplePoints: undefined }).status,
+    'unavailable',
+  );
+});
+
+void test('explicit samples retain unselected objects and flag an unselected open object', () => {
+  const first = box([0, 0, 0], [1, 1, 1]);
+  const second = box([2, 0, 0], [3, 1, 1]);
+  const distant = box([0, 0, 3], [1, 1, 4]);
+  const options = {
+    samplePoints: [[2.25, 1.25]] as const,
+    selectedSourceFaceIds: [0, 3],
+  };
+  const closed = collected(
+    collectSourceDepth({
+      ...fixture([...first, ...second, ...distant]),
+      ...options,
+    }),
+  ).columns[0];
+  assert.equal(closed.ambiguous, false);
+  assert.deepEqual(
+    closed.intervals.map(({ min, max }) => [min, max]),
+    [
+      [1, 2],
+      [3, 4],
+    ],
+  );
+  assert.equal(closed.crossings.length, 4);
+  assert.deepEqual(
+    closed.crossings.slice(2).flatMap((c) => c.selectedFaceIds),
+    [],
+  );
+  const open = collected(
+    collectSourceDepth({
+      ...fixture([...first, ...second.slice(18), ...distant]),
+      ...options,
+    }),
+  ).columns[0];
+  assert.equal(open.ambiguous, true);
+  assert.deepEqual(open.intervals, []);
+  assert.equal(open.crossings.length, 3);
+  assert.ok(open.reasons.includes('Odd source crossing count.'));
+});
+
+void test('explicit Y samples retain plate units and source tangencies remain ambiguous', () => {
+  const y = collected(
+    collectSourceDepth({
+      ...fixture(box([10, 20, 30], [11, 22, 31]), 1, [[1, 1]]),
+      samplePoints: [[1.75, 1.25]],
+    }),
+  );
+  assert.deepEqual(y.columnAxes, [0, 2]);
+  assert.deepEqual(
+    y.columns[0].intervals.map(({ min, max }) => [min, max]),
+    [[2, 7]],
+  );
+  const positions = box([0, 0, 0], [1, 1, 1]);
+  positions.push(0, 0.25, 0, 1, 0.25, 0, 1, 0.25, 1);
+  const row = collected(
+    collectSourceDepth({
+      ...fixture(positions),
+      samplePoints: [[2.625, 1.3]],
+    }),
+  ).columns[0];
+  assert.equal(row.ambiguous, true);
+  assert.deepEqual(row.intervals, []);
+  assert.ok(row.reasons.includes('Source face tangent to the query ray.'));
+});
+
+void test('explicit samples reject mismatches, nonfinite or noninterior coordinates and duplicate points', () => {
+  const input = fixture(box([0, 0, 0], [1, 1, 1]));
+  for (const samplePoints of [
+    [],
+    [
+      [2.25, 1.25],
+      [2.75, 1.75],
+    ],
+    [[NaN, 1.25]],
+    [[2.25, Infinity]],
+    [[2, 1.25]],
+    [[3, 1.25]],
+    [[2.25, 1]],
+    [[2.25, 2]],
+    [[1.75, 1.25]],
+    [[2.25, 2.25]],
+    [[2.25]],
+  ]) {
+    const result = collectSourceDepth({
+      ...input,
+      samplePoints,
+    } as unknown as SourceDepthInput);
+    assert.equal(result.status, 'unavailable', JSON.stringify(samplePoints));
+    assert.equal('columns' in result, false);
+  }
+  const duplicate = collectSourceDepth({
+    ...input,
+    columns: [
+      [2, 1],
+      [2, 1],
+    ],
+    samplePoints: [
+      [2.25, 1.25],
+      [2.25, 1.25],
+    ],
+  });
+  assert.deepEqual(duplicate, {
+    status: 'unavailable',
+    reason: 'Duplicate source-depth sample point.',
+  });
+});
+
+void test('explicit query count and triangle work retain the bounded workload limits', () => {
+  const input = {
+    ...fixture(box([0, 0, 0], [1, 1, 1]), 0, [
+      [2, 1],
+      [2, 1],
+    ]),
+    samplePoints: [
+      [2.25, 1.25],
+      [2.75, 1.75],
+    ] as const,
+  };
+  for (const limits of [
+    { columns: 1 },
+    { bboxColumnTests: 1 },
+    { rayTriangleTests: 1 },
+    { rawCrossings: 1 },
+  ]) {
+    const result = collectSourceDepth({ ...input, limits });
+    assert.equal(result.status, 'unavailable');
+    assert.equal('columns' in result, false);
+  }
+});

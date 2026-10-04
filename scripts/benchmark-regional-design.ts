@@ -15,7 +15,16 @@ import { conversionFingerprint } from './benchmark-evidence.ts';
 import { proposeRegionalTarget } from './regional-design/source-target.ts';
 import { scoreCatalogSurface } from './regional-design/catalog-surface-score.ts';
 import { IDENTITY, ASSEMBLY_PARTS } from '../lib/assembly-catalog.ts';
-import type { Brick } from '../lib/brick-engine.ts';
+import { validateModel, type Brick, type Model } from '../lib/brick-engine.ts';
+import { detectRefinements } from '../lib/semantic-refinement.ts';
+import { meshToDesignAuto } from '../lib/mesh-design.ts';
+import {
+  VisionSceneDetector,
+  type VisionSceneResponse,
+} from '../lib/scene/detectors/vision-detector.ts';
+import { proposeUprightLayouts } from './regional-design/upright-layout.ts';
+import { normalizeSourceMesh } from './regional-design/catalog-surface-score.ts';
+import { procurementReport } from '../lib/purchase-inventory.ts';
 
 const selectionPath = 'benchmarks/regional-design-selections-2026-10-04.json';
 const selections = JSON.parse(readFileSync(selectionPath, 'utf8')) as {
@@ -33,7 +42,27 @@ const sha = (bytes: Uint8Array) =>
   createHash('sha256').update(bytes).digest('hex');
 const directory = 'outputs/regional-design-calibration';
 mkdirSync(directory, { recursive: true });
-const filter = process.argv.slice(2);
+const withLayouts = process.argv.includes('--layouts');
+const reuseBaseline = process.argv.includes('--reuse-baseline');
+if (reuseBaseline && !withLayouts)
+  throw Error('--reuse-baseline requires --layouts.');
+const productionFingerprint = conversionFingerprint();
+const cachedRun = reuseBaseline
+  ? (JSON.parse(readFileSync(`${directory}/summary.json`, 'utf8')) as {
+      conversionFingerprint: string;
+      cases: {
+        id: string;
+        resolution: number;
+        sourceGLBSha256: string;
+        sourceRGBASha256: string;
+        camera: ReferenceCamera;
+        finalModel?: { modelSha256: string; recordedSceneSha256: string };
+      }[];
+    })
+  : undefined;
+const filter = process.argv
+  .slice(2)
+  .filter((arg) => !['--layouts', '--reuse-baseline'].includes(arg));
 if (filter.some((id) => !selections.cases.some((c) => c.id === id)))
   throw Error('Unknown regional diagnostic case.');
 const rows: Record<string, unknown>[] = [];
@@ -89,6 +118,52 @@ for (const c of selections.cases) {
     surfaceOwnership: { regions: c.regions },
   });
   const ledger = volume.surfaceOwnership!;
+  let finalModel: Model | undefined;
+  let sceneSha256: string | undefined;
+  if (withLayouts) {
+    const sceneBytes = readFileSync(
+      c.id === 'temple-standard'
+        ? 'lib/fixtures/temple-standard.scene.json'
+        : 'outputs/identity-calibration/house.scene.json',
+    );
+    sceneSha256 = sha(sceneBytes);
+    if (reuseBaseline) {
+      const entry = cachedRun?.cases.find((row) => row.id === c.id);
+      const bytes = readFileSync(`${directory}/${c.id}-baseline-current.json`);
+      if (
+        cachedRun?.conversionFingerprint !== productionFingerprint ||
+        !entry?.finalModel ||
+        entry.resolution !== c.resolution ||
+        entry.sourceGLBSha256 !== sha(glb) ||
+        entry.sourceRGBASha256 !== sha(image.data) ||
+        JSON.stringify(entry.camera) !== JSON.stringify(c.camera) ||
+        entry.finalModel.recordedSceneSha256 !== sceneSha256 ||
+        entry.finalModel.modelSha256 !== sha(bytes)
+      )
+        throw Error(
+          'Baseline provenance differs; rerun --layouts without cache reuse.',
+        );
+      finalModel = JSON.parse(bytes.toString()) as Model;
+    } else {
+      const scene = JSON.parse(sceneBytes.toString()) as VisionSceneResponse;
+      const refinements = await detectRefinements(
+        source,
+        image,
+        c.resolution,
+        undefined,
+        c.camera,
+        new VisionSceneDetector(async () => scene),
+      );
+      finalModel = meshToDesignAuto(source, c.resolution, refinements, 48, {
+        image,
+        camera: c.camera,
+      }).model;
+      writeFileSync(
+        `${directory}/${c.id}-baseline-current.json`,
+        JSON.stringify(finalModel),
+      );
+    }
+  }
   const originalPositions = sha(
     new Uint8Array(
       source.positions.buffer,
@@ -102,6 +177,7 @@ for (const c of selections.cases) {
       ownership: ledger,
       regionId: r.regionId,
       preserveCells: volume.protectedCells,
+      baselineParts: finalModel?.bricks,
     });
     const arrayHash = (positions: Float32Array) =>
       sha(
@@ -131,6 +207,36 @@ for (const c of selections.cases) {
       }),
     );
     const depth = target.depth;
+    const layout =
+      finalModel && target.status === 'ready-for-layout'
+        ? proposeUprightLayouts({
+            source: {
+              positions: normalizeSourceMesh(
+                source.positions,
+                ledger.normalization.min,
+                ledger.normalization.scale,
+              ),
+              faceIds: target.sourceFaceIds,
+              completeOcclusionGeometry: true,
+            },
+            baselineModel: finalModel,
+            editableCells: new Set(target.editableShell),
+            lockedCells: new Set(target.lockedShell.map((cell) => cell.key)),
+            lockedPartIds: new Set(target.lockedParts.map((part) => part.id)),
+            views: [
+              [0, 0, 1],
+              [1, 0, 0],
+              [0, 1, 0],
+            ],
+            maxCandidates: 3,
+            scoreOptions: { maxRayDistanceStuds: 100, sampleSpacingStuds: 0.2 },
+          })
+        : undefined;
+    if (layout)
+      writeFileSync(
+        `${directory}/${c.id}-${r.regionId}-layouts.json`,
+        JSON.stringify(layout),
+      );
     return {
       id: r.regionId,
       status: target.status,
@@ -174,6 +280,39 @@ for (const c of selections.cases) {
               stats: depth.stats,
             }
           : depth,
+      ownedDepth: {
+        status: target.ownedDepth.queryPlan.status,
+        queries: target.ownedDepth.queryPlan.queries.length,
+        unresolvedCells: target.ownedDepth.queryPlan.unresolvedCells.length,
+        uniqueRays: target.ownedDepth.queryIndices.length
+          ? Math.max(...target.ownedDepth.queryIndices) + 1
+          : 0,
+        raysStatus: target.ownedDepth.rays?.status ?? 'not-requested',
+        ambiguousRays:
+          target.ownedDepth.rays?.status === 'collected'
+            ? target.ownedDepth.rays.columns.filter(
+                (column) => column.ambiguous,
+              ).length
+            : null,
+      },
+      layout: layout
+        ? {
+            status: layout.status,
+            reasons: layout.reasons,
+            candidates: layout.candidates.map((candidate) => ({
+              strategy: candidate.strategy,
+              removedParts: candidate.removedIDs.length,
+              addedParts: candidate.addedIDs.length,
+              changedCells: candidate.changedCells.length,
+              baselineScore: candidate.baselineScore,
+              score: candidate.score,
+              assemblyAudited: false,
+              accepted: false,
+            })),
+          }
+        : withLayouts
+          ? { status: 'not-proposed', reason: 'source target unresolved' }
+          : undefined,
       warnings: target.warnings,
       permissions: target.permissions,
     };
@@ -201,6 +340,26 @@ for (const c of selections.cases) {
     sparseOwnershipCells: ledger.cells.size,
     sparseContributors: ledger.contributorCount,
     regions,
+    finalModel: finalModel
+      ? {
+          brickCount: finalModel.bricks.length,
+          modelSha256: sha(
+            readFileSync(`${directory}/${c.id}-baseline-current.json`),
+          ),
+          recordedSceneSha256: sceneSha256,
+          cachedInferenceOnly: true,
+          baselineReused: reuseBaseline,
+          validation: validateModel(finalModel),
+          procurement: (() => {
+            const p = procurementReport(finalModel);
+            return {
+              unverified: p.unverified,
+              unsupportedColors: p.unsupportedColors,
+              requiresReview: p.requiresReview,
+            };
+          })(),
+        }
+      : undefined,
     elapsedSeconds: (Date.now() - started) / 1000,
   });
   console.log(JSON.stringify({ case: c.id, regions }));
@@ -291,7 +450,7 @@ for (const file of experimentalFiles)
     .update('\0');
 const summary = {
   date: '2026-10-04',
-  conversionFingerprint: conversionFingerprint(),
+  conversionFingerprint: productionFingerprint,
   experimentalCodeFingerprint: experimentHash.digest('hex'),
   selectionSha256: sha(readFileSync(selectionPath)),
   cases: rows,
@@ -303,9 +462,13 @@ const summary = {
   scope: [
     'Frozen diagnostic face regions; no detection, neural inference, material model or camera refit.',
     'Source ownership is a necessary constraint, not noise identity or permission to edit.',
-    'Only source targets evaluated; no final layout, packing, procurement, assembly or physical acceptance.',
+    withLayouts
+      ? 'Current converter replay and bounded upright catalog layout proposals; no candidate committed or physically accepted.'
+      : 'Only source targets evaluated; no final layout, packing, procurement, assembly or physical acceptance.',
     'Stored raw and designed mesh snapshots are separate; source ray pairs retain gaps and ambiguous crossings.',
-    'Baseline protected cells applied; final construction/component constraints require final model input and are not certified by this source-only replay.',
+    withLayouts
+      ? 'Final deliberate construction, support, installed and semantic pieces supplied as locks; unchanged source observations do not establish material identity.'
+      : 'Baseline protected cells applied; final construction/component constraints require final model input and are not certified by this source-only replay.',
   ],
 };
 writeFileSync(`${directory}/summary.json`, JSON.stringify(summary, null, 2));
