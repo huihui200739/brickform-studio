@@ -78,6 +78,12 @@ import {
 import type { BBox3d, SceneElementInstance } from './scene/scene-types.ts';
 import { designMeshSurfaces, type SurfaceDesign } from './surface-design.ts';
 import { slopeSurface, designSlopes } from './slope-design.ts';
+import {
+  prepareMeshSurfaceOwnership,
+  recordSurfaceOwnershipContribution,
+  type MeshSurfaceOwnership,
+  type MeshSurfaceOwnershipSelection,
+} from './mesh-surface-ownership.ts';
 
 // Conversion is split in two stages: the triangle volume is cast once, and each
 // component-placement attempt re-reads that volume. Autoplacement can therefore
@@ -96,6 +102,10 @@ export type MeshVolume = {
   surfaceDesign?: SurfaceDesign;
   voxelMaterialDesign?: VoxelMaterialDesign;
   slopeSamples: ReturnType<typeof slopeSurface>;
+  surfaceOwnership?: MeshSurfaceOwnership;
+};
+export type BuildMeshVolumeOptions = {
+  surfaceOwnership?: MeshSurfaceOwnershipSelection;
 };
 export type PreservedRegion = {
   kind: 'statue';
@@ -532,7 +542,16 @@ function focalFallbackCandidates(region: ComponentRegion): ComponentRegion[] {
 export function buildMeshVolume(
   mesh: TriangleMesh,
   resolution = 28,
+  options?: BuildMeshVolumeOptions,
 ): MeshVolume {
+  if (
+    options !== undefined &&
+    (!options ||
+      typeof options !== 'object' ||
+      Array.isArray(options) ||
+      Object.keys(options).some((key) => key !== 'surfaceOwnership'))
+  )
+    throw Error('Mesh volume options are invalid.');
   let p = mesh.positions;
   const n = p.length / 9;
   if (
@@ -560,6 +579,21 @@ export function buildMeshVolume(
   const w = Math.max(1, Math.ceil(span[0] * scale)),
     h = Math.max(1, Math.ceil((span[1] * scale) / 0.4)),
     d = Math.max(1, Math.ceil(span[2] * scale));
+  const surfaceOwnership =
+    options?.surfaceOwnership !== undefined
+      ? prepareMeshSurfaceOwnership(
+          surfaces.mesh,
+          {
+            min: min as [number, number, number],
+            scale,
+            gridOffset: [1, 2, 1],
+            plateHeight: 0.4,
+            gridSize: [w, h, d],
+          },
+          options.surfaceOwnership,
+          mesh,
+        )
+      : undefined;
   const hits: { x: number; color: number }[][] = Array.from(
     { length: h * d },
     () => [],
@@ -666,6 +700,8 @@ export function buildMeshVolume(
       [w, h, d],
       (x, y, z, area) => {
         const key = `${x + 1},${y + 2},${z + 1}`;
+        if (surfaceOwnership)
+          recordSurfaceOwnershipContribution(surfaceOwnership, key, t, area);
         let vote = votes.get(key);
         if (!vote) {
           vote = new Float64Array(PALETTE.length);
@@ -759,6 +795,7 @@ export function buildMeshVolume(
     surfaceDesign: surfaces.design,
     voxelMaterialDesign,
     slopeSamples: slopeSurface(surfaces.mesh, resolution),
+    ...(surfaceOwnership ? { surfaceOwnership } : {}),
   };
 }
 // Assemble the brick model from a cast volume and the requested component
