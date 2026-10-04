@@ -49,7 +49,7 @@ import {
   auditDesignGeometry,
   type DesignGeometry,
 } from './design-geometry.ts';
-import { installCavityLintel } from './cavity-lintel.ts';
+import { installCavityLintel, type CavityLintelOpening } from './cavity-lintel.ts';
 import { brazierClearances } from './semantic-clearance.ts';
 import { enforceGroupConsistency } from './element-grouping.ts';
 import {
@@ -75,7 +75,7 @@ import {
   colorFromReference,
   type ReferenceCamera,
 } from './reference-colors.ts';
-import type { SceneElementInstance } from './scene/scene-types.ts';
+import type { BBox3d, SceneElementInstance } from './scene/scene-types.ts';
 import { designMeshSurfaces, type SurfaceDesign } from './surface-design.ts';
 import { slopeSurface, designSlopes } from './slope-design.ts';
 
@@ -796,6 +796,22 @@ function assembleVolume(
   applyDesignPlanes(cells, designGeometry);
   validateRegions(regions, [w, h, d]);
   const placements = regions.map((r) => regionPlacement(r, [w, h, d]));
+  // Reuse only the declaration for this volume. The fallback names a local
+  // construction purpose; it is not evidence that source geometry occupies it.
+  const lintelOpening = (
+    region: ComponentRegion,
+    box: BBox3d,
+  ): CavityLintelOpening => ({
+    openingId:
+      region.anchorResult?.designGeometry?.openings.find(({ bounds }) =>
+        [0, 1, 2].every(
+          (axis) =>
+            bounds.min[axis] === box.min[axis] &&
+            bounds.max[axis] === box.max[axis],
+        ),
+      )?.id ?? `cavity:${region.id}`,
+    regionId: region.id,
+  });
   const flameClearances = brazierClearances(regions, [w, h, d]);
   const openings = [
     ...regions.flatMap((r) =>
@@ -926,6 +942,11 @@ function assembleVolume(
         d: 2,
         h: 1,
         color: dominant,
+        construction: {
+          ...lintelOpening(regions[i], r),
+          origin: 'cavity-lintel',
+          role: 'bridge',
+        },
         installation:
           '将整块 2 × 8 薄板横跨开口，两端分别扣在左右承托凸点上，保持下方通道畅通。',
       });
@@ -943,6 +964,7 @@ function assembleVolume(
           dominant,
           (x, y, z) =>
             flameClearances.some((cut) => insideRegion([x, y, z], cut)),
+          lintelOpening(region, box),
         ),
       );
   }

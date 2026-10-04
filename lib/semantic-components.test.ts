@@ -236,6 +236,16 @@ void test('removing a statue preserves a real full-width bridge above the openin
   );
   assert.ok(bridges.length > 0);
   assert.ok(bridges.every((b) => b.w === 8 && b.d === 2 && b.h === 1));
+  assert.ok(
+    bridges.every(
+      (b) =>
+        b.construction?.origin === 'cavity-lintel' &&
+        b.construction.openingId === 'cavity:portal' &&
+        b.construction.regionId === 'portal' &&
+        b.construction.role === 'bridge',
+    ),
+  );
+  assert.equal(m.bricks.filter((b) => b.construction).length, bridges.length);
   assert.equal(validateAssembly(m).connected, true);
 });
 

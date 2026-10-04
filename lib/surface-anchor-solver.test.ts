@@ -206,6 +206,21 @@ for (const resolution of [28, 36, 48])
     assert.ok(opening, 'the detected niche must reserve its opening');
     assert.equal(result.model.designGeometry?.validation?.passed, true);
     assert.equal(result.model.designGeometry?.planes.length, 1);
+    const lintels = result.model.bricks.filter((b) => b.construction);
+    const declaredOpening = statue.anchorResult!.designGeometry!.openings[0];
+    assert.ok(
+      lintels.length > 0,
+      'the intentional entry plates retain construction provenance',
+    );
+    assert.ok(
+      lintels.every(
+        (b) =>
+          b.construction?.origin === 'cavity-lintel' &&
+          b.construction.openingId === declaredOpening.id &&
+          b.construction.regionId === statue.id,
+      ),
+    );
+    assert.ok(lintels.some((b) => b.construction?.role === 'bridge'));
     assert.ok(
       result.model.bricks.every(
         (b) =>

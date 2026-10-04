@@ -52,6 +52,14 @@ export function isOpaquePaletteColor(index: number) {
     (PALETTE[index].opacity ?? 1) >= 1
   );
 }
+/** Intentional opening construction, independent of source surface occupancy.
+ * The opening ID may identify a declared opening or a region-local design. */
+export type CavityLintelConstruction = {
+  origin: 'cavity-lintel';
+  openingId: string;
+  regionId?: string;
+  role: 'corbel' | 'bridge' | 'bond';
+};
 // Coordinates use studs in X/Z and plate units (3.2 mm) in Y.
 export type Brick = {
   id: number;
@@ -68,6 +76,7 @@ export type Brick = {
   rotation?: number;
   support?: boolean;
   installation?: string;
+  construction?: CavityLintelConstruction;
   pose?: Pose;
   section?: string;
   step?: number;

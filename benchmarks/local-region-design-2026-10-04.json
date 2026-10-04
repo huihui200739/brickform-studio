@@ -1,0 +1,911 @@
+{
+  "method": "bounded-local-region-design-audit",
+  "date": "2026-10-04",
+  "headAtAudit": "0a1dea3401a033d6fea4f44a0fc4e81b7548062c",
+  "conversionFingerprint": "ea8b01354e21a4b16e6fbdf4eb7624e7fbe7681db7360eab502ccee8e046d0b4",
+  "decision": "Reject production local source-plane fitting from these controls: House volume unchanged; Temple compound frame unsupported by a single plane.",
+  "productionAlgorithmChanged": false,
+  "screenshotIssueFixed": false,
+  "appearanceAccepted": false,
+  "physicalBuildVerified": false,
+  "artifacts": {
+    "houseEvidence": {
+      "path": "outputs/local-region-audit/house-evidence.json",
+      "sha256": "9c6c46a3677e7d81d8bbd58583fbbad05d23e762c598662db518e6f9af05e56a"
+    },
+    "houseVolume": {
+      "path": "outputs/local-region-audit/house-volume-effect.json",
+      "sha256": "6199899ebbc1a4b8ac4a2faddc602990df5035d2e27fff93e7a44707d3d76131"
+    },
+    "templeSummary": {
+      "path": "outputs/temple-local-geometry-audit/summary.json",
+      "sha256": "260febab213d15e6ff5b4b073ecb02090b503bb8f947b438d5595aa040d8dcc4"
+    },
+    "projectionGate": {
+      "path": "outputs/local-region-audit/projection-gate.json",
+      "sha256": "23456ea8b521ffba40209c28e39a34e13c5f1b6369a95337508ed1781df59e7d"
+    }
+  },
+  "house": {
+    "sourceRasterSha256": "7db1435cb4531df28da3719eea61516c7149636014c64ea8ee4b2429ae106225",
+    "sourceGLBSha256": "6028d6c60c1553c54991e00562924249178653dc0eabcb828e486bf3dbc76171",
+    "maskArtifactSha256": "fcd15d8ff36687bdf61e3cc50728b8f60b92380d126d08d33bcdb99feabd52f9",
+    "codeSha256": {
+      "lib/reference-colors.ts": "72f5dd1fb20af4ae0aabb17518fcd922e7b18edb3b0f00c11aef0c035b4272e0",
+      "lib/reference-visibility.ts": "839b65d403bb19fe59af05a65f0fa3b47bde631af62a8f707a5f700be4a085df",
+      "lib/reference-materials.ts": "432ba0f5359cd068744d129fa699b9f88349427819dd43e9c09a156f572f4854",
+      "lib/surface-materials.ts": "d2c175ca908ade61e04b35018de2bb8ef8130db3b9248b6fe91b0a5607a3a395",
+      "lib/scene-surface-graph.ts": "79a7bfc713a587864a7190038feac8120ac288cdfe8c93177d88f59e1d74b357",
+      "lib/surface-design.ts": "b2893f61b627610e889aa3d58ee54f3af2bca14f23a36a4dc07463fcfbf938a0",
+      "lib/surface-region-design.ts": "5c517640c0e2c498c8869e2fa447157b59069ae62255db2e9dca1386ac1641e4",
+      "lib/surface-projection-validation.ts": "2c028295e95215b517f34d1783771368493a6b74a550fbb056e62123e8d6abdf",
+      "lib/mesh-design.ts": "7ec747c4e3accb81d90a8c4514ad1f6fe8c7a1701d02fd5ce7364bb526ff9b2e",
+      "lib/voxel-materials.ts": "21803d158de94ddfa7ca9fd1d29b5fa9fa58476a1a71106977b4a27a10b4a320",
+      "scripts/correspondence/mesh-contours.ts": "ee14f71ed96fe1f0dd572efcd047866ff5fd4a0871ad743903a5949230381a1d",
+      "outputs/local-region-audit/mesh-diagnostic.ts": "41aa55390c5b1fe3350e03636cce81dac79ca4b1a2f133bacc98f57cbac5b18b"
+    },
+    "frozenSourceEvidence": {
+      "positions": "9c0cbbcd70b271b19d77d8d10fc4195e7d653f2df64b8f88b153e44e8b46a4c2",
+      "colors": "afea642940894bdf1eb39bdb67b9116ff07b67580bce50518276e6399390d483",
+      "features": "1fe5034857bcc99fc11aa4892f1ed6d17b5959c4f4621cc185893d0bee0c15b6",
+      "ledgerPositions": "9c0cbbcd70b271b19d77d8d10fc4195e7d653f2df64b8f88b153e44e8b46a4c2",
+      "ledgerRaster": "ed3a7ba90ee9b293fc9703fb6333b81f024a323217aa995484e138101013c71b",
+      "ledgerPixels": "1c1eb2eddfb25f813cfd30a528926a6efc47497ec9dcb1cd9158d4e4ddafd9aa",
+      "ledgerCamera": "{\"yaw\":35,\"pitch\":10,\"perspective\":0}"
+    },
+    "camera": {
+      "yaw": 35,
+      "pitch": 10,
+      "perspective": 0
+    },
+    "resolution": 28,
+    "baselineCells": 12259,
+    "creasePairSupport": {
+      "candidatePairs": 8360,
+      "supportCounts": {
+        "both": 0,
+        "one": 447,
+        "neither": 7913
+      },
+      "failureCounts": {
+        "thin-projected-support": 7460,
+        "nonplanar": 4574,
+        "normal-spread": 4437,
+        "small-source-area": 4416,
+        "small-projected-area": 5840,
+        "small-projected-span": 3929,
+        "one-face": 1826
+      },
+      "stablePatches": 32
+    },
+    "patches": [
+      {
+        "mask": 0,
+        "label": "door candidate",
+        "patch": 60564,
+        "sourceFaceCount": 762,
+        "observedFaceCount": 755,
+        "fitOriginal": {
+          "normal": [
+            -0.0027079723168577058,
+            -0.006706711542676321,
+            0.9999738431110159
+          ],
+          "center": [
+            0.0035073277004214545,
+            -0.6193671272491634,
+            0.30207341398986576
+          ],
+          "rmseStuds": 0.011462473381958587,
+          "residualStuds": {
+            "min": 1.0573092855108211e-06,
+            "p50": 0.006751662694300626,
+            "p95": 0.02129697286700294,
+            "max": 0.053801819085793526
+          },
+          "areaStudsSquared": 18.457725877427364
+        },
+        "currentSurfaceDesign": {
+          "changedTargetFaces": 0,
+          "movedTargetVertices": 0,
+          "maximumTargetVertexDisplacementStuds": 0,
+          "fitCurrent": {
+            "normal": [
+              -0.0027079723168577058,
+              -0.006706711542676321,
+              0.9999738431110159
+            ],
+            "center": [
+              0.0035073277004214545,
+              -0.6193671272491634,
+              0.30207341398986576
+            ],
+            "rmseStuds": 0.011462473381958587,
+            "residualStuds": {
+              "min": 1.0573092855108211e-06,
+              "p50": 0.006751662694300626,
+              "p95": 0.02129697286700294,
+              "max": 0.053801819085793526
+            },
+            "areaStudsSquared": 18.457725877427364
+          }
+        },
+        "proposal": {
+          "method": "area-weighted-source-PCA-plane-interior-exact-vertices",
+          "protectedBoundaryVertices": 116,
+          "eligibleInteriorVertices": 323,
+          "movedInteriorVertices": 323,
+          "maxDisplacementStuds": 0.024198063543454502,
+          "displacementFraction": 1,
+          "minimumOriginalToCandidateNormalDot": 0.8945381635936298,
+          "fitProposed": {
+            "normal": [
+              -0.002245390732881734,
+              -0.006415206559528656,
+              0.999976901405855
+            ],
+            "center": [
+              0.0035074344286271392,
+              -0.6193668634572617,
+              0.3020340278785181
+            ],
+            "rmseStuds": 0.006790791076462152,
+            "residualStuds": {
+              "min": 2.8815847381757987e-06,
+              "p50": 0.0008156351921199438,
+              "p95": 0.016248103917646695,
+              "max": 0.053949334839186264
+            },
+            "areaStudsSquared": 18.457725877427364
+          },
+          "projection": {
+            "method": "fixed-source-camera",
+            "passed": true,
+            "silhouetteChangedPixels": 0,
+            "materialChangedPixels": 1,
+            "comparedPixels": 20740,
+            "maxVertexDisplacementPixels": 0.09649999087124207,
+            "failureReasons": []
+          },
+          "colorsUnchanged": true,
+          "featuresUnchanged": true,
+          "ledgerUnchanged": true
+        },
+        "volume": {
+          "dimensionsBefore": [
+            28,
+            70,
+            28
+          ],
+          "dimensionsAfter": [
+            28,
+            70,
+            28
+          ],
+          "occupiedBefore": 12259,
+          "occupiedAfter": 12259,
+          "addedCells": [],
+          "removedCells": [],
+          "boundaryMaterialChanges": [],
+          "interiorMaterialChanges": [],
+          "dominantBefore": 4,
+          "dominantAfter": 4,
+          "openRowsBefore": 1,
+          "openRowsAfter": 1,
+          "intersectedBefore": 985,
+          "intersectedAfter": 985
+        },
+        "sourceFaceIdsSha256": "f21a1cc8108412db9c6c2df5ee00c2c2607fda58426ada2001a605a38be3a261",
+        "actualPipelineChangedTargetFaces": 760,
+        "actualPipelineChangedOutsideTargetFaces": 0
+      },
+      {
+        "mask": 3,
+        "label": "front upper window candidate",
+        "patch": 60866,
+        "sourceFaceCount": 292,
+        "observedFaceCount": 275,
+        "fitOriginal": {
+          "normal": [
+            0.00013982674425542523,
+            -0.0034252428912478184,
+            0.9999941240625454
+          ],
+          "center": [
+            6.590283959420263e-06,
+            -0.09032821183428373,
+            0.29312007854525135
+          ],
+          "rmseStuds": 0.009592436984366355,
+          "residualStuds": {
+            "min": 2.3155262146161994e-05,
+            "p50": 0.003494959217206947,
+            "p95": 0.02297017009468655,
+            "max": 0.06953864208303429
+          },
+          "areaStudsSquared": 7.180016866742635
+        },
+        "currentSurfaceDesign": {
+          "changedTargetFaces": 0,
+          "movedTargetVertices": 0,
+          "maximumTargetVertexDisplacementStuds": 0,
+          "fitCurrent": {
+            "normal": [
+              0.00013982674425542523,
+              -0.0034252428912478184,
+              0.9999941240625454
+            ],
+            "center": [
+              6.590283959420263e-06,
+              -0.09032821183428373,
+              0.29312007854525135
+            ],
+            "rmseStuds": 0.009592436984366355,
+            "residualStuds": {
+              "min": 2.3155262146161994e-05,
+              "p50": 0.003494959217206947,
+              "p95": 0.02297017009468655,
+              "max": 0.06953864208303429
+            },
+            "areaStudsSquared": 7.180016866742635
+          }
+        },
+        "proposal": {
+          "method": "area-weighted-source-PCA-plane-interior-exact-vertices",
+          "protectedBoundaryVertices": 44,
+          "eligibleInteriorVertices": 125,
+          "movedInteriorVertices": 125,
+          "maxDisplacementStuds": 0.012874279843511683,
+          "displacementFraction": 1,
+          "minimumOriginalToCandidateNormalDot": 0.9975128840859089,
+          "fitProposed": {
+            "normal": [
+              0.00017438046265908118,
+              -0.0020008819441984403,
+              0.9999979830294157
+            ],
+            "center": [
+              6.616549521357886e-06,
+              -0.09032885520449453,
+              0.2933079131705517
+            ],
+            "rmseStuds": 0.00826757241900714,
+            "residualStuds": {
+              "min": 0.00045170213076120547,
+              "p50": 0.002746340248949419,
+              "p95": 0.01874588192943594,
+              "max": 0.06529160564497906
+            },
+            "areaStudsSquared": 7.180016866742635
+          },
+          "projection": {
+            "method": "fixed-source-camera",
+            "passed": true,
+            "silhouetteChangedPixels": 0,
+            "materialChangedPixels": 0,
+            "comparedPixels": 20740,
+            "maxVertexDisplacementPixels": 0.0510902668132038,
+            "failureReasons": []
+          },
+          "colorsUnchanged": true,
+          "featuresUnchanged": true,
+          "ledgerUnchanged": true
+        },
+        "volume": {
+          "dimensionsBefore": [
+            28,
+            70,
+            28
+          ],
+          "dimensionsAfter": [
+            28,
+            70,
+            28
+          ],
+          "occupiedBefore": 12259,
+          "occupiedAfter": 12259,
+          "addedCells": [],
+          "removedCells": [],
+          "boundaryMaterialChanges": [],
+          "interiorMaterialChanges": [],
+          "dominantBefore": 4,
+          "dominantAfter": 4,
+          "openRowsBefore": 1,
+          "openRowsAfter": 1,
+          "intersectedBefore": 985,
+          "intersectedAfter": 985
+        },
+        "sourceFaceIdsSha256": "2a44f5ce489290413984e33710054e6301dca340d5f3f392daac94fd6e9c369d",
+        "actualPipelineChangedTargetFaces": 291,
+        "actualPipelineChangedOutsideTargetFaces": 0
+      },
+      {
+        "mask": 4,
+        "label": "right upper window candidate",
+        "patch": 124066,
+        "sourceFaceCount": 238,
+        "observedFaceCount": 176,
+        "fitOriginal": {
+          "normal": [
+            0.9999420371620289,
+            -0.007977236182626728,
+            -0.007230907214049421
+          ],
+          "center": [
+            0.48551777752510233,
+            -0.08767202200304383,
+            -0.16504339264088955
+          ],
+          "rmseStuds": 0.00945388030685226,
+          "residualStuds": {
+            "min": 0.00010702239703670616,
+            "p50": 0.0052606027629892305,
+            "p95": 0.02062097342205518,
+            "max": 0.03846922971195283
+          },
+          "areaStudsSquared": 5.847078318534202
+        },
+        "currentSurfaceDesign": {
+          "changedTargetFaces": 0,
+          "movedTargetVertices": 0,
+          "maximumTargetVertexDisplacementStuds": 0,
+          "fitCurrent": {
+            "normal": [
+              0.9999420371620289,
+              -0.007977236182626728,
+              -0.007230907214049421
+            ],
+            "center": [
+              0.48551777752510233,
+              -0.08767202200304383,
+              -0.16504339264088955
+            ],
+            "rmseStuds": 0.00945388030685226,
+            "residualStuds": {
+              "min": 0.00010702239703670616,
+              "p50": 0.0052606027629892305,
+              "p95": 0.02062097342205518,
+              "max": 0.03846922971195283
+            },
+            "areaStudsSquared": 5.847078318534202
+          }
+        },
+        "proposal": {
+          "method": "area-weighted-source-PCA-plane-interior-exact-vertices",
+          "protectedBoundaryVertices": 40,
+          "eligibleInteriorVertices": 100,
+          "movedInteriorVertices": 100,
+          "maxDisplacementStuds": 0.022388835572449327,
+          "displacementFraction": 1,
+          "minimumOriginalToCandidateNormalDot": 0.988482941332932,
+          "fitProposed": {
+            "normal": [
+              0.9999687128772482,
+              -0.0056283747125605325,
+              -0.005558296925716729
+            ],
+            "center": [
+              0.48553572902569825,
+              -0.08767216536517611,
+              -0.16504352231808744
+            ],
+            "rmseStuds": 0.005290226791894838,
+            "residualStuds": {
+              "min": 1.3983182442094252e-05,
+              "p50": 0.0016539532786662848,
+              "p95": 0.013587732958004852,
+              "max": 0.03333218938106319
+            },
+            "areaStudsSquared": 5.847078318534202
+          },
+          "projection": {
+            "method": "fixed-source-camera",
+            "passed": true,
+            "silhouetteChangedPixels": 0,
+            "materialChangedPixels": 1,
+            "comparedPixels": 20740,
+            "maxVertexDisplacementPixels": 0.12500101739545239,
+            "failureReasons": []
+          },
+          "colorsUnchanged": true,
+          "featuresUnchanged": true,
+          "ledgerUnchanged": true
+        },
+        "volume": {
+          "dimensionsBefore": [
+            28,
+            70,
+            28
+          ],
+          "dimensionsAfter": [
+            28,
+            70,
+            28
+          ],
+          "occupiedBefore": 12259,
+          "occupiedAfter": 12259,
+          "addedCells": [],
+          "removedCells": [],
+          "boundaryMaterialChanges": [],
+          "interiorMaterialChanges": [],
+          "dominantBefore": 4,
+          "dominantAfter": 4,
+          "openRowsBefore": 1,
+          "openRowsAfter": 1,
+          "intersectedBefore": 985,
+          "intersectedAfter": 985
+        },
+        "sourceFaceIdsSha256": "45f8252ae5eabfec6676bb9e6d00a38951b253d781abfcc958d54b90e69a0f8b",
+        "actualPipelineChangedTargetFaces": 237,
+        "actualPipelineChangedOutsideTargetFaces": 0
+      },
+      {
+        "mask": 5,
+        "label": "right lower window candidate",
+        "patch": 118898,
+        "sourceFaceCount": 264,
+        "observedFaceCount": 173,
+        "fitOriginal": {
+          "normal": [
+            0.9999819049495249,
+            -0.0018093981801114744,
+            0.005737233806027618
+          ],
+          "center": [
+            0.46450080580445907,
+            -0.5841159294929483,
+            -0.16572757990053938
+          ],
+          "rmseStuds": 0.013488916476027658,
+          "residualStuds": {
+            "min": 0.0002808406013098225,
+            "p50": 0.00599854108523754,
+            "p95": 0.019737185611560876,
+            "max": 0.07828977206189777
+          },
+          "areaStudsSquared": 6.495334401265789
+        },
+        "currentSurfaceDesign": {
+          "changedTargetFaces": 0,
+          "movedTargetVertices": 0,
+          "maximumTargetVertexDisplacementStuds": 0,
+          "fitCurrent": {
+            "normal": [
+              0.9999819049495249,
+              -0.0018093981801114744,
+              0.005737233806027618
+            ],
+            "center": [
+              0.46450080580445907,
+              -0.5841159294929483,
+              -0.16572757990053938
+            ],
+            "rmseStuds": 0.013488916476027658,
+            "residualStuds": {
+              "min": 0.0002808406013098225,
+              "p50": 0.00599854108523754,
+              "p95": 0.019737185611560876,
+              "max": 0.07828977206189777
+            },
+            "areaStudsSquared": 6.495334401265789
+          }
+        },
+        "proposal": {
+          "method": "area-weighted-source-PCA-plane-interior-exact-vertices",
+          "protectedBoundaryVertices": 46,
+          "eligibleInteriorVertices": 110,
+          "movedInteriorVertices": 110,
+          "maxDisplacementStuds": 0.014112983731533935,
+          "displacementFraction": 1,
+          "minimumOriginalToCandidateNormalDot": 0.996323610658558,
+          "fitProposed": {
+            "normal": [
+              0.9999768245241163,
+              0.0014361155873647388,
+              0.0066549219893570905
+            ],
+            "center": [
+              0.46470172507317126,
+              -0.5841162936952085,
+              -0.16572642684571998
+            ],
+            "rmseStuds": 0.011512844224994245,
+            "residualStuds": {
+              "min": 3.625998959043741e-05,
+              "p50": 0.003521620023317002,
+              "p95": 0.021545002815007906,
+              "max": 0.07004820372263368
+            },
+            "areaStudsSquared": 6.495334401265789
+          },
+          "projection": {
+            "method": "fixed-source-camera",
+            "passed": true,
+            "silhouetteChangedPixels": 0,
+            "materialChangedPixels": 0,
+            "comparedPixels": 20740,
+            "maxVertexDisplacementPixels": 0.07805272258199614,
+            "failureReasons": []
+          },
+          "colorsUnchanged": true,
+          "featuresUnchanged": true,
+          "ledgerUnchanged": true
+        },
+        "volume": {
+          "dimensionsBefore": [
+            28,
+            70,
+            28
+          ],
+          "dimensionsAfter": [
+            28,
+            70,
+            28
+          ],
+          "occupiedBefore": 12259,
+          "occupiedAfter": 12259,
+          "addedCells": [],
+          "removedCells": [],
+          "boundaryMaterialChanges": [],
+          "interiorMaterialChanges": [],
+          "dominantBefore": 4,
+          "dominantAfter": 4,
+          "openRowsBefore": 1,
+          "openRowsAfter": 1,
+          "intersectedBefore": 985,
+          "intersectedAfter": 985
+        },
+        "sourceFaceIdsSha256": "0fe06731c6d79c9ddd307a61211872eb25e9016446ef545b323a1be9729ec80f",
+        "actualPipelineChangedTargetFaces": 262,
+        "actualPipelineChangedOutsideTargetFaces": 0
+      }
+    ],
+    "limits": [
+      "Only four preselected source-stable patches; masks propose correspondence, not semantic or camera truth.",
+      "All exact vertices touching outside source faces are fixed. No new faces, closure, bridges, palette changes, grid snapping, roof proposal or hidden geometry inferred.",
+      "Volume at 28 only, without packing, assembly, part selection or strength validation.",
+      "Fixed-camera RGB construction is a deterministic source ledger recreation, not new ML/material analysis.",
+      "A difference in occupied cells or boundary color is an effect, not evidence of a physically correct door/window."
+    ]
+  },
+  "temple": {
+    "sourceHashes": {
+      "sourceCanonicalRGBA": "3b15881cb3e604ae23d1d8823471ffc04282961a22928481444e729ec6da7244",
+      "sourceGLB": "432bff9f81a91d9e02f9e8ba3b09344b107fe2a6d08a1266ddce172215ed051f",
+      "selectedModel": "b953902905baa65092dfb98c7de8b9a02f8e61f975b5cb808550f18211c7e9e1",
+      "scene": "b693151ce3d12186370bf9e63a7c8544ade94d306d73defdf45b8663b3034550"
+    },
+    "defaultModelSha256": "bacbaa92bcb9a705639e196dd7671713e090ce23e7eda38af3171923ad584312",
+    "defaultBricks": 8613,
+    "optionalModelSha256": "b953902905baa65092dfb98c7de8b9a02f8e61f975b5cb808550f18211c7e9e1",
+    "optionalBricks": 7953,
+    "historicalScreenshotBricks": 8563,
+    "screenshotExactReplay": false,
+    "camera": {
+      "yaw": 0,
+      "pitch": 20,
+      "perspective": 0.5
+    },
+    "plane": {
+      "planeFrontCells": 608,
+      "missingPlaneFrontCells": 0,
+      "subjectInsideOpening": 0,
+      "note": "Counts at Z14 refer to the declared front layer, not frontmost subject cells at depths outside the reserved opening."
+    },
+    "selected": [
+      {
+        "label": "A",
+        "cell": [
+          19,
+          50,
+          25
+        ],
+        "ownership": "source-surface-cell",
+        "rawClippedAreaStudsSquared": 0.22533875915416235,
+        "designedClippedAreaStudsSquared": 0.22533875915416235,
+        "sourceFacesTouchingCell": [
+          66180,
+          66181,
+          66179,
+          66154,
+          66153,
+          66152,
+          66155
+        ],
+        "patchFaces": 113,
+        "patchAreaStudsSquared": 5.261132769350169,
+        "pcaDiagnostic": {
+          "normal": [
+            0.9227489414042647,
+            0.3852274507706269,
+            -0.011584572071223466
+          ],
+          "rmsStuds": 0.34666470976386293,
+          "maxResidualStuds": 0.8503745151921489,
+          "signedNormalConsensus": 0.30517616083822746,
+          "normalRmsDegrees": 76.44604405919166,
+          "adjacentNormalAngleMedianDegrees": 12.583543971089242,
+          "adjacentNormalAngleP90Degrees": 46.396490691901256
+        },
+        "uniqueOriginalSamples": 36,
+        "boundarySampleCount": 31,
+        "cachedSceneMaskSampleCounts": {
+          "tree": 0,
+          "building": 21,
+          "lamp": 0,
+          "statue": 6,
+          "brazier": 20,
+          "decor": 6,
+          "person": 0
+        },
+        "defaultBrickSummary": [
+          {
+            "id": 6448,
+            "part": "3070b",
+            "x": 19,
+            "y": 50,
+            "z": 25,
+            "w": 1,
+            "d": 1,
+            "h": 1,
+            "color": 9,
+            "section": "subject"
+          }
+        ],
+        "defaultPatchColorCounts": {
+          "nominalCells": 10,
+          "byColor": {
+            "7": 9,
+            "9": 1
+          },
+          "bySection": {
+            "subject": 10
+          },
+          "distinctBricks": 7
+        },
+        "optionalPatchColorCounts": {
+          "nominalCells": 11,
+          "byColor": {
+            "7": 11
+          },
+          "bySection": {
+            "supports": 1,
+            "subject": 10
+          },
+          "distinctBricks": 9
+        },
+        "subjectCoordinatesEqual": true
+      },
+      {
+        "label": "B",
+        "cell": [
+          30,
+          50,
+          25
+        ],
+        "ownership": "source-surface-cell",
+        "rawClippedAreaStudsSquared": 0.17381915036809586,
+        "designedClippedAreaStudsSquared": 0.17381915036809586,
+        "sourceFacesTouchingCell": [
+          103709,
+          103708,
+          103707,
+          103689,
+          103687,
+          103686
+        ],
+        "patchFaces": 115,
+        "patchAreaStudsSquared": 5.089648485983601,
+        "pcaDiagnostic": {
+          "normal": [
+            -0.9254037641884824,
+            0.377342406449824,
+            0.035221889790918615
+          ],
+          "rmsStuds": 0.3360475673442359,
+          "maxResidualStuds": 0.8686876221262855,
+          "signedNormalConsensus": 0.32805484543261076,
+          "normalRmsDegrees": 74.76548419564,
+          "adjacentNormalAngleMedianDegrees": 11.945965713527663,
+          "adjacentNormalAngleP90Degrees": 44.73761074780686
+        },
+        "uniqueOriginalSamples": 42,
+        "boundarySampleCount": 22,
+        "cachedSceneMaskSampleCounts": {
+          "tree": 0,
+          "building": 32,
+          "lamp": 5,
+          "statue": 5,
+          "brazier": 13,
+          "decor": 0,
+          "person": 0
+        },
+        "defaultBrickSummary": [
+          {
+            "id": 6446,
+            "part": "3069b",
+            "x": 30,
+            "y": 50,
+            "z": 24,
+            "w": 1,
+            "d": 2,
+            "h": 1,
+            "color": 7,
+            "section": "subject"
+          }
+        ],
+        "defaultPatchColorCounts": {
+          "nominalCells": 10,
+          "byColor": {
+            "7": 9,
+            "9": 1
+          },
+          "bySection": {
+            "subject": 10
+          },
+          "distinctBricks": 6
+        },
+        "optionalPatchColorCounts": {
+          "nominalCells": 11,
+          "byColor": {
+            "7": 11
+          },
+          "bySection": {
+            "supports": 1,
+            "subject": 10
+          },
+          "distinctBricks": 9
+        },
+        "subjectCoordinatesEqual": true
+      },
+      {
+        "label": "C",
+        "cell": [
+          21,
+          76,
+          22
+        ],
+        "ownership": "installed-cavity-lintel",
+        "rawClippedAreaStudsSquared": 0,
+        "designedClippedAreaStudsSquared": 0,
+        "sourceFacesTouchingCell": [],
+        "patchFaces": 651,
+        "patchAreaStudsSquared": 35.07119004720701,
+        "pcaDiagnostic": {
+          "normal": [
+            0.0006064348165578773,
+            -0.6899132149740439,
+            0.723891834489789
+          ],
+          "rmsStuds": 0.1902129286258378,
+          "maxResidualStuds": 0.7845175954663275,
+          "signedNormalConsensus": 0.8615854355720622,
+          "normalRmsDegrees": 31.00788344351151,
+          "adjacentNormalAngleMedianDegrees": 4.190250358761969,
+          "adjacentNormalAngleP90Degrees": 22.06371732676469
+        },
+        "uniqueOriginalSamples": 379,
+        "boundarySampleCount": 332,
+        "cachedSceneMaskSampleCounts": {
+          "tree": 0,
+          "building": 379,
+          "lamp": 0,
+          "statue": 0,
+          "brazier": 0,
+          "decor": 0,
+          "person": 0
+        },
+        "defaultBrickSummary": [
+          {
+            "id": 7429,
+            "part": "3034",
+            "x": 21,
+            "y": 76,
+            "z": 21,
+            "w": 8,
+            "d": 2,
+            "h": 1,
+            "color": 7,
+            "section": "subject"
+          }
+        ],
+        "defaultPatchColorCounts": {
+          "nominalCells": 130,
+          "byColor": {
+            "7": 67,
+            "9": 28,
+            "10": 21,
+            "8": 14
+          },
+          "bySection": {
+            "subject": 130
+          },
+          "distinctBricks": 41
+        },
+        "optionalPatchColorCounts": {
+          "nominalCells": 131,
+          "byColor": {
+            "7": 131
+          },
+          "bySection": {
+            "subject": 130,
+            "supports": 1
+          },
+          "distinctBricks": 33
+        },
+        "subjectCoordinatesEqual": true
+      }
+    ],
+    "limits": "Area is exact clipped current designed source surface, but not an independent geometry truth label. PCA uses each bounded diagnostic patch, which may contain real sharp/curved ornaments; its large residual does not prove noise. Scene masks are cached inferred exclusions, not rerun. Ledger grid centres use +.5/191 then Math.round: <=.7072-pixel rounding alone, plus ~1.4-1.6-pixel projection-grid step. Camera interior alignment is not verified. Nominal grid cells approximate part exterior; C is explicit bridge construction."
+  },
+  "wholeSurfaceProjectionControls": [
+    {
+      "id": "house",
+      "resolution": 28,
+      "patches": 7,
+      "inclined": 0,
+      "validation": {
+        "method": "fixed-source-camera",
+        "passed": true,
+        "silhouetteChangedPixels": 3,
+        "materialChangedPixels": 9,
+        "comparedPixels": 20743,
+        "maxVertexDisplacementPixels": 0.5536767814666091,
+        "failureReasons": []
+      }
+    },
+    {
+      "id": "house",
+      "resolution": 48,
+      "patches": 22,
+      "inclined": 2,
+      "validation": {
+        "method": "fixed-source-camera",
+        "passed": true,
+        "silhouetteChangedPixels": 4,
+        "materialChangedPixels": 59,
+        "comparedPixels": 20744,
+        "maxVertexDisplacementPixels": 0.6310125689547936,
+        "failureReasons": []
+      }
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 28,
+      "patches": 14,
+      "inclined": 0,
+      "validation": {
+        "method": "fixed-source-camera",
+        "passed": true,
+        "silhouetteChangedPixels": 0,
+        "materialChangedPixels": 43,
+        "comparedPixels": 27493,
+        "maxVertexDisplacementPixels": 0.9082141094605565,
+        "failureReasons": []
+      }
+    },
+    {
+      "id": "temple-standard",
+      "resolution": 48,
+      "patches": 32,
+      "inclined": 0,
+      "validation": {
+        "method": "fixed-source-camera",
+        "passed": true,
+        "silhouetteChangedPixels": 0,
+        "materialChangedPixels": 57,
+        "comparedPixels": 27493,
+        "maxVertexDisplacementPixels": 0.9082141094605565,
+        "failureReasons": []
+      }
+    }
+  ],
+  "scope": [
+    "Original source and cached semantic masks; no new neural inference, weight downloads or camera fit.",
+    "Four local volume replays at28; no brick packing, procurement, assembly strength or physical trial.",
+    "Three fixed Temple probes with exact source triangle-cell intersections and nominal brick cells; no whole-model region truth labels.",
+    "Four current surface fits at28/48 through original fixed camera; passing these does not verify internal image correspondence or material identity.",
+    "Existing six cross-class source inputs are public generative-engine example renders, not independent real-photo validation."
+  ],
+  "nextImplementationGate": "Source-owned regional target with actual final-part benefit, protected boundaries/holes/colors/structural beam and explicit no-op/rejection handling."
+}

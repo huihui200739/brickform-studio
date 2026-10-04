@@ -1,7 +1,11 @@
-import type { Brick } from './brick-engine.ts';
+import type { Brick, CavityLintelConstruction } from './brick-engine.ts';
 import type { BBox3d } from './scene/scene-types.ts';
 
 type Cell = { color: number; support: boolean };
+export type CavityLintelOpening = Pick<
+  CavityLintelConstruction,
+  'openingId' | 'regionId'
+>;
 
 /** Install catalog plates over an image-supported opening. The two side
  * corbels bond to the jambs; the 2 x 8 plate bonds to both corbels. */
@@ -12,6 +16,7 @@ export function installCavityLintel(
   axis: 0 | 2,
   color: number,
   blocked?: (x: number, y: number, z: number) => boolean,
+  opening?: CavityLintelOpening,
 ): Brick[] {
   const cross = axis === 0 ? 2 : 0;
   const left = box.min[cross],
@@ -25,6 +30,7 @@ export function installCavityLintel(
     run: number,
     y: number,
     length: number,
+    role: CavityLintelConstruction['role'],
   ) => {
     const b: Brick = {
       id: 0,
@@ -36,6 +42,15 @@ export function installCavityLintel(
       d: axis === 2 ? 2 : length,
       h: 1,
       color,
+      ...(opening
+        ? {
+            construction: {
+              ...opening,
+              origin: 'cavity-lintel' as const,
+              role,
+            },
+          }
+        : {}),
       installation:
         part === '3020' && y === box.max[1]
           ? '把薄板外侧的两列凸点扣在入口侧壁顶面，内侧两列伸向入口，作为上方跨梁的承托。左右托板装好后再安装跨梁。'
@@ -93,17 +108,31 @@ export function installCavityLintel(
       // Span follows the observed opening. Grow the beam above it, never a
       // pillar inside it. Two cantilevers and an overlapping upper plate use
       // catalog dimensions; the structural checker verifies their contacts.
-      put('3020', left - 2, run, shelfY, 4);
-      put('3020', right - 2, run, shelfY, 4);
-      put('3034', left - 2, run, shelfY + 1, 8);
-      if (span >= 12) put('3034', right - 6, run, shelfY + 1, 8);
-      else put('3020', right - 2, run, shelfY + 1, 4);
-      put('3034', Math.ceil((left + right - 8) / 2), run, shelfY + 2, 8);
+      put('3020', left - 2, run, shelfY, 4, 'corbel');
+      put('3020', right - 2, run, shelfY, 4, 'corbel');
+      put('3034', left - 2, run, shelfY + 1, 8, 'bridge');
+      if (span >= 12) put('3034', right - 6, run, shelfY + 1, 8, 'bridge');
+      else put('3020', right - 2, run, shelfY + 1, 4, 'bridge');
+      put(
+        '3034',
+        Math.ceil((left + right - 8) / 2),
+        run,
+        shelfY + 2,
+        8,
+        'bond',
+      );
     } else if (span > 6) {
-      put('3020', left - 2, run, shelfY, 4);
-      put('3020', right - 2, run, shelfY, 4);
-      put('3034', Math.floor((left + right - 8) / 2), run, shelfY + 1, 8);
-    } else put('3034', left - 1, run, shelfY, 8);
+      put('3020', left - 2, run, shelfY, 4, 'corbel');
+      put('3020', right - 2, run, shelfY, 4, 'corbel');
+      put(
+        '3034',
+        Math.floor((left + right - 8) / 2),
+        run,
+        shelfY + 1,
+        8,
+        'bridge',
+      );
+    } else put('3034', left - 1, run, shelfY, 8, 'bridge');
   }
   return fixed;
 }
