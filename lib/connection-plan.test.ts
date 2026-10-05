@@ -11,6 +11,33 @@ import {
   stageBricks,
 } from './build-instructions.ts';
 import { manualHTML } from './manual.ts';
+import { execFileSync } from 'node:child_process';
+
+void test('long connected designs still plan with a restricted browser-like call stack', () => {
+  const output = execFileSync(
+    process.execPath,
+    [
+      '--stack-size=128',
+      '--experimental-strip-types',
+      '--input-type=module',
+      '-e',
+      `import assert from 'node:assert/strict';
+       import {planGridAssembly} from ${JSON.stringify(new URL('./connection-plan.ts', import.meta.url).href)};
+       const bricks = Array.from({length: 800}, (_, i) => ({id:i+1,x:0,y:i,z:0,w:1,h:1,d:1,part:'3024',color:7}));
+       const plan = planGridAssembly(bricks);
+       assert.deepEqual(plan.unresolved, []);
+       assert.equal(plan.ordered.length, 800);
+       for (let i=0;i<800;i++) {
+         assert.equal(plan.ordered[i].brick.id, i+1);
+         assert.equal(plan.ordered[i].move.direction, 'down');
+         assert.deepEqual(plan.ordered[i].move.parentIds, i ? [i] : []);
+       }
+       console.log('planned');`,
+    ],
+    { encoding: 'utf8', timeout: 20000 },
+  );
+  assert.equal(output.trim(), 'planned');
+});
 
 const brick = (
   id: number,

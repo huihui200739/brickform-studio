@@ -42,28 +42,45 @@ export function planGridAssembly(bricks: Brick[]) {
       low = new Map<number, number>();
     const critical = new Set<number>();
     let clock = 0;
-    const visit = (id: number, parent: number | undefined) => {
+    const frame = (id: number, parent: number | undefined) => {
       discovery.set(id, ++clock);
       low.set(id, clock);
-      let children = 0;
       const neighbors =
         id === root
           ? bases
           : [...links.get(id)!, ...(byId.get(id)!.y === 0 ? [root] : [])];
-      for (const other of neighbors) {
+      return { id, parent, neighbors, next: 0, children: 0 };
+    };
+    // Large high-detail models can have thousands of consecutive graph
+    // vertices. Use explicit DFS frames so browser/worker call-stack limits
+    // cannot prevent conversion. Neighbor order and articulation rules remain
+    // identical to the recursive traversal.
+    const stack = [frame(root, undefined)];
+    while (stack.length) {
+      const current = stack[stack.length - 1];
+      const { id, parent, neighbors } = current;
+      if (current.next < neighbors.length) {
+        const other = neighbors[current.next++];
         if (other !== root && !remaining.has(other)) continue;
         if (!discovery.has(other)) {
-          children++;
-          visit(other, id);
-          low.set(id, Math.min(low.get(id)!, low.get(other)!));
-          if (parent !== undefined && low.get(other)! >= discovery.get(id)!)
-            critical.add(id);
+          current.children++;
+          stack.push(frame(other, id));
         } else if (other !== parent)
           low.set(id, Math.min(low.get(id)!, discovery.get(other)!));
+        continue;
       }
-      if (parent === undefined && children > 1) critical.add(id);
-    };
-    visit(root, undefined);
+      stack.pop();
+      if (parent === undefined) {
+        if (current.children > 1) critical.add(id);
+      } else {
+        low.set(parent, Math.min(low.get(parent)!, low.get(id)!));
+        if (
+          stack[stack.length - 1].parent !== undefined &&
+          low.get(id)! >= discovery.get(parent)!
+        )
+          critical.add(parent);
+      }
+    }
     return { critical, reachable: discovery };
   };
   // Highest-first removal favors familiar bottom-up building after reversal.
