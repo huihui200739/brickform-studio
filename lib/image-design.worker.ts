@@ -23,6 +23,7 @@ import {
 } from './material-hypothesis.ts';
 import type { TriangleMesh } from './mesh-types.ts';
 import type { Raster } from './brick-engine.ts';
+import { packWorkspaceDesign } from './workspace-design.ts';
 self.onmessage = async (
   event: MessageEvent<{
     mesh?: TriangleMesh;
@@ -30,7 +31,9 @@ self.onmessage = async (
     views?: MultiView[];
     volume?: MultiViewVolume;
     raster: Raster;
-    options: ImageDesignOptions;
+    options: ImageDesignOptions & {
+      colorMode?: 'coherent' | 'clean' | 'faithful';
+    };
     name: string;
     action?:
       | 'color'
@@ -38,11 +41,17 @@ self.onmessage = async (
       | 'components'
       | 'views'
       | 'views-draft'
-      | 'blueprint';
+      | 'blueprint'
+      | 'workspace-design';
+    detailEnhancement?: boolean;
+    detectedCount?: number;
+    semanticWarning?: string;
     materialCandidate?: MaterialHypothesisCandidate;
     pitch?: number;
     depth?: number;
     softenShadows?: boolean;
+    unobservedPolicy?: import('./source-material-provenance.ts').UnobservedMaterialPolicy;
+    materialMode?: 'material-first' | 'radiance';
     autoSemanticRefinement?: boolean;
     camera?: { yaw: number; pitch: number; perspective: number };
   }>,
@@ -64,6 +73,10 @@ self.onmessage = async (
           raster,
           event.data.camera,
           event.data.softenShadows,
+          {
+            unobservedPolicy: event.data.unobservedPolicy,
+            materialMode: event.data.materialMode,
+          },
         ),
       });
       return;
@@ -99,6 +112,28 @@ self.onmessage = async (
           options.resolution,
           name,
         ),
+      });
+      return;
+    }
+    if (event.data.action === 'workspace-design') {
+      if (!mesh) throw Error('缺少已确认的三维草稿，不能开始细节转换。');
+      self.postMessage({
+        design: packWorkspaceDesign({
+          action: 'workspace-design',
+          mesh,
+          raster,
+          name: mesh.name,
+          options: {
+            resolution: options.resolution,
+            ...(options.colorMode ? { colorMode: options.colorMode } : {}),
+          },
+          regions,
+          camera: event.data.camera || mesh.coloring,
+          autoSemanticRefinement: false,
+          detailEnhancement: event.data.detailEnhancement !== false,
+          detectedCount: event.data.detectedCount ?? regions.length,
+          semanticWarning: event.data.semanticWarning,
+        }),
       });
       return;
     }
@@ -148,12 +183,12 @@ self.onmessage = async (
       ? meshToDesignAuto(mesh, options.resolution, refined, 48, {
           image: raster,
           camera: event.data.camera || mesh.coloring,
-        })
+        }, { colorMode: options.colorMode })
       : {
           model: meshToDesign(mesh, options.resolution, [], {
             image: raster,
             camera: event.data.camera || mesh.coloring,
-          }),
+          }, { colorMode: options.colorMode }),
           applied: [] as ComponentRegion[],
           dropped: [] as ComponentRegion[],
         };

@@ -3272,21 +3272,7 @@ h1 {
     order: -1;
   }
 }
-.assembly-preview:fullscreen {
-  background: #eef1f5;
-  display: flex;
-  flex-direction: column;
-}
-.assembly-preview:fullscreen .viewer {
-  flex: 1;
-  height: auto;
-  min-height: 240px;
-}
-.assembly-preview:fullscreen .layer-explorer {
-  flex-shrink: 0;
-  max-height: 38vh;
-  overflow: auto;
-}
+/* AssemblyViewer owns its scoped fullscreen layout across all entry points. */
 
 .image-result-note {
   display: flex;

@@ -8,6 +8,7 @@ import {
 } from '@/lib/semantic-components';
 import { viewerGeometry, viewerPose } from '@/lib/assembly-render';
 import { PALETTE } from '@/lib/brick-engine';
+import { paletteOverlayMaterial } from '@/lib/palette-rendering';
 import type { V3 } from '@/lib/assembly-catalog';
 import type { TriangleMesh } from '@/lib/mesh-types';
 export default function MeshDraftViewer({
@@ -157,10 +158,11 @@ export default function MeshDraftViewer({
               const obj = new T.Mesh(
                 geo,
                 new T.MeshStandardMaterial({
-                  color: PALETTE[b.color].hex,
+                  ...paletteOverlayMaterial(
+                    PALETTE[b.color],
+                    !!r.confirmed || r.source === 'manual',
+                  ),
                   roughness: 0.4,
-                  transparent: !r.confirmed && r.source !== 'manual',
-                  opacity: r.confirmed || r.source === 'manual' ? 1 : 0.35,
                 }),
               );
               obj.applyMatrix4(new T.Matrix4().set(...viewerPose(b.pose!)));

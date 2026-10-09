@@ -4,6 +4,10 @@ import { BoxGeometry } from 'three';
 import { colorFromReference, referenceMask } from './reference-colors.ts';
 import { PALETTE } from './brick-engine.ts';
 import { MESH_FEATURE } from './mesh-types.ts';
+import {
+  snapshotNativeAppearance,
+  SOURCE_COLOR_KIND,
+} from './source-material-provenance.ts';
 
 void test('reference projection preserves geometry, separates painted regions, and estimates unseen faces', () => {
   const geometry = new BoxGeometry(2, 2, 2, 5, 5, 5).toNonIndexed();
@@ -127,6 +131,49 @@ void test('an abrupt warm dark stripe is preserved because paint and a hard shad
   assert.ok(
     present(off).size > 1,
     'turning shadow reduction off keeps the photograph’s shading',
+  );
+  g.dispose();
+});
+
+void test('a warm dark opening is preserved in view without painting an unseen opposite wall', () => {
+  const g = new BoxGeometry(2, 2, 2, 10, 10, 10).toNonIndexed();
+  const positions = new Float32Array(g.attributes.position.array);
+  const data = new Uint8Array(40 * 40 * 4);
+  for (let y = 2; y < 38; y++)
+    for (let x = 2; x < 38; x++)
+      data.set(
+        (x > 10 && x < 30 && y > 10 && y < 30
+          ? [53, 33, 0]
+          : [215, 186, 140]
+        ).concat(255),
+        (y * 40 + x) * 4,
+      );
+  const result = colorFromReference(
+    {
+      name: 'warm opening',
+      positions,
+      colors: new Uint8Array(positions.length / 3),
+    },
+    { width: 40, height: 40, data },
+    { yaw: 0, pitch: 0, perspective: 0 },
+  );
+  let observedBrown = 0;
+  for (let f = 0; f < positions.length / 9; f++) {
+    const z =
+      (positions[f * 9 + 2] + positions[f * 9 + 5] + positions[f * 9 + 8]) / 3;
+    const color = Array.from(result.colors.subarray(f * 3, f * 3 + 3));
+    if (z > 0.99 && color.join(',') === '53,33,0') {
+      assert.equal(result.materialEvidence!.observed[f], 1);
+      observedBrown++;
+    }
+    if (z < -0.99) {
+      assert.equal(result.materialEvidence!.observed[f], 0);
+      assert.deepEqual(color, [215, 186, 140]);
+    }
+  }
+  assert.ok(
+    observedBrown > 0,
+    'a true brown feature with the same pixels is retained',
   );
   g.dispose();
 });
@@ -322,7 +369,8 @@ void test('unseen same-height walls inherit wall material rather than a larger s
   const surfaces = result.materialDesign!.surfaces!;
   assert.equal(surfaces.inferredFaces, 2);
   const wall = surfaces.regions.find((r) => r.normal[0] > 0.99)!;
-  assert.equal(wall.source, 'compatible-surface');
+  assert.equal(wall.source, 'inclination-consensus');
+  assert.ok(wall.inferredSupport!.supportFraction > 0.95);
   assert.ok(wall.donorRegionIds.length > 0);
   assert.ok(
     wall.donorRegionIds.every(
@@ -380,4 +428,200 @@ void test('a large face samples its visible portion even when its centroid is hi
   );
   assert.equal(result.materialEvidence!.observed[0], 1);
   assert.deepEqual(Array.from(result.colors.slice(0, 3)), [0, 85, 191]);
+});
+
+void test('reference paint retains native appearance and audits unknown disconnected faces without changing raw evidence or legacy defaults', () => {
+  const positions = Float32Array.from([
+    -1, -1, 0.01, 1, -1, 0.01, 1, 1, 0.01, -1, -1, 0.01, 1, 1, 0.01, -1, 1,
+    0.01, -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, 1, 1, 0, -1, 1, 0,
+  ]);
+  const nativeAppearance = snapshotNativeAppearance({
+    version: 1,
+    method: 'glb-native-appearance',
+    intrinsicMaterialVerified: false,
+    originalRGB: Uint8Array.from(
+      Array.from({ length: 4 }, () => [255, 0, 255]).flat(),
+    ),
+    materialIds: new Int32Array(4),
+    faceSourceKinds: new Uint8Array(4).fill(1),
+    alpha: new Float32Array(4).fill(0.25),
+    materials: [
+      {
+        id: 0,
+        source: 'explicit-gltf-material',
+        name: 'authored native magenta appearance',
+        baseColorFactor: [1, 0, 1, 0.25],
+        alphaMode: 'BLEND',
+        alphaCutoff: 0.5,
+        doubleSided: false,
+      },
+    ],
+  });
+  const source = {
+    positions,
+    colors: nativeAppearance.originalRGB.slice(),
+    name: 'native thin panels',
+    nativeAppearance,
+  };
+  const snapshot = structuredClone(source);
+  const data = new Uint8Array(40 * 40 * 4);
+  for (let y = 2; y < 38; y++)
+    for (let x = 2; x < 38; x++)
+      data.set([215, 186, 140, 255], (y * 40 + x) * 4);
+  const image = { width: 40, height: 40, data },
+    camera = { yaw: 0, pitch: 0, perspective: 0 };
+  const legacy = colorFromReference(source, image, camera, false);
+  const explicitLegacy = colorFromReference(source, image, camera, false, {
+    unobservedPolicy: 'legacy',
+  });
+  const topology = colorFromReference(source, image, camera, false, {
+    unobservedPolicy: 'source-topology-only',
+  });
+  assert.deepEqual(
+    source,
+    snapshot,
+    'the original appearance, geometry and input colours are not modified',
+  );
+  assert.deepEqual(
+    legacy.colors,
+    explicitLegacy.colors,
+    'opt-in addition does not change faithful/clean default paint',
+  );
+  assert.deepEqual(legacy.nativeAppearance, nativeAppearance);
+  assert.deepEqual(topology.nativeAppearance, nativeAppearance);
+  assert.notEqual(
+    topology.nativeAppearance!.originalRGB.buffer,
+    nativeAppearance.originalRGB.buffer,
+  );
+  assert.notEqual(
+    topology.colourPipelineAudit!.nativeRGB!.buffer,
+    nativeAppearance.originalRGB.buffer,
+  );
+  assert.deepEqual(
+    topology.colourPipelineAudit!.nativeRGB,
+    snapshot.nativeAppearance.originalRGB,
+  );
+  assert.deepEqual(
+    topology.sourceObservations,
+    legacy.sourceObservations,
+    'RGBA, region labels, depth samples and exact source topology stay identical',
+  );
+  assert.deepEqual(
+    topology.materialEvidence!.observed,
+    legacy.materialEvidence!.observed,
+  );
+  assert.deepEqual(
+    Array.from(topology.materialEvidence!.observed),
+    [1, 1, 0, 0],
+  );
+  assert.equal(topology.positions, positions);
+  assert.deepEqual(
+    Array.from(legacy.colourPipelineAudit!.perFaceSourceKind),
+    [2, 2, 5, 5],
+  );
+  assert.equal(
+    legacy.colourPipelineAudit!.counts.disconnectedInferenceFaces,
+    2,
+  );
+  assert.deepEqual(
+    Array.from(topology.colourPipelineAudit!.perFaceSourceKind),
+    [2, 2, 7, 7],
+  );
+  assert.equal(
+    topology.colourPipelineAudit!.perFaceSourceKind[2],
+    SOURCE_COLOR_KIND.referenceDefault,
+  );
+  assert.equal(topology.colourPipelineAudit!.counts.unknownFaces, 2);
+  assert.equal(topology.colourPipelineAudit!.counts.inferredFaces, 0);
+  assert.equal(
+    topology.colourPipelineAudit!.counts.disconnectedInferenceFaces,
+    0,
+  );
+  assert.equal(topology.colourPipelineAudit!.topologyParentFaces![2], -1);
+  assert.equal(topology.colourPipelineAudit!.intrinsicMaterialVerified, false);
+  assert.ok(
+    topology.materialDesign!.warnings.some((w) =>
+      w.includes('unknown reference-default'),
+    ),
+  );
+});
+
+void test('same explicit native material can infer an unseen connected box face with immutable observation coverage', () => {
+  const geometry = new BoxGeometry(2, 2, 2).toNonIndexed();
+  const positions = Float32Array.from(geometry.attributes.position.array),
+    faces = positions.length / 9;
+  const nativeAppearance = snapshotNativeAppearance({
+    version: 1,
+    method: 'glb-native-appearance',
+    intrinsicMaterialVerified: false,
+    // Authored opaque linear-gray factor, not a one-white reconstruction proxy.
+    originalRGB: new Uint8Array(faces * 3).fill(188),
+    materialIds: new Int32Array(faces),
+    faceSourceKinds: new Uint8Array(faces).fill(1),
+    alpha: new Float32Array(faces).fill(1),
+    materials: [
+      {
+        id: 0,
+        source: 'explicit-gltf-material',
+        name: 'authored opaque linear-gray factor',
+        baseColorFactor: [0.5, 0.5, 0.5, 1],
+        alphaMode: 'OPAQUE',
+        alphaCutoff: 0.5,
+        doubleSided: false,
+      },
+    ],
+  });
+  const mesh = {
+    positions,
+    colors: nativeAppearance.originalRGB.slice(),
+    nativeAppearance,
+    name: 'box',
+  };
+  const data = new Uint8Array(40 * 40 * 4);
+  for (let y = 4; y < 36; y++)
+    for (let x = 4; x < 36; x++)
+      data.set([150, 150, 150, 255], (y * 40 + x) * 4);
+  const image = { width: 40, height: 40, data },
+    camera = { yaw: 0, pitch: 0, perspective: 0 };
+  const legacy = colorFromReference(mesh, image, camera, false);
+  const result = colorFromReference(mesh, image, camera, false, {
+    unobservedPolicy: 'source-topology-only',
+  });
+  assert.deepEqual(result.sourceObservations, legacy.sourceObservations);
+  assert.deepEqual(
+    result.materialEvidence!.observed,
+    legacy.materialEvidence!.observed,
+  );
+  assert.equal(result.colourPipelineAudit!.counts.unknownFaces, 0);
+  assert.equal(result.colourPipelineAudit!.counts.inferredFaces, faces - 2);
+  assert.equal(result.colourPipelineAudit!.counts.referenceObservedFaces, 2);
+  for (let f = 0; f < faces; f++)
+    if (!result.materialEvidence!.observed[f]) {
+      assert.equal(
+        result.colourPipelineAudit!.perFaceSourceKind[f],
+        SOURCE_COLOR_KIND.sourceTopologyInferred,
+      );
+      let current = f;
+      for (let steps = 0; steps < faces; steps++) {
+        const next = result.colourPipelineAudit!.topologyParentFaces![current];
+        assert.ok(next >= 0);
+        if (next === current) {
+          assert.equal(result.materialEvidence!.observed[current], 1);
+          break;
+        }
+        current = next;
+        assert.ok(
+          steps < faces - 1,
+          'path must reach a positive observed anchor',
+        );
+      }
+    }
+  assert.throws(
+    () =>
+      colorFromReference(mesh, image, camera, false, {
+        unobservedPolicy: 'invented' as never,
+      }),
+    /policy is invalid/,
+  );
+  geometry.dispose();
 });

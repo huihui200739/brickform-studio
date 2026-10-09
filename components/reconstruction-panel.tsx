@@ -1,5 +1,12 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import Image from 'next/image';
 import { Box, Upload, LoaderCircle } from 'lucide-react';
 import type { Model, Raster } from '@/lib/brick-engine';
 import { PALETTE, isOpaquePaletteColor } from '@/lib/brick-engine';
@@ -41,6 +48,11 @@ type ApiResponse = {
   multiView?: { configured: boolean; model: string };
 };
 type Job = { id: string; ticket: string };
+type ReconstructionRun = {
+  generation: number;
+  image: string | undefined;
+  signal: AbortSignal;
+};
 export default function ReconstructionPanel({
   active = true,
   image,
@@ -48,6 +60,7 @@ export default function ReconstructionPanel({
   resolution,
   onModel,
   onInputsChange,
+  onBusyChange,
 }: {
   active?: boolean;
   image?: string;
@@ -55,6 +68,7 @@ export default function ReconstructionPanel({
   resolution: number;
   onModel: (model: Model) => void;
   onInputsChange?: () => void;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [regions, setRegions] = useState<ComponentRegion[]>([]),
     [selected, setSelected] = useState(''),
@@ -102,14 +116,23 @@ export default function ReconstructionPanel({
       Partial<Record<ViewAxis, boolean>>
     >({});
   const onInputsChangeRef = useRef(onInputsChange);
-  onInputsChangeRef.current = onInputsChange;
+  useLayoutEffect(() => {
+    onInputsChangeRef.current = onInputsChange;
+  }, [onInputsChange]);
   const viewGeneration = useRef(0),
     viewLoadTokens = useRef<Record<ViewAxis, number>>({
       front: 0,
       side: 0,
       top: 0,
-    });
+    }),
+    viewInputs = useRef({ views, projection: viewProjection, mode: inputMode });
 
+  const faceInput = useRef<HTMLInputElement | null>(null),
+    viewFiles = useRef<Partial<Record<ViewAxis, HTMLInputElement | null>>>({}),
+    viewsRef = useRef(views);
+  useLayoutEffect(() => {
+    viewsRef.current = views;
+  }, [views]);
   useEffect(
     () => () => {
       for (const view of Object.values(viewsRef.current))
@@ -117,10 +140,6 @@ export default function ReconstructionPanel({
     },
     [],
   );
-  const faceInput = useRef<HTMLInputElement | null>(null),
-    viewFiles = useRef<Partial<Record<ViewAxis, HTMLInputElement | null>>>({}),
-    viewsRef = useRef(views);
-  viewsRef.current = views;
   const [multiConfigured, setMultiConfigured] = useState(false);
   const [multiDiagnostics, setMultiDiagnostics] =
     useState<MultiDiagnostics | null>(null);
@@ -152,13 +171,34 @@ export default function ReconstructionPanel({
   // A color pair is independent of stud resolution and input-tab selection.
   // Discard it only for a new source image/geometry, never promote a displayed
   // hypothesis to the reference colors when the user changes precision.
-  useEffect(() => {
+  const resetMaterialPair = useEffectEvent(() => {
     setMaterialPair(null);
+  });
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) resetMaterialPair();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [image, draft?.positions]);
-  const autoGeneration = useRef(0);
+  const autoGeneration = useRef(0),
+    runGeneration = useRef(0),
+    sourceImage = useRef(image),
+    sourceResolution = useRef(resolution);
+  useLayoutEffect(() => {
+    // Committed inputs become visible before any asynchronous task can publish.
+    sourceImage.current = image;
+    sourceResolution.current = resolution;
+  }, [image, resolution]);
   const alive = useRef(true),
     controller = useRef<AbortController | null>(null),
-    worker = useRef<Worker | null>(null),
+    conversionController = useRef<AbortController | null>(null),
+    conversionPrecision = useRef(resolution),
+    autoController = useRef<AbortController | null>(null),
+    autoPrecision = useRef(resolution),
+    workerCancellations = useRef(new Set<() => void>()),
     fileInput = useRef<HTMLInputElement>(null),
     original = useRef<TriangleMesh | null>(null),
     referenceUrl = useRef(''),
@@ -167,22 +207,134 @@ export default function ReconstructionPanel({
       key: '',
     });
   useEffect(() => {
-    viewGeneration.current++;
+    onBusyChange?.(busy || autoBusy);
+    return () => onBusyChange?.(false);
+  }, [busy, autoBusy, onBusyChange]);
+  const invalidatePrecision = useEffectEvent(() => {
+    // Packing precision does not change the useful GLB or the server-side job.
+    // Cancel only client conversion/automatic detection, never ongoing inference.
+    if (conversionPrecision.current !== sourceResolution.current)
+      conversionController.current?.abort();
+    if (autoPrecision.current !== sourceResolution.current) {
+      autoController.current?.abort();
+      autoGeneration.current = autoGeneration.current + 1;
+      setAutoBusy(false);
+    }
+  });
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) invalidatePrecision();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [resolution]);
+  function isCurrentRun(run: ReconstructionRun) {
+    return (
+      alive.current &&
+      run.generation === runGeneration.current &&
+      run.image === sourceImage.current &&
+      !run.signal.aborted
+    );
+  }
+  function beginRun(): ReconstructionRun {
+    controller.current?.abort();
+    const abort = new AbortController();
+    controller.current = abort;
+    return {
+      generation: ++runGeneration.current,
+      image: sourceImage.current,
+      signal: abort.signal,
+    };
+  }
+  function beginPacking(run: ReconstructionRun) {
+    conversionController.current?.abort();
+    const abort = new AbortController();
+    conversionController.current = abort;
+    conversionPrecision.current = sourceResolution.current;
+    return {
+      abort,
+      resolution: sourceResolution.current,
+      signal: AbortSignal.any([run.signal, abort.signal]),
+    };
+  }
+  const invalidateImage = useEffectEvent(() => {
+    // The parent may reuse this panel instead of remounting it with an image key.
+    // Abort both network and worker work; every async continuation also checks
+    // its captured source/generation before changing the displayed result.
+    runGeneration.current = runGeneration.current + 1;
+    autoGeneration.current = autoGeneration.current + 1;
+    controller.current?.abort();
+    for (const cancel of workerCancellations.current) cancel();
+    materialController.current?.abort();
+    setJob(null);
+    setMultiJob(null);
     setViewDraft(null);
     setNeuralDraft(null);
     setMultiDiagnostics(null);
     setViewError('');
+    setDraft(null);
+    setGlbUrl('');
+    setRegions([]);
+    setSelected('');
+    setPicking(false);
+    setPlacementReports([]);
+    setComponentNote('');
+    setBusy(false);
+    setAutoBusy(false);
+    setProgress(0);
+    setPhase('');
+    setError('');
+    original.current = null;
+    referenceUrl.current = '';
+    autoDone.current = { mesh: null, key: '' };
+  });
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) invalidateImage();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [image]);
+  const invalidateViews = useEffectEvent(() => {
+    const previous = viewInputs.current;
+    if (
+      previous.views !== views ||
+      previous.projection !== viewProjection ||
+      previous.mode !== inputMode
+    ) {
+      viewGeneration.current++;
+      setNeuralDraft(null);
+      setMultiDiagnostics(null);
+    }
+    viewInputs.current = { views, projection: viewProjection, mode: inputMode };
+    // An orthographic voxel draft is resolution-dependent; a native GLB is not.
+    setViewDraft(null);
+    setViewError('');
     setPhase('');
     if (inputMode === 'views') onInputsChangeRef.current?.();
+  });
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) invalidateViews();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [views, resolution, viewProjection, inputMode, softenShadows]);
   useEffect(() => {
     alive.current = true;
     const c = new AbortController();
+    const cancellations = workerCancellations.current;
     void fetch('/api/reconstruction', { signal: c.signal })
       .then(async (r) => {
         const body = (await r.json()) as ApiResponse;
         if (!r.ok) throw Error(body.error || '无法查询服务状态');
-        if (alive.current) {
+        if (alive.current && !c.signal.aborted) {
           setConfigured(!!body.configured);
           setMultiConfigured(!!body.multiView?.configured);
           setProvider(body.provider || '');
@@ -196,17 +348,20 @@ export default function ReconstructionPanel({
       .then(async (r) => {
         if (!r.ok) return;
         const status = (await r.json()) as { configured?: boolean };
-        if (alive.current) setMaterialConfigured(!!status.configured);
+        if (alive.current && !c.signal.aborted)
+          setMaterialConfigured(!!status.configured);
       })
       .catch(() => {
         // Hosted and unconfigured worktables keep the reference color route.
       });
     return () => {
       alive.current = false;
+      runGeneration.current = runGeneration.current + 1;
+      autoGeneration.current = autoGeneration.current + 1;
       c.abort();
       controller.current?.abort();
       materialController.current?.abort();
-      worker.current?.terminate();
+      for (const cancel of cancellations) cancel();
     };
   }, []);
   useEffect(
@@ -215,10 +370,10 @@ export default function ReconstructionPanel({
     },
     [glbUrl],
   );
-  async function api(path: string, init?: RequestInit) {
+  async function api(path: string, init?: RequestInit, signal?: AbortSignal) {
     const r = await fetch('/api/reconstruction' + path, {
       ...init,
-      signal: controller.current?.signal,
+      signal,
     });
     const body = (await r.json()) as ApiResponse;
     if (!r.ok) throw Error(body.error || '三维服务请求失败。');
@@ -226,22 +381,26 @@ export default function ReconstructionPanel({
   }
   async function follow(
     task: Job,
+    run: ReconstructionRun,
     multi = false,
     generation = viewGeneration.current,
   ) {
     for (let attempt = 0; attempt < 180; attempt++) {
-      if (!alive.current) return;
+      if (!isCurrentRun(run)) return;
       const q = `?id=${encodeURIComponent(task.id)}&ticket=${encodeURIComponent(task.ticket)}`;
-      const status = await api(q);
+      const status = await api(q, undefined, run.signal);
+      if (!isCurrentRun(run)) return;
       setProgress(status.progress || 0);
       if (status.status === 'FAILED' || status.status === 'CANCELED') {
-        if (multi && alive.current) setMultiJob(null);
+        if (multi) setMultiJob(null);
+        else setJob(null);
+        setPhase('');
         throw Error(status.error || '三维任务已停止。');
       }
       if (status.ready) {
         setPhase('正在读取三维草稿');
         const r = await fetch('/api/reconstruction' + q + '&download=1', {
-          signal: controller.current?.signal,
+          signal: run.signal,
         });
         if (!r.ok) {
           const e = (await r.json()) as ApiResponse;
@@ -249,9 +408,10 @@ export default function ReconstructionPanel({
         }
         const buffer = await r.arrayBuffer();
         const mesh = await readGLB(buffer, name);
+        if (!isCurrentRun(run)) return;
         if (multi) {
-          if (alive.current) setMultiJob(null);
-          if (alive.current && generation === viewGeneration.current) {
+          setMultiJob(null);
+          if (generation === viewGeneration.current) {
             setNeuralDraft(mesh);
             setMultiDiagnostics(status.multiDiagnostics || null);
             setMultiJob(null);
@@ -264,7 +424,8 @@ export default function ReconstructionPanel({
           }
           return;
         }
-        if (alive.current) {
+        if (isCurrentRun(run)) {
+          setJob(null);
           setGlbUrl(
             URL.createObjectURL(
               new Blob([buffer], { type: 'model/gltf-binary' }),
@@ -276,25 +437,26 @@ export default function ReconstructionPanel({
           setPicking(false);
           setDraft(mesh);
           let readyMesh = mesh;
-          if (image) {
-            referenceUrl.current = image;
+          if (run.image) {
+            referenceUrl.current = run.image;
             try {
-              const colored = await projectColors(mesh, referenceUrl.current);
+              const colored = await projectColors(mesh, run.image, run);
+              if (!isCurrentRun(run)) return;
               readyMesh = colored;
-              if (alive.current) setDraft(colored);
+              setDraft(colored);
             } catch (e) {
-              if (alive.current)
-                setError(
-                  `形状已保留，但参考图配色未完成：${e instanceof Error ? e.message : '请重试配色'}`,
-                );
+              if (!isCurrentRun(run)) return;
+              setError(
+                `形状已保留，但参考图配色未完成：${e instanceof Error ? e.message : '请重试配色'}`,
+              );
             }
           }
-          if (alive.current) await convert(readyMesh);
+          if (isCurrentRun(run)) await convert(readyMesh, run);
         }
         return;
       }
       await new Promise<void>((resolve, reject) => {
-        const signal = controller.current?.signal;
+        const signal = run.signal;
         const abort = () => {
           clearTimeout(timer);
           reject(new DOMException('Stopped', 'AbortError'));
@@ -310,44 +472,49 @@ export default function ReconstructionPanel({
     throw Error('任务仍在运行。请稍后点击“继续查看任务”，不会重新扣费提交。');
   }
   async function reconstruct(resume = false) {
+    const run = beginRun();
     setError('');
     setBusy(true);
-    setPhase('正在提交图片');
-    controller.current = new AbortController();
+    setPhase(resume ? '正在继续查询任务' : '正在提交图片');
     try {
-      if (!resume && !image) throw Error('请先上传图片。');
+      if (!resume && !run.image) throw Error('请先上传图片。');
       const task =
         resume && job
           ? job
-          : ((await api('', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ image }),
-            })) as Job);
+          : ((await api(
+              '',
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: run.image }),
+              },
+              run.signal,
+            )) as Job);
+      if (!isCurrentRun(run)) return;
       if (!task.id || !task.ticket)
         throw Error('服务没有返回任务凭证，请检查服务状态后重试。');
       setJob(task);
       setPhase('正在重建三维结构');
-      await follow(task);
+      await follow(task, run);
     } catch (e) {
-      if (alive.current)
+      if (isCurrentRun(run))
         setError(e instanceof Error ? e.message : '三维重建失败。');
     } finally {
-      if (alive.current) setBusy(false);
+      if (isCurrentRun(run)) setBusy(false);
     }
   }
   async function reconstructViews(resume = false) {
+    const run = beginRun();
     setViewError('');
     setBusy(true);
     const generation = ++viewGeneration.current;
-    controller.current = new AbortController();
     try {
       if (Object.keys(views).length !== 3) throw Error('请先上传三个视角。');
       setPhase('正在把三张图一起提交给本机重建引擎');
       const inputs = await Promise.all(
         (['front', 'side', 'top'] as ViewAxis[]).map(async (axis) => {
           const view = views[axis]!;
-          const img = new Image();
+          const img = new window.Image();
           img.src = view.imageData;
           await img.decode();
           const canvas = document.createElement('canvas');
@@ -363,28 +530,35 @@ export default function ReconstructionPanel({
           return { axis, image: canvas.toDataURL('image/png') };
         }),
       );
+      if (!isCurrentRun(run)) return;
       const task =
         resume && multiJob
           ? multiJob
-          : await api('', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ views: inputs }),
-            });
+          : await api(
+              '',
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ views: inputs }),
+              },
+              run.signal,
+            );
+      if (!isCurrentRun(run)) return;
       if (!task.id || !task.ticket) throw Error('服务没有返回任务凭证。');
       const handle = { id: task.id, ticket: task.ticket };
       setMultiJob(handle);
       setPhase('本机正在联合估计三视角相机与深度，然后融合三维表面');
-      await follow(handle, true, generation);
+      await follow(handle, run, true, generation);
     } catch (e) {
-      if (alive.current)
+      if (isCurrentRun(run))
         setViewError(e instanceof Error ? e.message : '三图联合重建失败。');
     } finally {
-      if (alive.current) setBusy(false);
+      if (isCurrentRun(run)) setBusy(false);
     }
   }
   async function importMesh(file?: File) {
     if (!file) return;
+    const run = beginRun();
     setError('');
     setBusy(true);
     setPhase('正在读取 GLB 模型');
@@ -399,7 +573,8 @@ export default function ReconstructionPanel({
         buffer,
         file.name.replace(/\.glb$/i, '').slice(0, 24),
       );
-      if (alive.current) {
+      if (isCurrentRun(run)) {
+        setJob(null);
         setGlbUrl(
           URL.createObjectURL(
             new Blob([buffer], { type: 'model/gltf-binary' }),
@@ -414,30 +589,43 @@ export default function ReconstructionPanel({
         setPhase('已导入三维网格，请检查方向与体积');
       }
     } catch (e) {
-      if (alive.current)
+      if (isCurrentRun(run))
         setError(e instanceof Error ? e.message : '无法读取模型。');
     } finally {
-      if (alive.current) setBusy(false);
+      if (isCurrentRun(run)) setBusy(false);
     }
   }
   async function runWorkerMessage(
     payload: unknown,
     timeout = 90000,
+    signal = controller.current?.signal,
   ): Promise<Record<string, unknown>> {
     return new Promise<Record<string, unknown>>((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(new DOMException('Stopped', 'AbortError'));
+        return;
+      }
       const w = new Worker(new URL(workerUrl, window.location.href), {
         type: 'module',
       });
-      worker.current = w;
       const cleanup = () => {
         clearTimeout(timer);
+        signal?.removeEventListener('abort', cancel);
+        workerCancellations.current.delete(cancel);
         w.terminate();
-        if (worker.current === w) worker.current = null;
+      };
+      const cancel = () => {
+        cleanup();
+        reject(new DOMException('Stopped', 'AbortError'));
       };
       const timer = setTimeout(() => {
         cleanup();
-        reject(Error('转换超时，请降低积木尺寸。'));
+        const error = Error('转换超时，请降低积木尺寸。');
+        error.name = 'WorkerTimeoutError';
+        reject(error);
       }, timeout);
+      workerCancellations.current.add(cancel);
+      signal?.addEventListener('abort', cancel, { once: true });
       w.onmessage = (event) => {
         cleanup();
         const data = event.data as Record<string, unknown>;
@@ -451,19 +639,25 @@ export default function ReconstructionPanel({
         cleanup();
         reject(Error('积木转换程序未能启动，请刷新后重试。'));
       };
-      w.postMessage(payload);
+      try {
+        w.postMessage(payload);
+      } catch (error) {
+        cleanup();
+        reject(error);
+      }
     });
   }
   async function runWorker<T>(
     payload: unknown,
     result: 'mesh' | 'model',
+    signal?: AbortSignal,
   ): Promise<T> {
-    const data = await runWorkerMessage(payload);
+    const data = await runWorkerMessage(payload, 90000, signal);
     if (data[result]) return data[result] as T;
     throw Error('转换失败。');
   }
   async function readReferenceRaster(url: string): Promise<Raster> {
-    const img = new Image();
+    const img = new window.Image();
     img.src = url;
     await img.decode();
     const scale = Math.min(1, 320 / Math.max(img.width, img.height));
@@ -480,38 +674,51 @@ export default function ReconstructionPanel({
     };
     return raster;
   }
-  async function projectColors(mesh: TriangleMesh, url: string) {
+  async function projectColors(
+    mesh: TriangleMesh,
+    url: string,
+    run: ReconstructionRun,
+  ) {
+    if (!isCurrentRun(run)) throw new DOMException('Stopped', 'AbortError');
     setPhase('正在对齐参考图视角并恢复配色');
     const raster = await readReferenceRaster(url);
+    if (!isCurrentRun(run)) throw new DOMException('Stopped', 'AbortError');
     return runWorker<TriangleMesh>(
-      { action: 'color', mesh, raster, softenShadows },
+      {
+        action: 'color', mesh, raster, softenShadows,
+        materialMode: softenShadows ? 'material-first' : 'radiance',
+      },
       'mesh',
+      run.signal,
     );
   }
   async function applyReference() {
     if (!draft || !image) return;
+    const run = beginRun();
     setBusy(true);
     setError('');
     try {
       const colored = await projectColors(
         original.current || draft,
         referenceUrl.current || image,
+        run,
       );
-      if (alive.current) {
+      if (isCurrentRun(run)) {
         setMaterialPair(null);
         setDraft(colored);
         setPhase('参考图配色已应用，请检查颜色与形状后再转换');
       }
     } catch (e) {
-      if (alive.current)
+      if (isCurrentRun(run))
         setError(e instanceof Error ? e.message : '参考图配色失败。');
     } finally {
-      if (alive.current) setBusy(false);
+      if (isCurrentRun(run)) setBusy(false);
     }
   }
   async function generateMaterialCandidate() {
     const source = materialPair?.source || draft;
     if (!source?.sourceObservations || !source.coloring || busy) return;
+    const run = beginRun();
     const generation = materialGeneration.current,
       raw = source.sourceObservations.raster,
       raster = { width: raw.width, height: raw.height, data: raw.rgba },
@@ -538,7 +745,8 @@ export default function ReconstructionPanel({
         candidate?: unknown;
       };
       if (!response.ok) throw Error(body.error || '配色候选生成失败。');
-      if (!alive.current || generation !== materialGeneration.current) return;
+      if (!isCurrentRun(run) || generation !== materialGeneration.current)
+        return;
       const candidate = decodeMaterialCandidate(body.candidate, raster, {
         sourceSha256,
       });
@@ -549,8 +757,10 @@ export default function ReconstructionPanel({
           materialCandidate: candidate,
         },
         'mesh',
+        abort.signal,
       );
-      if (!alive.current || generation !== materialGeneration.current) return;
+      if (!isCurrentRun(run) || generation !== materialGeneration.current)
+        return;
       // The worker changes material data only. Reuse immutable source objects
       // so comparing colors does not restart placement or semantic detection.
       const preview = {
@@ -565,7 +775,7 @@ export default function ReconstructionPanel({
       onInputsChangeRef.current?.();
       setPhase('配色候选已显示。请对照参考配色，再点击“生成积木成品”。');
     } catch (e) {
-      if (alive.current && generation === materialGeneration.current)
+      if (isCurrentRun(run) && generation === materialGeneration.current)
         setError(
           e instanceof Error && e.name === 'AbortError'
             ? '配色候选生成超时，已保留原配色。'
@@ -577,15 +787,94 @@ export default function ReconstructionPanel({
       clearTimeout(timeout);
       if (materialController.current === abort)
         materialController.current = null;
-      if (alive.current) setBusy(false);
+      if (isCurrentRun(run)) setBusy(false);
     }
   }
+  const autoDetect = async (mesh: TriangleMesh) => {
+    autoController.current?.abort();
+    const abort = new AbortController();
+    autoController.current = abort;
+    autoPrecision.current = sourceResolution.current;
+    const generation = ++autoGeneration.current,
+      source = sourceImage.current,
+      precision = sourceResolution.current,
+      parentSignal = controller.current?.signal,
+      signal = parentSignal
+        ? AbortSignal.any([parentSignal, abort.signal])
+        : abort.signal;
+    setAutoBusy(true);
+    setComponentNote('正在识别原图中的对象和轮廓，再独立检查安装位置。');
+    try {
+      const raster = source
+        ? await readReferenceRaster(referenceUrl.current || source)
+        : undefined;
+      if (
+        !alive.current ||
+        generation !== autoGeneration.current ||
+        source !== sourceImage.current ||
+        precision !== sourceResolution.current ||
+        signal.aborted
+      )
+        return;
+      const data = await runWorkerMessage(
+        {
+          action: 'components',
+          mesh,
+          options: { resolution: precision },
+          raster,
+          regions,
+          autoSemanticRefinement: autoComponents,
+        },
+        210000,
+        signal,
+      );
+      if (
+        !alive.current ||
+        generation !== autoGeneration.current ||
+        source !== sourceImage.current ||
+        precision !== sourceResolution.current ||
+        signal.aborted
+      )
+        return;
+      const found = (data.regions as ComponentRegion[]) || [];
+      setRegions((current) => mergeRefinementRegions(current, found));
+      setPlacementReports((data.reports as PlacementReport[]) || []);
+      setSelected('');
+      setPicking(false);
+      setComponentNote(
+        typeof data.semanticWarning === 'string'
+          ? data.semanticWarning
+          : `图片检测 ${found.length} 个对象；身份与安装均通过的组件自动提交，其余保留原几何。`,
+      );
+    } catch (e) {
+      if (
+        alive.current &&
+        generation === autoGeneration.current &&
+        source === sourceImage.current &&
+        precision === sourceResolution.current &&
+        !signal.aborted
+      ) {
+        setPlacementReports([]);
+        setComponentNote(
+          `自动放置未完成（${e instanceof Error ? e.message : '未知错误'}），将直接按网格转换。`,
+        );
+      }
+    } finally {
+      if (autoController.current === abort) autoController.current = null;
+      if (
+        alive.current &&
+        generation === autoGeneration.current &&
+        source === sourceImage.current
+      )
+        setAutoBusy(false);
+    }
+  };
   // Ignore stale requests when geometry or options change. Recolouring alone
   // preserves confirmed mounting points instead of starting another search.
-  useEffect(() => {
+  const synchronizeComponents = useEffectEvent(() => {
     if (busy) return;
     if (!draft) {
-      autoGeneration.current++;
+      autoGeneration.current = autoGeneration.current + 1;
       setAutoBusy(false);
       setPlacementReports([]);
       return;
@@ -600,13 +889,13 @@ export default function ReconstructionPanel({
     const sameOptions = autoDone.current.key === key;
     autoDone.current = { mesh: draft, key };
     if (recoloured && sameOptions) {
-      autoGeneration.current++;
+      autoGeneration.current = autoGeneration.current + 1;
       setAutoBusy(false);
       return;
     }
     setPlacementReports([]);
     if (!autoComponents) {
-      autoGeneration.current++;
+      autoGeneration.current = autoGeneration.current + 1;
       setAutoBusy(false);
       setRegions((current) => current.filter((r) => !r.autoRefinement));
       setSelected('');
@@ -616,73 +905,92 @@ export default function ReconstructionPanel({
       return;
     }
     void autoDetect(draft);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    // Detection is keyed by geometry/options; unrelated busy renders are not new input.
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) synchronizeComponents();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [draft, autoComponents, resolution]);
-  async function autoDetect(mesh: TriangleMesh) {
-    const generation = ++autoGeneration.current;
-    setAutoBusy(true);
-    setComponentNote('正在识别原图中的对象和轮廓，再独立检查安装位置。');
-    try {
-      const data = await runWorkerMessage({
-        action: 'components',
-        mesh,
-        options: { resolution },
-        raster: image
-          ? await readReferenceRaster(referenceUrl.current || image)
-          : undefined,
-        regions,
-        autoSemanticRefinement: autoComponents,
-      });
-      if (!alive.current || generation !== autoGeneration.current) return;
-      const found = (data.regions as ComponentRegion[]) || [];
-      setRegions((current) => mergeRefinementRegions(current, found));
-      setPlacementReports((data.reports as PlacementReport[]) || []);
-      setSelected('');
-      setPicking(false);
-      setComponentNote(
-        data.semanticWarning
-          ? String(data.semanticWarning)
-          : `图片检测 ${found.length} 个对象；身份与安装均通过的组件自动提交，其余保留原几何。`,
-      );
-    } catch (e) {
-      if (alive.current && generation === autoGeneration.current) {
-        setPlacementReports([]);
-        setComponentNote(
-          `自动放置未完成（${e instanceof Error ? e.message : '未知错误'}），将直接按网格转换。`,
-        );
-      }
-    } finally {
-      if (alive.current && generation === autoGeneration.current)
-        setAutoBusy(false);
-    }
-  }
-  async function convert(target = draft) {
+  async function convert(target = draft, existingRun?: ReconstructionRun) {
     if (!target) return;
     if (target === neuralDraft && !multiVerified) {
       setViewError('三视图重建一致性检查未通过，当前草稿不能可靠转换。');
       return;
     }
+    const run = existingRun || beginRun();
+    if (!isCurrentRun(run)) return;
+    const packing = beginPacking(run);
     setBusy(true);
     setError('');
     setPhase('正在把三维体积转换为积木，并检查连接');
     try {
-      const data = await runWorkerMessage({
+      const raster = (
+        inputMode === 'views' ? views.front?.imageData : run.image
+      )
+        ? await readReferenceRaster(
+            inputMode === 'views'
+              ? views.front!.imageData
+              : referenceUrl.current || run.image!,
+          ).catch(() => undefined)
+        : undefined;
+      if (
+        !isCurrentRun(run) ||
+        packing.signal.aborted ||
+        packing.resolution !== sourceResolution.current
+      )
+        return;
+      const payload = {
         mesh: target,
-        options: { resolution },
+        options: {
+          resolution: packing.resolution,
+          colorMode: softenShadows ? 'coherent' : 'faithful',
+        },
         regions: target === draft ? regions : [],
-        raster: (inputMode === 'views' ? views.front?.imageData : image)
-          ? await readReferenceRaster(
-              inputMode === 'views'
-                ? views.front!.imageData
-                : referenceUrl.current || image!,
-            ).catch(() => undefined)
-          : undefined,
+        raster,
         autoSemanticRefinement: autoComponents,
-      });
+      };
+      let data: Record<string, unknown>;
+      try {
+        // The optional scene endpoint can spend 170 s on inference and the
+        // detector allows 180 s; leave time for ordinary brick conversion too.
+        data = await runWorkerMessage(
+          payload,
+          autoComponents && raster ? 210000 : 90000,
+          packing.signal,
+        );
+      } catch (e) {
+        if (!isCurrentRun(run)) return;
+        if (
+          !(e instanceof Error) ||
+          e.name !== 'WorkerTimeoutError' ||
+          !autoComponents ||
+          !raster
+        )
+          throw e;
+        setComponentNote(
+          '对象识别超时，已跳过自动语义增强；保留网格继续生成积木。',
+        );
+        setPhase('对象识别超时，正在直接转换原网格');
+        data = await runWorkerMessage(
+          { ...payload, autoSemanticRefinement: false },
+          90000,
+          packing.signal,
+        );
+      }
       const model = data.model as Model;
-      if (alive.current) {
-        if (data.semanticWarning)
-          setComponentNote(String(data.semanticWarning));
+      if (!model) throw Error('转换没有返回有效积木模型。');
+      if (
+        isCurrentRun(run) &&
+        !packing.signal.aborted &&
+        packing.resolution === sourceResolution.current
+      ) {
+        if (typeof data.semanticWarning === 'string')
+          setComponentNote(data.semanticWarning);
         const applied = Number(data.applied || 0),
           dropped = (data.dropped as string[]) || [];
         setRegions((data.regions as ComponentRegion[]) || regions);
@@ -693,10 +1001,20 @@ export default function ReconstructionPanel({
         );
       }
     } catch (e) {
-      if (alive.current)
+      if (
+        isCurrentRun(run) &&
+        packing.resolution === sourceResolution.current &&
+        !packing.signal.aborted
+      )
         setError(e instanceof Error ? e.message : '积木转换失败。');
     } finally {
-      if (alive.current) setBusy(false);
+      if (conversionController.current === packing.abort)
+        conversionController.current = null;
+      if (isCurrentRun(run)) {
+        if (packing.resolution !== sourceResolution.current)
+          setPhase('精度已改变，已保留三维草稿；请按当前精度重新转换。');
+        setBusy(false);
+      }
     }
   }
   async function loadView(axis: ViewAxis, file?: File) {
@@ -711,7 +1029,7 @@ export default function ReconstructionPanel({
       if (file.size > 10 * 1024 * 1024)
         throw Error('每张图片请控制在 10 MB 以内。');
       url = URL.createObjectURL(file);
-      const img = new Image();
+      const img = new window.Image();
       img.src = url;
       await img.decode();
       if (img.width * img.height > 40_000_000)
@@ -792,6 +1110,8 @@ export default function ReconstructionPanel({
     setViewError('');
   }
   async function carveViews(convertToBricks = false) {
+    const run = beginRun();
+    const packing = beginPacking(run);
     const generation = ++viewGeneration.current;
     const list = (['front', 'side', 'top'] as ViewAxis[])
       .filter((axis) => views[axis])
@@ -815,15 +1135,25 @@ export default function ReconstructionPanel({
         throw Error('普通透视照片还需要相机校准；当前入口仅支持正交视图。');
       if (convertToBricks && !viewDraft)
         throw Error('请先生成并检查三维草稿。');
-      const data = await runWorkerMessage({
-        action: convertToBricks ? 'views' : 'views-draft',
-        views: list,
-        volume: convertToBricks ? viewDraft!.volume : undefined,
-        options: { resolution },
-        softenShadows,
-        name: '三视图积木',
-      });
-      if (!alive.current || generation !== viewGeneration.current) return;
+      const data = await runWorkerMessage(
+        {
+          action: convertToBricks ? 'views' : 'views-draft',
+          views: list,
+          volume: convertToBricks ? viewDraft!.volume : undefined,
+          options: { resolution: packing.resolution },
+          softenShadows,
+          name: '三视图积木',
+        },
+        90000,
+        packing.signal,
+      );
+      if (
+        !isCurrentRun(run) ||
+        generation !== viewGeneration.current ||
+        packing.signal.aborted ||
+        packing.resolution !== sourceResolution.current
+      )
+        return;
       if (convertToBricks) {
         const model = data.model as Model;
         onModel(model);
@@ -841,12 +1171,23 @@ export default function ReconstructionPanel({
         );
       }
     } catch (e) {
-      if (alive.current && generation === viewGeneration.current) {
+      if (
+        isCurrentRun(run) &&
+        generation === viewGeneration.current &&
+        !packing.signal.aborted &&
+        packing.resolution === sourceResolution.current
+      ) {
         setPhase('');
         setViewError(e instanceof Error ? e.message : '三视图转换失败。');
       }
     } finally {
-      if (alive.current) setBusy(false);
+      if (conversionController.current === packing.abort)
+        conversionController.current = null;
+      if (isCurrentRun(run)) {
+        if (packing.resolution !== sourceResolution.current)
+          setPhase('精度已改变，请重新生成轮廓草稿。');
+        setBusy(false);
+      }
     }
   }
   function exportViewDraft() {
@@ -873,7 +1214,7 @@ export default function ReconstructionPanel({
       if (!file.type.startsWith('image/'))
         throw Error('请选择 PNG、JPG 或 WebP 图片。');
       const url = URL.createObjectURL(file),
-        img = new Image();
+        img = new window.Image();
       img.src = url;
       await img.decode();
       const scale = Math.min(1, 720 / Math.max(img.width, img.height)),
@@ -925,29 +1266,49 @@ export default function ReconstructionPanel({
   }
   async function readFace() {
     if (!face) return;
+    const run = beginRun();
+    const packing = beginPacking(run);
     setBusy(true);
     setFaceError('');
     try {
-      const data = await runWorkerMessage({
-        action: 'blueprint',
-        raster: face.raster,
-        pitch: face.spanX / Math.max(2, face.studs),
-        depth: faceDepth,
-        options: { resolution },
-        name: '正面图纸',
-      });
+      const data = await runWorkerMessage(
+        {
+          action: 'blueprint',
+          raster: face.raster,
+          pitch: face.spanX / Math.max(2, face.studs),
+          depth: faceDepth,
+          options: { resolution: packing.resolution },
+          name: '正面图纸',
+        },
+        90000,
+        packing.signal,
+      );
       const model = data.model as Model;
-      if (alive.current) {
+      if (
+        isCurrentRun(run) &&
+        !packing.signal.aborted &&
+        packing.resolution === sourceResolution.current
+      ) {
         onModel(model);
         setPhase(
           `正面图纸：读出 ${model.blueprintDesign?.bricks ?? 0} 块零件，正面宽度 ${model.blueprintDesign?.studs ?? 0} 凸点。`,
         );
       }
     } catch (e) {
-      if (alive.current)
+      if (
+        isCurrentRun(run) &&
+        !packing.signal.aborted &&
+        packing.resolution === sourceResolution.current
+      )
         setFaceError(e instanceof Error ? e.message : '读图失败。');
     } finally {
-      if (alive.current) setBusy(false);
+      if (conversionController.current === packing.abort)
+        conversionController.current = null;
+      if (isCurrentRun(run)) {
+        if (packing.resolution !== sourceResolution.current)
+          setPhase('精度已改变，请重新生成正面图纸。');
+        setBusy(false);
+      }
     }
   }
   function recolor(hex: string) {
@@ -1026,7 +1387,13 @@ export default function ReconstructionPanel({
             </strong>
             {face ? (
               <>
-                <img src={face.preview} alt="正面图与识别到的主体" />
+                <Image
+                  src={face.preview}
+                  alt="正面图与识别到的主体"
+                  width={face.raster.width}
+                  height={face.raster.height}
+                  unoptimized
+                />
                 <small className="view-slot-coverage">
                   主体占画面 {(face.coverage * 100).toFixed(0)}%
                 </small>
@@ -1035,7 +1402,10 @@ export default function ReconstructionPanel({
               <span className="view-slot-empty">还没有图片</span>
             )}
             <div className="view-slot-actions">
-              <button onClick={() => faceInput.current?.click()}>
+              <button
+                disabled={busy || autoBusy}
+                onClick={() => faceInput.current?.click()}
+              >
                 {face ? '换一张' : '选择图片'}
               </button>
             </div>
@@ -1059,7 +1429,7 @@ export default function ReconstructionPanel({
                 min="4"
                 max="200"
                 value={face?.studs ?? 40}
-                disabled={!face}
+                disabled={busy || autoBusy || !face}
                 onChange={(e) =>
                   setFace((current) =>
                     current
@@ -1087,6 +1457,7 @@ export default function ReconstructionPanel({
                 min="2"
                 max="48"
                 value={faceDepth}
+                disabled={busy || autoBusy}
                 onChange={(e) =>
                   setFaceDepth(Math.max(2, Math.min(48, +e.target.value || 2)))
                 }
@@ -1153,7 +1524,9 @@ export default function ReconstructionPanel({
             </p>
             <p>三视角能减少猜测；隐藏的背面、内部结构与真实连接仍需检查。</p>
             {!multiConfigured && (
-              <p role="status">本机三视图引擎正在准备，完成前不能提交。</p>
+              <output style={{ display: 'block' }}>
+                本机三视图引擎正在准备，完成前不能提交。
+              </output>
             )}
           </div>
         ) : (
@@ -1186,7 +1559,10 @@ export default function ReconstructionPanel({
               </strong>
               {views[axis] ? (
                 <>
-                  <img
+                  <Image
+                    width={views[axis]!.raster.width}
+                    height={views[axis]!.raster.height}
+                    unoptimized
                     style={{
                       transform: `scale(${views[axis]!.mirrored ? -1 : 1}, ${views[axis]!.flippedVertical ? -1 : 1})`,
                     }}
@@ -1568,7 +1944,7 @@ export default function ReconstructionPanel({
                 按参考图恢复配色
               </button>
               <button
-                disabled={busy || !original.current}
+                disabled={busy || !draft}
                 onClick={() => {
                   setMaterialPair(null);
                   if (original.current) setDraft(original.current);

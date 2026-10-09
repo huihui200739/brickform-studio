@@ -75,6 +75,7 @@ export function localReconstruction(): Plugin {
               ticket = url.searchParams.get('ticket') || '';
             if (
               !job ||
+              !/^[a-f0-9]{48}$/.test(ticket) ||
               ticket.length !== job.ticket.length ||
               !timingSafeEqual(Buffer.from(ticket), Buffer.from(job.ticket))
             )
@@ -96,7 +97,10 @@ export function localReconstruction(): Plugin {
                 'Content-Type': 'image/png',
                 'Cache-Control': 'no-store',
               });
-              createReadStream(file).pipe(res);
+              const stream = createReadStream(file);
+              stream.once('error', () => res.destroy());
+              res.once('close', () => stream.destroy());
+              stream.pipe(res);
               return;
             }
             if (url.searchParams.get('download') === '1') {
@@ -106,7 +110,10 @@ export function localReconstruction(): Plugin {
                 'Content-Type': 'model/gltf-binary',
                 'Cache-Control': 'no-store',
               });
-              createReadStream(job.output).pipe(res);
+              const stream = createReadStream(job.output);
+              stream.once('error', () => res.destroy());
+              res.once('close', () => stream.destroy());
+              stream.pipe(res);
               return;
             }
             const diagnostics =
@@ -258,9 +265,16 @@ export function localReconstruction(): Plugin {
                   '--seed',
                   // A reference has one repeatable draft. Resolution changes
                   // affect brick packing, never resample the hidden geometry.
-                  String(createHash('sha256').update(await readFile(path.join(dir, 'input.png'))).digest().readUInt32BE(0)),
+                  String(
+                    createHash('sha256')
+                      .update(await readFile(path.join(dir, 'input.png')))
+                      .digest()
+                      .readUInt32BE(0),
+                  ),
                 ]);
               }
+              if (!existsSync(job.output) || statSync(job.output).size < 20)
+                throw Error('本机引擎未返回有效 GLB 文件。');
               job.status = 'SUCCEEDED';
               job.progress = 100;
             } catch (e) {

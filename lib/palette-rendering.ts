@@ -11,3 +11,18 @@ export function paletteMaterial(color: { hex: string; opacity?: number }) {
     depthWrite: false,
   };
 }
+
+/** Candidate overlays fade the palette material instead of replacing its alpha. */
+export function paletteOverlayMaterial(
+  color: { hex: string; opacity?: number },
+  confirmed: boolean,
+) {
+  const material = paletteMaterial(color);
+  if (confirmed) return material;
+  return {
+    ...material,
+    transparent: true,
+    opacity: (color.opacity ?? 1) * 0.35,
+    depthWrite: false,
+  };
+}

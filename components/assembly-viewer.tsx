@@ -8,12 +8,14 @@ import {
   RotateCcw,
   Layers3,
   Maximize,
+  Minimize,
   LoaderCircle,
 } from 'lucide-react';
 import { PALETTE, type Model, type Brick } from '@/lib/brick-engine';
 
 import { viewerGeometry, viewerPose } from '@/lib/assembly-render';
 import { paletteMaterial } from '@/lib/palette-rendering';
+import './assembly-viewer.css';
 import {
   explodedLayers,
   visibleInPreview,
@@ -62,7 +64,8 @@ export default function AssemblyViewer({
       ? 0
       : Math.min(firstLayer, Math.max(0, availableSteps.length - 1)),
     count = allLayers ? model.levels.length : 6;
-  const mount = useRef<HTMLDivElement>(null),
+  const preview = useRef<HTMLDivElement>(null),
+    mount = useRef<HTMLDivElement>(null),
     live = useRef({
       layer,
       exploded,
@@ -76,7 +79,35 @@ export default function AssemblyViewer({
     zoom: (factor: number) => void;
     view: (name: string) => void;
     update: () => void;
+    resize: () => void;
   } | null>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+  useEffect(() => {
+    let frame = 0;
+    const syncFullscreen = () => {
+      setFullscreen(document.fullscreenElement === preview.current);
+      // Fullscreen layout is committed before sizing the WebGL drawing buffer.
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => control.current?.resize());
+    };
+    const exitWithEscape = (event: KeyboardEvent) => {
+      // Native browser Escape may be intercepted before the DOM event. When it
+      // is delivered here, use the real API, scoped to this viewer only.
+      if (
+        event.key === 'Escape' &&
+        document.fullscreenElement === preview.current
+      )
+        void document.exitFullscreen().catch(syncFullscreen);
+    };
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    document.addEventListener('keydown', exitWithEscape);
+    syncFullscreen();
+    return () => {
+      document.removeEventListener('fullscreenchange', syncFullscreen);
+      document.removeEventListener('keydown', exitWithEscape);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
   const [failure, setFailure] = useState<{
       model: Model;
       message: string;
@@ -109,7 +140,10 @@ export default function AssemblyViewer({
           camera = new THREE.PerspectiveCamera(34, 1, 0.1, 1000);
         const orbit = new OrbitControls(camera, renderer.domElement);
         orbit.enableDamping = true;
-        orbit.addEventListener('start', () => setView('custom'));
+        orbit.addEventListener('start', () => {
+          angle = 'custom';
+          setView('custom');
+        });
         orbit.enablePan = false;
         orbit.maxPolarAngle = Math.PI * 0.88;
         const size = Math.max(model.width, model.depth, model.height * 0.4);
@@ -312,8 +346,35 @@ export default function AssemblyViewer({
             label.sprite.position.z = right.z * distance;
           }
         };
-        let angle = 'perspective';
-        const fit = (name = angle) => {
+        const frameForDirection = (heading: number[]) => {
+          const bounds = visibleBounds.isEmpty()
+            ? new THREE.Box3(
+                new THREE.Vector3(-1, 0, -1),
+                new THREE.Vector3(1, 1, 1),
+              )
+            : visibleBounds.clone();
+          alignLabels(heading);
+          for (const label of labels)
+            if (label.sprite.visible) {
+              const p = label.sprite.position;
+              bounds.expandByPoint(
+                p.clone().add(new THREE.Vector3(2, 0.65, 2)),
+              );
+              bounds.expandByPoint(
+                p.clone().sub(new THREE.Vector3(2, 0.65, 2)),
+              );
+            }
+          return previewFrame(
+            bounds.min.toArray(),
+            bounds.max.toArray(),
+            camera.aspect,
+            camera.fov,
+            heading,
+          );
+        };
+        let angle = 'perspective',
+          fitDistance = 0;
+        const fit = (name = angle, direction?: number[], relativeZoom = 1) => {
           angle = name;
           const damping = orbit.enableDamping;
           orbit.enableDamping = false;
@@ -325,40 +386,51 @@ export default function AssemblyViewer({
             back: [0, 0.13, -1],
             top: [0, 1, 0.001],
           };
-          const bounds = visibleBounds.isEmpty()
-            ? new THREE.Box3(
-                new THREE.Vector3(-1, 0, -1),
-                new THREE.Vector3(1, 1, 1),
-              )
-            : visibleBounds.clone();
-          alignLabels(dirs[name] || dirs.perspective);
-          for (const label of labels)
-            if (label.sprite.visible) {
-              const p = label.sprite.position;
-              bounds.expandByPoint(
-                p.clone().add(new THREE.Vector3(2, 0.65, 2)),
-              );
-              bounds.expandByPoint(
-                p.clone().sub(new THREE.Vector3(2, 0.65, 2)),
-              );
-            }
-          const framing = previewFrame(
-            bounds.min.toArray(),
-            bounds.max.toArray(),
-            camera.aspect,
-            camera.fov,
-            dirs[name] || dirs.perspective,
-          );
+          const heading =
+            direction ||
+            (name === 'custom'
+              ? camera.position.clone().sub(orbit.target).toArray()
+              : dirs[name] || dirs.perspective);
+          const framing = frameForDirection(heading);
+          fitDistance = framing.distance;
           orbit.minDistance = framing.minDistance;
           orbit.maxDistance = Math.max(size * 8, framing.distance * 3);
           orbit.target.fromArray(framing.target);
           camera.position
-            .fromArray(dirs[name] || dirs.perspective)
+            .fromArray(heading)
             .normalize()
-            .multiplyScalar(framing.distance)
+            .multiplyScalar(framing.distance * relativeZoom)
+            .clampLength(orbit.minDistance, orbit.maxDistance)
             .add(orbit.target);
           orbit.update();
           orbit.enableDamping = damping;
+        };
+        let previousWidth = 0,
+          previousHeight = 0;
+        const resize = () => {
+          const { width, height } = el.getBoundingClientRect();
+          if (
+            !width ||
+            !height ||
+            (width === previousWidth && height === previousHeight)
+          )
+            return;
+          const offset = camera.position.clone().sub(orbit.target);
+          // Reframe for the new aspect without snapping a custom orbit or zoom
+          // back to a preset. The same path handles entry, Esc and window resize.
+          const direction = fitDistance ? offset.toArray() : undefined;
+          // Orbit rotation changes the direction-aware fit distance as well.
+          // Measure zoom against that heading at the OLD aspect, not against
+          // the last preset's distance, so a fullscreen round-trip is reversible.
+          const relativeZoom = direction
+            ? offset.length() / frameForDirection(direction).distance
+            : 1;
+          previousWidth = width;
+          previousHeight = height;
+          renderer.setSize(width, height);
+          camera.aspect = width / height;
+          camera.updateProjectionMatrix();
+          fit(angle, direction, relativeZoom);
         };
         control.current = {
           update: () => {
@@ -366,6 +438,7 @@ export default function AssemblyViewer({
             fit();
           },
           view: fit,
+          resize,
           zoom: (factor) => {
             camera.position
               .sub(orbit.target)
@@ -374,14 +447,6 @@ export default function AssemblyViewer({
               .add(orbit.target);
             orbit.update();
           },
-        };
-        const resize = () => {
-          const { width, height } = el.getBoundingClientRect();
-          if (!width || !height) return;
-          renderer.setSize(width, height);
-          camera.aspect = width / height;
-          camera.updateProjectionMatrix();
-          fit();
         };
         const observer = new ResizeObserver(resize);
         observer.observe(el);
@@ -454,7 +519,7 @@ export default function AssemblyViewer({
     if (view !== 'custom') control.current?.view(view);
   }, [exploded, view, readyModel]);
   return (
-    <div className="assembly-preview">
+    <div className="assembly-preview" ref={preview}>
       <div className="viewer assembly-viewer">
         <div className="canvas-mount" ref={mount} />
         {!ready && !error && (
@@ -550,20 +615,21 @@ export default function AssemblyViewer({
               <Layers3 size={17} />
             </button>
             <button
-              aria-label="全屏预览"
-              title="全屏"
+              aria-label={fullscreen ? '退出全屏' : '全屏预览'}
+              title={fullscreen ? '退出全屏（Esc）' : '全屏'}
+              aria-pressed={fullscreen}
               onClick={() => {
-                if (document.fullscreenElement) void document.exitFullscreen();
-                else
-                  void mount.current
-                    ?.closest('.assembly-preview')
-                    ?.requestFullscreen()
-                    .catch(() =>
-                      setFailure({ model, message: '当前浏览器不支持全屏。' }),
-                    );
+                // Keep the native request directly inside this user gesture.
+                const action =
+                  document.fullscreenElement === preview.current
+                    ? document.exitFullscreen()
+                    : preview.current?.requestFullscreen();
+                void action?.catch(() =>
+                  setFailure({ model, message: '当前浏览器不支持全屏。' }),
+                );
               }}
             >
-              <Maximize size={17} />
+              {fullscreen ? <Minimize size={17} /> : <Maximize size={17} />}
             </button>
           </div>
         </div>

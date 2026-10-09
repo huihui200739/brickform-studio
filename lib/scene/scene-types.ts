@@ -56,6 +56,8 @@ export type SceneElementInstance = {
   bbox3d?: BBox3d;
   scaleHint?: { width: number; height: number; depth: number };
   colorHints?: number[];
+  /** Explicit instance-bound design approximation, never template color as observed material. */
+  materialDesign?: import('../component-materials.ts').ComponentMaterialDesign;
   groupId?: string;
   importance?: ElementImportance;
   importanceScore?: number;

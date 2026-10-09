@@ -99,6 +99,7 @@ export type Model = {
   reservedVolumes?: import('./scene/scene-types.ts').BBox3d[];
   designGeometry?: import('./design-geometry.ts').DesignGeometry;
   platformDesign?: import('./platform-design.ts').PlatformDesign;
+  colorDesign?: import('./clean-design-colors.ts').ColorDesign;
   materialDesign?: import('./reference-materials.ts').ReferenceMaterialDesign;
   materialHypothesis?: import('./material-hypothesis.ts').MaterialHypothesisEvidence;
   surfaceDesign?: import('./surface-design.ts').SurfaceDesign;
@@ -170,7 +171,8 @@ export type Model = {
     sections: { id: string; name: string }[];
     steps: { name: string; description: string; section: string }[];
     reference: string;
-    parameters: {
+    /** Layout-only imports do not recover duck-specific design parameters. */
+    parameters?: {
       bodyLength: number;
       headWidth: number;
       bodyColor: number;

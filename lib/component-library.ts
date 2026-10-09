@@ -1,5 +1,6 @@
 import type { Brick } from './brick-engine.ts';
 import { componentBricks } from './component-parts.ts';
+import { materializeStatueBody } from './component-materials.ts';
 import {
   simplifiedTree,
   reliefStatue,
@@ -76,7 +77,8 @@ export const COMPONENT_LIBRARY: LegoComponentTemplate[] = [
     anchor: { kind: 'ground', localPoint: [0, 0, 0] },
     colors: [1, 11],
     representation: 'component',
-    build: () => componentBricks('statue'),
+    build: (instance) =>
+      materializeStatueBody(componentBricks('statue'), instance),
     fallback: 'relief',
   },
   {
@@ -88,7 +90,8 @@ export const COMPONENT_LIBRARY: LegoComponentTemplate[] = [
     anchor: { kind: 'surface', localPoint: [0, 0, 0] },
     colors: [7, 11],
     representation: 'template',
-    build: reliefStatue,
+    build: (instance) =>
+      materializeStatueBody(reliefStatue(instance), instance),
     requiresMask: true,
     fallback: 'relief',
   },
@@ -101,7 +104,8 @@ export const COMPONENT_LIBRARY: LegoComponentTemplate[] = [
     anchor: { kind: 'ground', localPoint: [0, 0, 0] },
     colors: [7, 11],
     representation: 'template',
-    build: simplifiedStandingStatue,
+    build: (instance) =>
+      materializeStatueBody(simplifiedStandingStatue(), instance),
     fallback: 'voxel',
   },
   {
@@ -113,7 +117,8 @@ export const COMPONENT_LIBRARY: LegoComponentTemplate[] = [
     anchor: { kind: 'surface', localPoint: [0, 0, 0] },
     colors: [11],
     representation: 'template',
-    build: forcedVoxelSilhouette,
+    build: (instance) =>
+      materializeStatueBody(forcedVoxelSilhouette(instance), instance),
     fallback: 'voxel',
   },
   {
@@ -125,7 +130,7 @@ export const COMPONENT_LIBRARY: LegoComponentTemplate[] = [
     anchor: { kind: 'surface', localPoint: [0, 0, 0] },
     colors: [7, 11],
     representation: 'template',
-    build: simplifiedStatue,
+    build: (instance) => materializeStatueBody(simplifiedStatue(), instance),
     fallback: 'voxel',
   },
 ];

@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import type { TriangleMesh } from './mesh-types.ts';
+import {
+  NATIVE_APPEARANCE_SOURCE,
+  SOURCE_COLOR_KIND,
+  snapshotNativeAppearance,
+  colourPipelineAudit,
+  type NativeMaterialAppearance,
+} from './source-material-provenance.ts';
 
 export async function readGLB(
   buffer: ArrayBuffer,
@@ -22,7 +29,22 @@ export async function readGLB(
   const gltf = await loader.parseAsync(buffer, '');
   gltf.scene.updateMatrixWorld(true);
   const positions: number[] = [],
-    colors: number[] = [];
+    colors: number[] = [],
+    materialIds: number[] = [],
+    faceSourceKinds: number[] = [],
+    alpha: number[] = [];
+  const nativeMaterials = new Map<number, NativeMaterialAppearance>();
+  const json = gltf.parser.json as {
+    materials?: Array<{
+      name?: string;
+      pbrMetallicRoughness?: {
+        baseColorFactor?: [number, number, number, number];
+      };
+      alphaMode?: 'OPAQUE' | 'MASK' | 'BLEND';
+      alphaCutoff?: number;
+      doubleSided?: boolean;
+    }>;
+  };
   const textures = new Map<
     THREE.Texture,
     { width: number; height: number; data: Uint8ClampedArray }
@@ -49,6 +71,30 @@ export async function readGLB(
             : object.material
         ) as THREE.MeshStandardMaterial;
         const c = (material.color || new THREE.Color(1, 1, 1)).clone();
+        const materialId =
+          gltf.parser.associations.get(material)?.materials ?? -1;
+        const definition =
+          materialId >= 0 ? json.materials?.[materialId] : undefined;
+        if (!nativeMaterials.has(materialId))
+          nativeMaterials.set(materialId, {
+            id: materialId,
+            source:
+              materialId >= 0
+                ? 'explicit-gltf-material'
+                : 'gltf-default-material',
+            name: definition?.name ?? material.name,
+            baseColorFactor: definition?.pbrMetallicRoughness
+              ?.baseColorFactor ?? [1, 1, 1, 1],
+            alphaMode: definition?.alphaMode ?? 'OPAQUE',
+            alphaCutoff: definition?.alphaCutoff ?? 0.5,
+            doubleSided: definition?.doubleSided ?? false,
+          });
+        let sourceKind =
+          materialId >= 0
+            ? NATIVE_APPEARANCE_SOURCE.materialFactor
+            : NATIVE_APPEARANCE_SOURCE.defaultMaterial;
+        let sampledAlpha =
+          definition?.pbrMetallicRoughness?.baseColorFactor?.[3] ?? 1;
         const ids = [0, 1, 2].map((j) => (index ? index.getX(i + j) : i + j));
         for (const id of ids) {
           v.fromBufferAttribute(attrs.position, id).applyMatrix4(
@@ -64,6 +110,12 @@ export async function readGLB(
             vertex.b += attrs.color.getZ(id) / 3;
           }
           c.multiply(vertex);
+          sourceKind |= NATIVE_APPEARANCE_SOURCE.vertexColor;
+          if (attrs.color.itemSize >= 4)
+            sampledAlpha *= ids.reduce(
+              (sum, id) => sum + attrs.color.getW(id) / 3,
+              0,
+            );
         }
         const map = material.map;
         if (map && attrs.uv && map.image) {
@@ -96,6 +148,8 @@ export async function readGLB(
               Math.max(0, Math.floor(uv.y * pixels.height)),
             ),
             k = (y * pixels.width + x) * 4;
+          sourceKind |= NATIVE_APPEARANCE_SOURCE.textureSample;
+          sampledAlpha *= pixels.data[k + 3] / 255;
           c.multiply(
             new THREE.Color().setRGB(
               pixels.data[k] / 255,
@@ -111,12 +165,33 @@ export async function readGLB(
           Math.round(c.g * 255),
           Math.round(c.b * 255),
         );
+        materialIds.push(materialId);
+        faceSourceKinds.push(sourceKind);
+        alpha.push(sampledAlpha);
       }
     });
     if (!positions.length) throw Error('GLB 中没有可转换的三角网格。');
+    const sampledColors = new Uint8Array(colors);
+    const nativeAppearance = snapshotNativeAppearance({
+      version: 1,
+      method: 'glb-native-appearance',
+      intrinsicMaterialVerified: false,
+      originalRGB: sampledColors,
+      materialIds: Int32Array.from(materialIds),
+      faceSourceKinds: Uint8Array.from(faceSourceKinds),
+      alpha: Float32Array.from(alpha),
+      materials: [...nativeMaterials.values()],
+    });
     return {
       positions: new Float32Array(positions),
-      colors: new Uint8Array(colors),
+      colors: sampledColors,
+      nativeAppearance,
+      colourPipelineAudit: colourPipelineAudit({
+        nativeAppearance,
+        perFaceSourceKind: new Uint8Array(materialIds.length).fill(
+          SOURCE_COLOR_KIND.nativeAppearance,
+        ),
+      }),
       name,
     };
   } finally {

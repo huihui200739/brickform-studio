@@ -8,6 +8,10 @@ export type TriangleMesh = {
   positions: Float32Array;
   // One sRGB color per triangle, sampled from the original material/texture.
   colors: Uint8Array;
+  // Detached imported appearance, not intrinsic albedo or reference evidence.
+  // Reference recolouring retains this original source-face sidecar.
+  nativeAppearance?: import('./source-material-provenance.ts').NativeAppearanceProvenance;
+  colourPipelineAudit?: import('./source-material-provenance.ts').ColourPipelineAudit;
   name: string;
   // One flags byte per triangle; unobserved triangles carry no flags.
   features?: Uint8Array;
@@ -26,6 +30,7 @@ export type TriangleMesh = {
     perspective: number;
     observedFraction: number;
     softenShadows?: boolean;
+    materialMode?: 'material-first' | 'radiance';
     alignment?: ReturnType<
       typeof import('./reference-colors.ts').referenceAlignment
     >['evidence'];

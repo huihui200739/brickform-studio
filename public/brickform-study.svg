@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="580" height="340" viewBox="0 0 580 340" fill="none">
+  <title>Brickform modular structure study</title>
+  <desc>An original isometric illustration, not an AI reconstruction result.</desc>
+  <defs>
+    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" stroke="#D9DDD0" stroke-width=".7"/></pattern>
+    <g id="stud"><path d="M-9 0v-5h18v5" fill="currentColor"/><ellipse cy="0" rx="9" ry="5" fill="currentColor"/><ellipse cy="-5" rx="9" ry="5" fill="currentColor" stroke="#FFFFFF" stroke-opacity=".4" stroke-width="1"/></g>
+    <g id="brick"><path d="m0 35 63 36v39L0 74V35Z" fill="currentColor"/><path d="m63 71 63-36v39l-63 36V71Z" fill="currentColor"/><path d="m0 35 63 36v39L0 74V35Z" fill="#202B20" opacity=".12"/><path d="m63 71 63-36v39l-63 36V71Z" fill="#202B20" opacity=".24"/><path d="m0 35 63-36 63 36-63 36L0 35Z" fill="currentColor" stroke="#FFFFFF" stroke-opacity=".55"/>
+      <use href="#stud" x="33" y="32"/><use href="#stud" x="63" y="15"/><use href="#stud" x="63" y="49"/><use href="#stud" x="93" y="32"/>
+    </g>
+  </defs>
+  <rect width="580" height="340" rx="14" fill="#F0F0E7"/>
+  <rect width="580" height="340" rx="14" fill="url(#grid)" opacity=".45"/>
+  <path d="M22 22h16m-16 0v16M558 22h-16m16 0v16M22 318h16m-16 0v-16M558 318h-16m16 0v-16" stroke="#AAB49F"/>
+  <ellipse cx="306" cy="257" rx="171" ry="46" fill="#A2AC91" opacity=".12"/>
+  <g transform="translate(50 -7) scale(.87)">
+    <path d="m49 224 222-127 244 140-222 126L49 224Z" fill="#DEE4D3" stroke="#BCC8AA"/>
+    <path d="m49 224 244 139v8L49 231v-7Zm244 139 222-126v8L293 371v-8Z" fill="#C5D0B6"/>
+    <g stroke="#B5C4A5" opacity=".65"><path d="m86 203 244 140m-207-161 244 140m-207-161 244 140m-207-161 244 140m-207-161 244 140"/><path d="m91 248 222-127M131 272l222-127M172 295l222-127M212 318l222-127M253 340l222-127"/></g>
+    <use href="#brick" x="145" y="173" color="#C98B57"/>
+    <use href="#brick" x="271" y="171" color="#A5B096"/>
+    <use href="#brick" x="208" y="97" color="#D9DDD0"/>
+    <path d="m227 212 41 23m-19-86 28 16m64 40 33-19" stroke="white" stroke-opacity=".45" stroke-width="2"/>
+  </g>
+  <path d="M82 97h47l42 24M476 103h-45l-45 25" stroke="#A9B49D" stroke-dasharray="3 4"/>
+  <g fill="#69735F" font-family="Arial,sans-serif" font-size="10" letter-spacing="1.3"><text x="44" y="86">MODULAR FORM</text><text x="432" y="92">02 × 02</text><text x="38" y="300">STUDY / 001</text></g>
+  <path d="M483 281h34m-17-17v34" stroke="#A9B49D"/>
+  <circle cx="500" cy="281" r="9" stroke="#A9B49D"/>
+</svg>

@@ -49,11 +49,18 @@ export default defineConfig(async () => {
 
   return {
     css: { postcss: { plugins: [tailwindcss()] } },
-    server: isCodexSeatbeltSandbox
-      ? { watch: { useFsEvents: false, usePolling: true } }
-      : undefined,
+    // vinext accepts --hostname, not Vite's --host/--strictPort CLI flags.
+    // Keep both development entries loopback-only and fail instead of changing ports.
+    server: {
+      host: '127.0.0.1',
+      port: 3000,
+      strictPort: true,
+      ...(isCodexSeatbeltSandbox
+        ? { watch: { useFsEvents: false, usePolling: true } }
+        : {}),
+    },
     plugins: [
-      ...(process.env.BRICKFORM_LOCAL_3D === '1'
+      ...(process.env.BRICKFORM_LOCAL_3D !== '0'
         ? [localReconstruction(), localSemantics(), localMaterials()]
         : []),
       vinext(),

@@ -11,11 +11,12 @@ import { BoxGeometry } from 'three';
 const root = path.resolve('dist/client');
 const chunkDir = path.join(root, '_next/static/chunks');
 const origin = 'https://brickform.example';
-let checked = 0;
+// The URL can be hoisted into a shared chunk after route splitting. Resolve
+// imported string constants instead of silently skipping all real launchers.
+const modules = new Map();
 for (const filename of fs.readdirSync(chunkDir)) {
   if (!filename.endsWith('.js')) continue;
   const code = fs.readFileSync(path.join(chunkDir, filename), 'utf8');
-  if (!code.includes('image-design.worker-')) continue;
   const ast = ts.createSourceFile(
     filename,
     code,
@@ -23,8 +24,13 @@ for (const filename of fs.readdirSync(chunkDir)) {
     true,
     ts.ScriptKind.JS,
   );
-  const constants = {};
-  const launchers = [];
+  const info = {
+    ast,
+    constants: {},
+    imports: new Map(),
+    exports: new Map(),
+    launchers: [],
+  };
   const visit = (node) => {
     if (
       ts.isVariableDeclaration(node) &&
@@ -32,12 +38,59 @@ for (const filename of fs.readdirSync(chunkDir)) {
       node.initializer &&
       ts.isStringLiteralLike(node.initializer)
     )
-      constants[node.name.text] = node.initializer.text;
+      info.constants[node.name.text] = node.initializer.text;
+    if (
+      ts.isImportDeclaration(node) &&
+      node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings)
+    ) {
+      for (const imported of node.importClause.namedBindings.elements)
+        info.imports.set(imported.name.text, {
+          file: path.basename(node.moduleSpecifier.text),
+          exported: (imported.propertyName ?? imported.name).text,
+        });
+    }
+    if (
+      ts.isExportDeclaration(node) &&
+      node.exportClause &&
+      ts.isNamedExports(node.exportClause)
+    ) {
+      for (const exported of node.exportClause.elements)
+        info.exports.set(
+          exported.name.text,
+          (exported.propertyName ?? exported.name).text,
+        );
+    }
     if (ts.isNewExpression(node) && node.expression.getText(ast) === 'Worker')
-      launchers.push(node);
+      info.launchers.push(node);
     ts.forEachChild(node, visit);
   };
   visit(ast);
+  modules.set(filename, info);
+}
+function resolveConstant(filename, name, seen = new Set()) {
+  const key = `${filename}:${name}`;
+  if (seen.has(key)) return undefined;
+  seen.add(key);
+  const info = modules.get(filename);
+  if (!info) return undefined;
+  if (name in info.constants) return info.constants[name];
+  const imported = info.imports.get(name);
+  if (!imported) return undefined;
+  const source = modules.get(imported.file);
+  const localName = source?.exports.get(imported.exported);
+  return localName
+    ? resolveConstant(imported.file, localName, seen)
+    : undefined;
+}
+let checked = 0;
+for (const [filename, info] of modules) {
+  const { ast, launchers } = info;
+  const constants = { ...info.constants };
+  for (const name of info.imports.keys()) {
+    const value = resolveConstant(filename, name);
+    if (value !== undefined) constants[name] = value;
+  }
   for (const launcher of launchers) {
     let workerUrl;
     vm.runInNewContext(launcher.getText(ast), {
@@ -251,10 +304,39 @@ for (const filename of fs.readdirSync(chunkDir)) {
     checked++;
   }
 }
+// The formal workflow adds one shared launcher; the advanced workbench retains
+// its image and mesh launchers. Every source launcher must survive packaging.
+let expected = 0;
+for (const file of [
+  'lib/workspace-worker.ts',
+  'app/advanced/page.tsx',
+  'components/reconstruction-panel.tsx',
+]) {
+  const source = ts.createSourceFile(
+    file,
+    fs.readFileSync(file, 'utf8'),
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  const count = (node) => {
+    if (
+      ts.isNewExpression(node) &&
+      node.expression.getText(source) === 'Worker'
+    )
+      expected++;
+    ts.forEachChild(node, count);
+  };
+  count(source);
+}
+assert.ok(
+  expected >= 3,
+  'Formal and advanced workflows must retain conversion workers',
+);
 assert.equal(
   checked,
-  2,
-  'Verify both image and mesh conversion worker launchers in the emitted page',
+  expected,
+  'Verify every emitted image/mesh worker launcher across route chunks',
 );
 console.log(
   'Image worker: HTTPS launcher, packaged asset, generated model and error response verified.',

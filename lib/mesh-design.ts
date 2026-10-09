@@ -4,6 +4,7 @@ import {
   type VoxelMaterialDesign,
 } from './voxel-materials.ts';
 import { componentTemplate } from './component-library.ts';
+import { bindComponentMaterial } from './component-materials.ts';
 import { hasVerifiedIdentity } from './scene/detectors/vision-detector.ts';
 import { repeatedGroups } from './scene-elements.ts';
 import {
@@ -49,7 +50,10 @@ import {
   auditDesignGeometry,
   type DesignGeometry,
 } from './design-geometry.ts';
-import { installCavityLintel, type CavityLintelOpening } from './cavity-lintel.ts';
+import {
+  installCavityLintel,
+  type CavityLintelOpening,
+} from './cavity-lintel.ts';
 import { brazierClearances } from './semantic-clearance.ts';
 import { enforceGroupConsistency } from './element-grouping.ts';
 import {
@@ -84,6 +88,12 @@ import {
   type MeshSurfaceOwnership,
   type MeshSurfaceOwnershipSelection,
 } from './mesh-surface-ownership.ts';
+
+import {
+  designModelColors,
+  type MeshColorOptions,
+} from './clean-design-colors.ts';
+export type { MeshColorOptions } from './clean-design-colors.ts';
 
 // Conversion is split in two stages: the triangle volume is cast once, and each
 // component-placement attempt re-reads that volume. Autoplacement can therefore
@@ -247,6 +257,66 @@ function assembleProceduralStructure(
   return model;
 }
 
+/** Rebond only the generated second base course, preserving every occupied
+ * cell/color. One-stud far-edge remainders otherwise stack into isolated strips.
+ * Alternating column offsets connect both row and column seams through the
+ * existing staggered first course. This never fills or removes source geometry. */
+function bondMeshFoundation(model: Model): boolean {
+  const course = model.bricks.filter((b) => b.y === 1);
+  if (
+    !course.length ||
+    course.some((b) => b.h !== 1 || b.construction || b.pose)
+  )
+    return false;
+  const cells = new Map<string, number>();
+  for (const b of course)
+    for (let x = b.x; x < b.x + b.w; x++)
+      for (let z = b.z; z < b.z + b.d; z++) {
+        const key = `${x},${z}`;
+        if (cells.has(key)) return false;
+        cells.set(key, b.color);
+      }
+  if (cells.size !== model.width * model.depth) return false;
+  const replacement: typeof model.bricks = [];
+  for (let x = 0; x < model.width; x++) {
+    let z = 0;
+    while (z < model.depth) {
+      const color = cells.get(`${x},${z}`);
+      if (color === undefined) return false;
+      // The first course starts odd rows with a singleton at x=0. Start
+      // even-column bonds one row later, so the far-right remainder cannot
+      // pair with that row's singleton into another isolated corner.
+      const lengths = x % 2 === 0 && z === 0 ? [1] : [4, 2, 1];
+      const depth = lengths.find(
+        (length) =>
+          z + length <= model.depth &&
+          Array.from({ length }, (_, dz) => cells.get(`${x},${z + dz}`)).every(
+            (value) => value === color,
+          ),
+      )!;
+      replacement.push({
+        id: 0,
+        part: depth === 4 ? '3710' : depth === 2 ? '3023' : '3024',
+        x,
+        y: 1,
+        z,
+        w: 1,
+        d: depth,
+        h: 1,
+        color,
+        support: false,
+      });
+      z += depth;
+    }
+  }
+  const bricks = [...model.bricks.filter((b) => b.y !== 1), ...replacement]
+    .sort((a, b) => a.y - b.y || a.z - b.z || a.x - b.x)
+    .map((b, index) => ({ ...b, id: index + 1 }));
+  if (!validateModel({ ...model, bricks }).connected) return false;
+  model.bricks = bricks;
+  return true;
+}
+
 export type VisibilityContext = {
   image?: Raster;
   camera?: ReferenceCamera;
@@ -255,25 +325,36 @@ export type VisibilityContext = {
 function matchingReferenceContext(
   mesh: TriangleMesh,
   visibility?: VisibilityContext,
+  colorOptions?: MeshColorOptions,
 ) {
-  if (!mesh.coloring || !visibility?.image) return { mesh, visibility };
-  const camera = visibility.camera || mesh.coloring;
+  if (!visibility?.image) return { mesh, visibility };
+  const materialMode = colorOptions?.colorMode === 'coherent'
+    ? 'material-first' : 'radiance';
   const source = mesh.coloring;
-  // Color sampling, semantic rays and packing must refer to the same view.
-  // Explicit mounting-camera changes require reprojecting the reference paint,
-  // rather than carrying colors sampled from another camera into its volume.
+  // A reference context is registered by the upstream color worker. Do not
+  // fabricate a camera or repaint authored native colours from an unrelated raster.
+  if (!source) return { mesh, visibility };
+  const camera = visibility.camera || source;
+  // Pack the selected MATERIAL palette, not cached per-pixel photograph tones.
+  // Camera changes still reproject the same raw reference without moving geometry.
   if (
-    camera.yaw !== source.yaw ||
-    camera.pitch !== source.pitch ||
-    camera.perspective !== source.perspective
+    !source ||
+    materialMode !== (source.materialMode ?? 'radiance') ||
+    (camera && (camera.yaw !== source.yaw ||
+      camera.pitch !== source.pitch ||
+      camera.perspective !== source.perspective))
   )
     mesh = colorFromReference(
       mesh,
       visibility.image,
       camera,
-      source.softenShadows ?? true,
+      source?.softenShadows ?? true,
+      {
+        unobservedPolicy: mesh.colourPipelineAudit?.unobservedPolicy,
+        materialMode,
+      },
     );
-  return { mesh, visibility: { ...visibility, camera } };
+  return { mesh, visibility: { ...visibility, camera: camera ?? mesh.coloring } };
 }
 
 function calibrateRegionAnchors(
@@ -1078,6 +1159,8 @@ function assembleVolume(
     ],
     'connector-graph',
   );
+  const bondedFoundation =
+    !validateModel(raw).connected && bondMeshFoundation(raw);
   // Preserve the occupied volume and full-width bridging plates. An exposed
   // brick becomes two full plates with a tiled top at the original height.
   // Only unused studs are removed; attachment surfaces stay intact.
@@ -1122,8 +1205,10 @@ function assembleVolume(
           b.z < s.z + s.d &&
           b.z + b.d > s.z,
       ) ||
-      // Split an underside attachment plate only on the calibrated floor and
-      // with full lower support. Upper bridges keep their continuous sockets.
+      // Floor attachment plates may split only when each proposed tile has a
+      // real lower contact (checked below). Requiring every voxel below the
+      // original plate wrongly rejects valid bridging tiles and leaves studs
+      // exposed on the calibrated floor. Upper bridges retain full sockets.
       (b.h === 1 &&
         hangingParents.has(b.id) &&
         !(
@@ -1134,11 +1219,6 @@ function assembleVolume(
               (dz) =>
                 floorColumns.has(`${b.x + dx},${b.z + dz}`) &&
                 !excludedFloorColumns.has(`${b.x + dx},${b.z + dz}`),
-            ),
-          ) &&
-          Array.from({ length: b.w }, (_, dx) => dx).every((dx) =>
-            Array.from({ length: b.d }, (_, dz) => dz).every((dz) =>
-              cells.has(`${b.x + dx},${b.y - 1},${b.z + dz}`),
             ),
           )
         )) ||
@@ -1330,6 +1410,9 @@ function assembleVolume(
   if (model.designGeometry)
     model.assembly!.reference +=
       ' 入口后墙按参考区域拟合为平面，局部阴影配色已合并；隐藏墙体与跨梁承重仍需复核。';
+  if (bondedFoundation)
+    model.assembly!.reference +=
+      ' 底板第二层使用错缝纵向板重新连接余边；底板占用体积、颜色与原网格主体均未改变。';
   if (packing.removed)
     model.assembly!.reference += ` 美学后处理移除冗余隐藏支撑 ${packing.removed} 块，保留连接与连通性。`;
   if (mesh.statueFallback?.cells.length)
@@ -1402,7 +1485,13 @@ function assembleVolume(
               return ` ${b.part}@(${b.x},${b.y},${b.z})`;
             })
             .join('')}`
-        : '积木结构未通过连接检查，请降低尺寸后重试。',
+        : `积木结构未通过连接检查：碰撞 ${check.collisions}，缺少连接 ${check.unsupported}，无效零件 ${check.invalidParts}，整体断开 ${check.connected ? 0 : 1}。请调整尺寸后重试。${check.badIds
+            .slice(0, 4)
+            .map((id) => {
+              const b = model.bricks.find((b) => b.id === id)!;
+              return ` ${b.part}@(${b.x},${b.y},${b.z})`;
+            })
+            .join('')}`,
     );
   return model;
 }
@@ -1411,11 +1500,30 @@ export function meshToDesign(
   resolution = 28,
   regions: ComponentRegion[] = [],
   visibility?: VisibilityContext,
+  colorOptions?: MeshColorOptions,
 ): Model {
-  ({ mesh, visibility } = matchingReferenceContext(mesh, visibility));
+  ({ mesh, visibility } = matchingReferenceContext(mesh, visibility, colorOptions));
   regions = regions.map(ensureSceneElement);
+  if (colorOptions?.colorMode === 'coherent' && visibility?.image) {
+    const reference = visibility.image;
+    regions = regions.map((region) =>
+      region.sceneElement
+        ? {
+            ...region,
+            sceneElement: bindComponentMaterial(region.sceneElement, reference, { materialFirst: true }),
+          }
+        : region,
+    );
+  }
   if (regions.some((r) => r.autoRefinement))
-    return meshToDesignAuto(mesh, resolution, regions, 48, visibility).model;
+    return meshToDesignAuto(
+      mesh,
+      resolution,
+      regions,
+      48,
+      visibility,
+      colorOptions,
+    ).model;
   const volume = buildMeshVolume(mesh, resolution);
   if (visibility?.image && regions.length) {
     try {
@@ -1445,7 +1553,12 @@ export function meshToDesign(
       structure.category === 'tower') &&
     structure.confidence >= 0.62
   )
-    return assembleProceduralStructure(mesh, resolution, structure);
+    return designModelColors(
+      assembleProceduralStructure(mesh, resolution, structure),
+      mesh,
+      resolution,
+      colorOptions,
+    );
   const model = assembleVolume(mesh, volume, resolution, eligible);
   model.structureCategory = structure.category;
   model.structureConfidence = structure.confidence;
@@ -1478,7 +1591,7 @@ export function meshToDesign(
         .filter((region) => region.anchorResult)
         .map(anchorDebug)
         .join('；');
-  return model;
+  return designModelColors(model, mesh, resolution, colorOptions);
 }
 export type AutoComponentResult = {
   model: Model;
@@ -1493,10 +1606,22 @@ export function meshToDesignAuto(
   regions: ComponentRegion[] = [],
   budget = 48,
   visibility?: VisibilityContext,
+  colorOptions?: MeshColorOptions,
 ): AutoComponentResult {
-  ({ mesh, visibility } = matchingReferenceContext(mesh, visibility));
+  ({ mesh, visibility } = matchingReferenceContext(mesh, visibility, colorOptions));
   if (regions.length > 64) throw Error('一次最多替换 64 个组件。');
   regions = regions.map(ensureSceneElement);
+  if (colorOptions?.colorMode === 'coherent' && visibility?.image) {
+    const reference = visibility.image;
+    regions = regions.map((region) =>
+      region.sceneElement
+        ? {
+            ...region,
+            sceneElement: bindComponentMaterial(region.sceneElement, reference, { materialFirst: true }),
+          }
+        : region,
+    );
+  }
   const volume = buildMeshVolume(mesh, resolution);
   if (visibility?.image && regions.length) {
     try {
@@ -1544,7 +1669,12 @@ export function meshToDesignAuto(
     classified.confidence >= 0.62
   )
     return {
-      model: assembleProceduralStructure(mesh, resolution, classified),
+      model: designModelColors(
+        assembleProceduralStructure(mesh, resolution, classified),
+        mesh,
+        resolution,
+        colorOptions,
+      ),
       applied: [],
       dropped: [],
       reports: [],
@@ -1845,5 +1975,11 @@ export function meshToDesignAuto(
     model.assembly.reference +=
       ' 组件位置检查：' +
       reports.map((r) => r.name + '：' + r.message).join('；');
-  return { model, applied, dropped, reports, attempts };
+  return {
+    model: designModelColors(model, mesh, resolution, colorOptions),
+    applied,
+    dropped,
+    reports,
+    attempts,
+  };
 }

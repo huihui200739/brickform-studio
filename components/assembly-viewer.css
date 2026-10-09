@@ -1,0 +1,65 @@
+/* Imported by the shared component, not an entry-specific global theme.
+ * Only its own fullscreen subtree is changed; normal layout and colors stay
+ * owned by the formal/new/advanced workspaces. */
+.assembly-preview:fullscreen {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: var(--canvas-surface, #eef1f5);
+}
+
+.assembly-preview:fullscreen::backdrop {
+  background: var(--canvas-surface, #eef1f5);
+}
+
+.assembly-preview:fullscreen > .assembly-viewer {
+  flex: 1 1 0;
+  width: 100%;
+  height: 0;
+  min-width: 0;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.assembly-preview:fullscreen > .assembly-viewer > .canvas-mount {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+
+.assembly-preview:fullscreen .canvas-mount canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.assembly-preview:fullscreen .assembly-view-bottom {
+  left: max(16px, env(safe-area-inset-left));
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.assembly-preview:fullscreen > .layer-explorer {
+  box-sizing: border-box;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 38vh;
+  max-height: 38dvh;
+  margin: 0;
+  border-radius: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}

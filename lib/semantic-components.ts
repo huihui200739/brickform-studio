@@ -24,6 +24,7 @@ import type { RepresentationResult } from './scene/scene-types.ts';
 import type { AnchorResult, PlacementMode } from './anchor-result.ts';
 export { componentBricks } from './component-parts.ts';
 import { componentBricks } from './component-parts.ts';
+import { materializeStatueBody } from './component-materials.ts';
 export type ComponentKind = 'tree' | 'brazier' | 'statue';
 export type ComponentRegion = {
   id: string;
@@ -189,7 +190,11 @@ export function positionedComponent(
   const template = templateId ? componentTemplate(templateId) : undefined;
   if (templateId && (!template || template.category !== kind))
     throw Error('实例模板不可用');
-  const parts = template ? template.build(instance) : componentBricks(kind);
+  const parts = template
+    ? template.build(instance)
+    : kind === 'statue'
+      ? materializeStatueBody(componentBricks(kind), instance)
+      : componentBricks(kind);
   return parts.map((b) => {
     const pose = {
       matrix: multiply(m, b.pose!.matrix),

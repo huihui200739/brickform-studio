@@ -24,6 +24,7 @@ export type ReferenceMaterialRegion = {
 };
 export type ReferenceMaterialDesign = {
   method: 'reference-gradient-regions';
+  materialFirst?: import('./reference-material-design.ts').ReferenceMaterialFirstDesign;
   regions: ReferenceMaterialRegion[];
   normalizedPixels: number;
   warnings: string[];

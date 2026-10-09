@@ -2,9 +2,22 @@ import { PALETTE, type Raster } from './brick-engine.ts';
 import { MESH_FEATURE, type TriangleMesh } from './mesh-types.ts';
 import { rgb } from './material-color-space.ts';
 import { referenceMaterials } from './reference-materials.ts';
+import { referenceMaterialDesign } from './reference-material-design.ts';
 import { surfaceMaterials } from './surface-materials.ts';
 import { referenceVisibility } from './reference-visibility.ts';
 import { createSceneSurfaceGraph } from './scene-surface-graph.ts';
+import {
+  colourPipelineAudit,
+  snapshotNativeAppearance,
+  unobservedMaterialPolicy,
+  type UnobservedMaterialPolicy,
+} from './source-material-provenance.ts';
+
+export type ReferenceColorOptions = {
+  unobservedPolicy?: UnobservedMaterialPolicy;
+  /** Material-first is a disclosed design plan; radiance retains photograph tones. */
+  materialMode?: 'material-first' | 'radiance';
+};
 
 const SIZE = 96;
 // Olive foliage is warm and desaturated: its green channel barely beats red but
@@ -332,7 +345,12 @@ export function colorFromReference(
   image: Raster,
   override?: ReferenceCamera,
   softenShadows = true,
+  options?: ReferenceColorOptions,
 ): TriangleMesh {
+  const materialMode = options?.materialMode ?? 'radiance';
+  if (!['material-first', 'radiance'].includes(materialMode))
+    throw Error('Reference material design mode is invalid.');
+  const policy = unobservedMaterialPolicy(options?.unobservedPolicy);
   const {
     camera,
     view,
@@ -345,7 +363,15 @@ export function colorFromReference(
     evidence,
     center,
   } = referenceAlignment(mesh, image, override);
-  const materials = referenceMaterials(image, mask, softenShadows);
+  const rawMaterials = referenceMaterials(image, mask, softenShadows);
+  const first = materialMode === 'material-first'
+    ? referenceMaterialDesign(image, mask, rawMaterials)
+    : undefined;
+  const materials = first ? {
+    ...rawMaterials,
+    palette: first.palette,
+    design: { ...rawMaterials.design, materialFirst: first.design },
+  } : rawMaterials;
   const p = mesh.positions;
   const N = 192,
     coords = new Float64Array(p.length);
@@ -445,8 +471,14 @@ export function colorFromReference(
   }
   if (observed < Math.min(10, Math.max(1, faces * 0.1)))
     throw Error('参考图与网格未能对齐，请调整配色视角或更换图片。');
-  const dominant = counts.indexOf(Math.max(...counts));
-  const surfaces = surfaceMaterials(p, faceColors, visiblePixels, dominant);
+  const dominant = first?.fallbackColor ?? counts.indexOf(Math.max(...counts));
+  const nativeAppearance = mesh.nativeAppearance
+    ? snapshotNativeAppearance(mesh.nativeAppearance)
+    : undefined;
+  const surfaces = surfaceMaterials(p, faceColors, visiblePixels, dominant, {
+    unobservedPolicy: policy,
+    nativeAppearance,
+  });
   const out = new Uint8Array(mesh.colors.length);
   for (let t = 0; t < faceColors.length; t++) {
     const c = surfaces.colors[t];
@@ -455,6 +487,15 @@ export function colorFromReference(
   return {
     ...mesh,
     colors: out,
+    ...(nativeAppearance ? { nativeAppearance } : {}),
+    colourPipelineAudit: colourPipelineAudit({
+      nativeAppearance,
+      unobservedPolicy: policy,
+      perFaceSourceKind: surfaces.perFaceSourceKind,
+      disconnectedInference: surfaces.disconnectedInference,
+      topologyParentFaces: surfaces.topologyParentFaces,
+      sourceDomainIds: surfaces.sourceDomainIds,
+    }),
     features,
     sourceObservations: observations?.finish(),
     materialHypothesis: undefined,
@@ -468,7 +509,9 @@ export function colorFromReference(
       surfaces: surfaces.design,
       warnings: [
         ...materials.design.warnings,
-        'Unobserved faces use geometric surface material hypotheses. Compatible inclination and proximity do not prove unseen paint; regions without compatible observations use the reference default.',
+        policy === 'source-topology-only'
+          ? 'Unobserved material design requires a positive observed-pixel anchor connected by exact manifold source edges. Explicit native material boundaries and real gaps block continuation; conflicting or unsupported domains remain unknown reference-default colours. Native appearance and topology support do not prove intrinsic albedo or unseen paint.'
+          : 'Unobserved faces use geometric surface material hypotheses: local donors require similarly facing nearby planes, otherwise a majority of observed large faces with matching inclination supplies an estimated design color. This does not prove unseen paint; unsupported or conflicting families remain a reference-default hypothesis.',
       ],
       projection: {
         voteUnit: 'visible-reference-pixel',
@@ -489,6 +532,7 @@ export function colorFromReference(
       ...camera,
       observedFraction: observed / faceColors.length,
       softenShadows,
+      ...(first ? { materialMode: 'material-first' as const } : {}),
     },
   };
 }
